@@ -67,3 +67,13 @@ export async function POST(request: NextRequest) {
   }
 }
 
+export async function GET() {
+  return NextResponse.json({ message: 'Send Email Now API is ready (POST only)' })
+}
+
+export async function OPTIONS() {
+  return NextResponse.json({}, { status: 200 })
+}
+
+export const runtime = 'nodejs';
+
