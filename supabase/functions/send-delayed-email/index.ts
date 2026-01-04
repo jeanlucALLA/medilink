@@ -17,7 +17,7 @@ serve(async (req) => {
     // Vérification de sécurité : vérifier la clé de service ou l'origine
     const authHeader = req.headers.get('authorization')
     const providedKey = authHeader?.replace('Bearer ', '') || req.headers.get('x-service-key') || ''
-    
+
     if (SERVICE_KEY && providedKey !== SERVICE_KEY) {
       return new Response(
         JSON.stringify({ error: 'Unauthorized: Invalid service key' }),
@@ -81,9 +81,9 @@ serve(async (req) => {
 
     if (!questionnaires || questionnaires.length === 0) {
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           message: 'No questionnaires to send',
-          count: 0 
+          count: 0
         }),
         { status: 200, headers: { 'Content-Type': 'application/json' } }
       )
@@ -94,20 +94,20 @@ serve(async (req) => {
     const questionnairesToSend = forceSendId
       ? questionnaires // Envoi forcé : envoyer immédiatement
       : questionnaires.filter((q) => {
-          if (!q.send_after_days || !q.created_at) return false
-          
-          const createdDate = new Date(q.created_at)
-          const sendDate = new Date(createdDate)
-          sendDate.setDate(sendDate.getDate() + q.send_after_days)
-          
-          return sendDate <= now
-        })
+        if (!q.send_after_days || !q.created_at) return false
+
+        const createdDate = new Date(q.created_at)
+        const sendDate = new Date(createdDate)
+        sendDate.setDate(sendDate.getDate() + q.send_after_days)
+
+        return sendDate <= now
+      })
 
     if (questionnairesToSend.length === 0) {
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           message: 'No questionnaires ready to send',
-          checked: questionnaires.length 
+          checked: questionnaires.length
         }),
         { status: 200, headers: { 'Content-Type': 'application/json' } }
       )
@@ -115,7 +115,7 @@ serve(async (req) => {
 
     // Récupérer les informations du praticien pour chaque questionnaire
     const results = []
-    
+
     for (const questionnaire of questionnairesToSend) {
       try {
         // Récupérer le profil du praticien
@@ -209,7 +209,7 @@ Vos données sont traitées de manière sécurisée et confidentielle.
             'Authorization': `Bearer ${RESEND_API_KEY}`,
           },
           body: JSON.stringify({
-            from: 'Medi.Link <noreply@medilink.fr>', // À configurer avec votre domaine vérifié
+            from: 'Medi.Link <onboarding@resend.dev>', // Utiliser le domaine de test Resend par défaut
             to: questionnaire.patient_email,
             subject: emailSubject,
             html: emailHtml,
@@ -272,17 +272,17 @@ Vos données sont traitées de manière sécurisée et confidentielle.
         errors: errorCount,
         results: results,
       }),
-      { 
-        status: 200, 
-        headers: { 'Content-Type': 'application/json' } 
+      {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
       }
     )
   } catch (error: any) {
     console.error('Erreur générale:', error)
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         error: 'Internal server error',
-        message: error.message 
+        message: error.message
       }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     )
