@@ -219,7 +219,9 @@ export async function GET() {
 
     console.log('[Debug GET] Questionnaires retournés:', questionnaires.length)
 
-    return NextResponse.json({ questionnaires })
+    const response = NextResponse.json({ questionnaires })
+    response.headers.set('X-Debug-Antigravity', 'v1')
+    return response
   } catch (error) {
     return NextResponse.json(
       { error: 'Erreur lors de la récupération' },
@@ -227,3 +229,5 @@ export async function GET() {
     )
   }
 }
+
+export const runtime = 'nodejs';
