@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { UserPlus, Mail, Lock, User, Briefcase, Building2, GraduationCap, ArrowLeft, MapPin, Gift } from 'lucide-react'
 import Link from 'next/link'
+import { STRIPE_PRICE_IDS } from '@/lib/constants'
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -77,9 +78,13 @@ export default function RegisterPage() {
       // Créer l'utilisateur avec Supabase Auth
       let authData, authError
       try {
+        const origin = window.location.origin
         const result = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
+          options: {
+            emailRedirectTo: `${origin}/auth/callback`,
+          }
         })
         authData = result.data
         authError = result.error
@@ -195,14 +200,45 @@ export default function RegisterPage() {
         // Afficher le message de succès
         setSuccess(true)
 
-        // Redirection vers le dashboard après l'inscription réussie
-        // Utilisation de window.location pour garantir le bon port
-        setTimeout(() => {
-          const currentPort = window.location.port || '3000'
-          const dashboardUrl = `http://localhost:${currentPort}/dashboard`
-          console.log('Redirection vers:', dashboardUrl)
-          window.location.href = dashboardUrl
-        }, 2000)
+        // Gérer la redirection vers Stripe ou la confirmation email
+        if (authData.session) {
+          // Session active : on redirige vers le paiement Stripe
+          try {
+            const response = await fetch('/api/stripe/checkout', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                priceId: STRIPE_PRICE_IDS.pro,
+                tier: 'pro',
+                userId: authData.user.id
+              }),
+            })
+
+            if (!response.ok) {
+              throw new Error('Erreur API Stripe')
+            }
+
+            const { url } = await response.json()
+            if (url) {
+              console.log('Redirection vers Stripe:', url)
+              window.location.href = url
+            } else {
+              console.error('Erreur: Pas d\'URL de checkout')
+              const origin = window.location.origin
+              window.location.href = `${origin}/dashboard`
+            }
+          } catch (err) {
+            console.error('Erreur appel Stripe:', err)
+            // En cas d'erreur, fallback dashboard
+            const origin = window.location.origin
+            window.location.href = `${origin}/dashboard`
+          }
+        } else {
+          // Pas de session (Confirmation email requise)
+          // On n'active pas le setSuccess tout de suite pour laisser le message visible ? 
+          // setSuccess est déjà true au dessus.
+          alert("Inscription réussie ! Veuillez consulter vos emails pour confirmer votre compte avant de procéder au paiement.")
+        }
       }
     } catch (err: any) {
       console.error("Erreur complète dans handleSubmit:", err)
