@@ -328,7 +328,7 @@ export default function AdminDashboard() {
                                 Administration
                             </h1>
                         </div>
-                        <p className="text-gray-500">Gérez les utilisateurs et supervisez l'activité de la plateforme.</p>
+                        <p className="text-gray-500">Gérez les utilisateurs et supervisez l&apos;activité de la plateforme.</p>
                     </div>
 
                     <div className="flex items-center gap-4">

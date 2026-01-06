@@ -12,7 +12,7 @@ function getInitials(nomComplet: string | null | undefined): string {
 
   // Séparer le nom en mots
   const mots = nomComplet.trim().split(/\s+/)
-  
+
   if (mots.length === 0) {
     return 'U'
   }
@@ -25,7 +25,7 @@ function getInitials(nomComplet: string | null | undefined): string {
   // Prendre la première lettre du premier mot et la première lettre du dernier mot
   const premiereLettre = mots[0].charAt(0).toUpperCase()
   const derniereLettre = mots[mots.length - 1].charAt(0).toUpperCase()
-  
+
   return premiereLettre + derniereLettre
 }
 
@@ -41,13 +41,13 @@ export default function SettingsPage() {
   const [showSuccess, setShowSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [subscriptionStatus, setSubscriptionStatus] = useState<'Gratuit' | 'Premium'>('Gratuit')
-  
+
   // États pour la section Sécurité
   const [newPassword, setNewPassword] = useState('')
   const [updatingPassword, setUpdatingPassword] = useState(false)
   const [passwordSuccess, setPasswordSuccess] = useState(false)
   const [passwordError, setPasswordError] = useState<string | null>(null)
-  
+
   // États pour la section Test Email
   const [testEmail, setTestEmail] = useState('')
   const [sendingTestEmail, setSendingTestEmail] = useState(false)
@@ -61,7 +61,7 @@ export default function SettingsPage() {
         setLoading(true)
         const { supabase } = await import('@/lib/supabase') as any
         const { data: { user }, error: authError } = await supabase.auth.getUser()
-        
+
         if (authError || !user) {
           setError('Erreur d\'authentification')
           setLoading(false)
@@ -70,7 +70,7 @@ export default function SettingsPage() {
 
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select('nom_complet, cabinet, code_postal, zip_code, city, department_code')
+          .select('*')
           .eq('id', user.id)
           .single()
 
@@ -120,7 +120,7 @@ export default function SettingsPage() {
 
       const { supabase } = await import('@/lib/supabase') as any
       const { data: { user }, error: authError } = await supabase.auth.getUser()
-      
+
       if (authError || !user) {
         console.error('[Settings] Erreur authentification:', authError)
         setError('Erreur d\'authentification')
@@ -147,15 +147,15 @@ export default function SettingsPage() {
         if (!finalCity || !finalDepartmentCode) {
           console.log('[Settings] Géocodage du code postal:', trimmedCodePostal)
           setGeocoding(true)
-          
+
           try {
             const geocodingResult = await geocodePostalCode(trimmedCodePostal)
-            
+
             if (geocodingResult) {
               console.log('[Settings] Géocodage réussi:', geocodingResult)
               finalCity = geocodingResult.city || finalCity
               finalDepartmentCode = geocodingResult.departmentCode || finalDepartmentCode
-              
+
               // Mettre à jour les états pour afficher les valeurs dans l'UI
               if (geocodingResult.city) {
                 setCity(geocodingResult.city)
@@ -261,7 +261,7 @@ export default function SettingsPage() {
 
       // Afficher le message de succès
       setShowSuccess(true)
-      
+
       // Le message disparaîtra automatiquement après 3 secondes
       setTimeout(() => {
         setShowSuccess(false)
@@ -308,7 +308,7 @@ export default function SettingsPage() {
       // Afficher le message de succès
       setPasswordSuccess(true)
       setNewPassword('') // Réinitialiser le champ
-      
+
       // Le message disparaîtra automatiquement après 3 secondes
       setTimeout(() => {
         setPasswordSuccess(false)
@@ -323,10 +323,47 @@ export default function SettingsPage() {
   }
 
   // Gérer l'abonnement (à implémenter avec Stripe)
-  const handleManageSubscription = () => {
-    // TODO: Rediriger vers la page de gestion d'abonnement Stripe
-    // ou ouvrir un modal de gestion d'abonnement
-    alert('Fonctionnalité de gestion d\'abonnement à venir')
+  const [managingSubscription, setManagingSubscription] = useState(false)
+
+  const handleManageSubscription = async () => {
+    try {
+      setManagingSubscription(true)
+      // Récupérer la session courante pour le token
+      const { supabase } = await import('@/lib/supabase') as any
+      const { data: { session } } = await supabase.auth.getSession()
+
+      if (!session?.access_token) {
+        throw new Error("Authentification requise")
+      }
+
+      const response = await fetch('/api/create-portal-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          // User has no subscription/customer ID yet
+          window.location.href = '/abonnement'
+          return
+        }
+        throw new Error(data.error || 'Erreur lors de la création de la session')
+      }
+
+      // Rediriger vers le portail Stripe
+      window.location.href = data.url
+
+    } catch (error) {
+      console.error('Erreur gestion abonnement:', error)
+      alert("Impossible d'accéder au portail. Avez-vous déjà un abonnement actif ?")
+    } finally {
+      setManagingSubscription(false)
+    }
   }
 
   if (loading) {
@@ -532,10 +569,16 @@ export default function SettingsPage() {
                     // Générer un ID de questionnaire fictif pour le test
                     const testQuestionnaireId = `test-${Date.now()}`
 
+                    // Récupérer la session pour le token
+                    const { supabase } = await import('@/lib/supabase') as any
+                    const { data: { session } } = await supabase.auth.getSession()
+                    if (!session?.access_token) throw new Error("Authentification requise")
+
                     const response = await fetch('/api/send-followup-email', {
                       method: 'POST',
                       headers: {
                         'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${session.access_token}`
                       },
                       body: JSON.stringify({
                         to: testEmail,
@@ -543,14 +586,17 @@ export default function SettingsPage() {
                         cabinetName: cabinet || 'Cabinet Médical',
                         sessionDate: new Date().toISOString(),
                         questionnaireId: testQuestionnaireId,
-                        practitionerName: nomComplet || undefined,
+                        // practitionerName est maintenant déduit côté serveur via le token
                       }),
                     })
 
                     const data = await response.json()
 
                     if (!response.ok) {
-                      throw new Error(data.error || 'Erreur lors de l\'envoi de l\'email')
+                      const errorMessage = data.details
+                        ? `${data.error}: ${data.details}`
+                        : (data.error || 'Erreur lors de l\'envoi de l\'email')
+                      throw new Error(errorMessage)
                     }
 
                     setTestEmailSuccess(true)
@@ -582,10 +628,10 @@ export default function SettingsPage() {
             {/* Note sur la configuration */}
             <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <p className="text-xs text-blue-800 mb-2">
-                <strong>Note :</strong> Assurez-vous que votre clé API Resend est configurée dans <code className="bg-blue-100 px-1 rounded">.env.local</code>
+                <strong>Note :</strong> Pour l&apos;envoi d&apos;emails, le système utilise désormais <strong>Resend</strong>. <a href="https://resend.com" target="_blank" rel="noopener noreferrer" className="underline">Voir le dashboard</a>.
               </p>
               <p className="text-xs text-blue-700">
-                Variable requise : <code className="bg-blue-100 px-1 rounded">RESEND_API_KEY</code>
+                Variable requise : <code className="bg-blue-100 px-1 rounded">RESEND_API_KEY</code> dans <code className="bg-blue-100 px-1 rounded">.env.local</code>
               </p>
             </div>
           </div>
@@ -669,9 +715,8 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
               <div>
                 <p className="text-sm font-medium text-gray-700 mb-1">Statut actuel</p>
-                <p className={`text-lg font-semibold ${
-                  subscriptionStatus === 'Premium' ? 'text-primary' : 'text-gray-900'
-                }`}>
+                <p className={`text-lg font-semibold ${subscriptionStatus === 'Premium' ? 'text-primary' : 'text-gray-900'
+                  }`}>
                   {subscriptionStatus}
                 </p>
               </div>
@@ -684,14 +729,24 @@ export default function SettingsPage() {
 
             <button
               onClick={handleManageSubscription}
-              className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors font-medium"
+              disabled={managingSubscription}
+              className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <CreditCard className="w-4 h-4" />
-              <span>Gérer mon abonnement</span>
+              {managingSubscription ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Redirection...</span>
+                </>
+              ) : (
+                <>
+                  <CreditCard className="w-4 h-4" />
+                  <span>Gérer mon abonnement</span>
+                </>
+              )}
             </button>
 
             <p className="text-xs text-gray-500 text-center">
-              {subscriptionStatus === 'Gratuit' 
+              {subscriptionStatus === 'Gratuit'
                 ? 'Passez à Premium pour débloquer toutes les fonctionnalités avancées'
                 : 'Gérez votre abonnement et vos méthodes de paiement'
               }

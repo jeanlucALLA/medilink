@@ -1,4 +1,3 @@
 export const STRIPE_PRICE_IDS = {
-    premium: 'price_1SIQGIPJwaO7UMTgOrYxkvAI',
-    cabinet: 'price_1SIQKoPJwaO7UMTgEKNZPO0U',
+    pro: 'price_1SmVSAPDDk8vjKdYmJGm5Em7',
 } as const;

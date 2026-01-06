@@ -1,14 +1,16 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { BarChart3, TrendingUp, Users, Calendar, Loader2, AlertCircle, AlertTriangle, Download, Check, MessageSquare, Plus, X, LineChart } from 'lucide-react'
+import { ChartsSkeleton } from '@/components/ChartsSkeleton'
 import jsPDF from 'jspdf'
 
 interface StatisticsData {
   date: string
   averageScore: number
   count: number
+  dateISO?: string
 }
 
 interface SummaryStats {
@@ -32,7 +34,7 @@ export default function StatisticsPage() {
   const [statisticsNotes, setStatisticsNotes] = useState<any[]>([])
   const [exporting, setExporting] = useState(false)
   const [isMounted, setIsMounted] = useState(false)
-  
+
   // Statistiques pour les cartes
   const [averageSatisfaction, setAverageSatisfaction] = useState<number | null>(null)
   const [alertResolutionRate, setAlertResolutionRate] = useState<number | null>(null)
@@ -41,11 +43,11 @@ export default function StatisticsPage() {
   const [criticalAlertsCount, setCriticalAlertsCount] = useState<number | null>(null)
 
   // Charger les statistiques pour les cartes avec try/catch
-  const loadCardStatistics = async () => {
+  const loadCardStatistics = useCallback(async () => {
     try {
       const { supabase } = await import('@/lib/supabase') as any
       const { data: { user } } = await supabase.auth.getUser()
-      
+
       if (!user) {
         setAverageSatisfaction(null)
         setAlertResolutionRate(null)
@@ -55,19 +57,29 @@ export default function StatisticsPage() {
         return
       }
 
+      // Helper pour appliquer le filtre de pathologie
+      const applyPathologyFilter = (query: any) => {
+        if (selectedPathology !== 'all') {
+          return query.ilike('pathologie', selectedPathology)
+        }
+        return query
+      }
+
       // Carte 1: Average Satisfaction
       try {
-        const { data: satisfactionData } = await supabase
+        let query = supabase
           .from('responses')
           .select('average_score, score_total')
           .eq('user_id', user.id)
           .limit(100)
 
+        const { data: satisfactionData } = await applyPathologyFilter(query)
+
         if (satisfactionData && satisfactionData.length > 0) {
           const scores = satisfactionData
             .map((r: any) => parseFloat(r.average_score || r.score_total || 0))
             .filter((s: number) => !isNaN(s) && s > 0)
-          
+
           if (scores.length > 0) {
             const avg = scores.reduce((a: number, b: number) => a + b, 0) / scores.length
             setAverageSatisfaction(Math.round(avg * 100) / 100)
@@ -84,10 +96,14 @@ export default function StatisticsPage() {
 
       // Carte 2: Alert Resolution Rate
       try {
-        const { data: alertsData } = await supabase
+        let query = supabase
           .from('alerts_log')
-          .select('treated')
+          .select('treated, pathologie')
           .eq('user_id', user.id)
+
+        // Note: alerts_log doit avoir une colonne pathologie pour que le filtre fonctionne
+        // Si elle n'existe pas, on ignore le filtre pour cette carte ou on fait une jointure
+        const { data: alertsData } = await applyPathologyFilter(query)
 
         if (alertsData && alertsData.length > 0) {
           const total = alertsData.length
@@ -104,16 +120,18 @@ export default function StatisticsPage() {
 
       // Carte 3: Taux de satisfaction global
       try {
-        const { data: globalData } = await supabase
+        let query = supabase
           .from('responses')
           .select('average_score, score_total')
           .eq('user_id', user.id)
+
+        const { data: globalData } = await applyPathologyFilter(query)
 
         if (globalData && globalData.length > 0) {
           const scores = globalData
             .map((r: any) => parseFloat(r.average_score || r.score_total || 0))
             .filter((s: number) => !isNaN(s) && s > 0)
-          
+
           if (scores.length > 0) {
             const avg = scores.reduce((a: number, b: number) => a + b, 0) / scores.length
             setGlobalSatisfaction(Math.round(avg * 10) / 10) // 4.6/5
@@ -130,6 +148,7 @@ export default function StatisticsPage() {
 
       // Carte 4: Suivis terminés et Alertes critiques
       try {
+        // Pour les questionnaires, on ne filtre pas par pathologie car la colonne n'y est pas forcément
         const { data: completedData } = await supabase
           .from('questionnaires')
           .select('id, status')
@@ -142,11 +161,13 @@ export default function StatisticsPage() {
           setCompletedFollowups(null)
         }
 
-        const { data: criticalData } = await supabase
+        let criticalQuery = supabase
           .from('responses')
           .select('id')
           .eq('user_id', user.id)
           .lte('score_total', 2)
+
+        const { data: criticalData } = await applyPathologyFilter(criticalQuery)
 
         if (criticalData) {
           setCriticalAlertsCount(criticalData.length)
@@ -166,13 +187,45 @@ export default function StatisticsPage() {
       setCompletedFollowups(null)
       setCriticalAlertsCount(null)
     }
-  }
+  }, [selectedPathology])
 
-  // Charger les pathologies disponibles (agnostique - seulement "Toutes les spécialités")
+  // Charger les pathologies disponibles (dynamique)
   const loadPathologies = async () => {
     try {
-      // Toujours afficher seulement "Toutes les spécialités" pour rester agnostique
-      setPathologies([{ value: 'all', label: 'Toutes les spécialités' }])
+      const { supabase } = await import('@/lib/supabase') as any
+      const { data: { user } } = await supabase.auth.getUser()
+
+      if (!user) return
+
+      // Récupérer les pathologies distinctes de la table responses
+      const { data, error } = await supabase
+        .from('responses')
+        .select('pathologie')
+        .eq('user_id', user.id)
+
+      if (error) {
+        console.error('Erreur récupération pathologies:', error)
+        // Fallback
+        setPathologies([{ value: 'all', label: 'Toutes les spécialités' }])
+        return
+      }
+
+      if (data) {
+        // Extraire les valeurs uniques et filtrer les nulls/vides
+        const uniquePathologies = Array.from(new Set(data.map((item: any) => item.pathologie)))
+          .filter(p => p && typeof p === 'string' && p.trim() !== '')
+          .sort()
+
+        const options = [
+          { value: 'all', label: 'Toutes les spécialités' },
+          ...uniquePathologies.map((p: any) => ({
+            value: p as string,
+            label: (p as string).charAt(0).toUpperCase() + (p as string).slice(1)
+          }))
+        ]
+
+        setPathologies(options)
+      }
     } catch (err) {
       console.error('Erreur lors du chargement des pathologies:', err)
       setPathologies([{ value: 'all', label: 'Toutes les spécialités' }])
@@ -180,14 +233,14 @@ export default function StatisticsPage() {
   }
 
   // Charger les statistiques
-  const loadStatistics = async () => {
+  const loadStatistics = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
 
       const { supabase } = await import('@/lib/supabase') as any
       const { data: { user } } = await supabase.auth.getUser()
-      
+
       if (!user) {
         setError('Utilisateur non authentifié')
         return
@@ -234,7 +287,7 @@ export default function StatisticsPage() {
 
       // Filtrer par pathologie si sélectionnée
       if (selectedPathology !== 'all') {
-        query = query.eq('pathologie', selectedPathology)
+        query = query.ilike('pathologie', selectedPathology)
       }
 
       const { data: responses, error: fetchError } = await query
@@ -277,14 +330,14 @@ export default function StatisticsPage() {
 
       responses?.forEach((response: any) => {
         if (!response || !response?.submitted_at) return
-        
+
         const date = new Date(response.submitted_at)?.toISOString()?.split('T')[0]
         if (!date) return
-        
-        // Utiliser score_total si disponible, sinon average_score
-        const score = response?.score_total 
-          ? parseFloat(response.score_total) 
-          : (parseFloat(response?.average_score) || 0)
+
+        // Utiliser average_score pour la précision maximale, sinon score_total
+        const score = response?.average_score
+          ? parseFloat(response.average_score)
+          : (parseFloat(response?.score_total) || 0)
 
         if (isNaN(score)) return // Ignorer les scores invalides
 
@@ -300,7 +353,7 @@ export default function StatisticsPage() {
       })
 
       // Convertir en format pour le graphique avec vérifications optionnelles
-      const chartDataArray: StatisticsData[] = Array.from(dataByDate.entries())
+      const chartDataArray = Array.from(dataByDate.entries())
         .map(([date, data]) => {
           if (!data || !data?.scores || data.scores.length === 0) {
             return null
@@ -314,7 +367,7 @@ export default function StatisticsPage() {
             count: data?.count || 0,
           }
         })
-        .filter((item): item is StatisticsData => item !== null)
+        .filter((item): item is any => item !== null)
         .sort((a, b) => (a?.dateISO || '').localeCompare(b?.dateISO || ''))
         .map(({ dateISO, ...rest }) => rest) // Retirer dateISO après le tri
 
@@ -324,12 +377,12 @@ export default function StatisticsPage() {
       const allScores = responses
         ?.map((r: any) => {
           if (!r) return null
-          return r?.score_total 
-            ? parseFloat(r.score_total) 
-            : (parseFloat(r?.average_score) || null)
+          return r?.average_score
+            ? parseFloat(r.average_score)
+            : (parseFloat(r?.score_total) || null)
         })
         .filter((score): score is number => score !== null && !isNaN(score)) || []
-      
+
       const globalAverage = allScores.length > 0
         ? (allScores.reduce((a: number, b: number) => (a || 0) + (b || 0), 0) / allScores.length)
         : 0
@@ -337,7 +390,7 @@ export default function StatisticsPage() {
       // Calculer la progression (comparer avec la période précédente)
       const previousPeriodStart = new Date(startDate)
       previousPeriodStart.setDate(previousPeriodStart.getDate() - periodDays)
-      
+
       let previousQuery = supabase
         .from('responses')
         .select('score_total, average_score')
@@ -346,22 +399,22 @@ export default function StatisticsPage() {
         .lt('submitted_at', startDateISO)
 
       if (selectedPathology !== 'all') {
-        previousQuery = previousQuery.eq('pathologie', selectedPathology)
+        previousQuery = previousQuery.ilike('pathologie', selectedPathology)
       }
 
       const { data: previousResponses } = await previousQuery
 
       const previousScores = (previousResponses && Array.isArray(previousResponses) && previousResponses.length > 0)
         ? previousResponses
-            ?.map((r: any) => {
-              if (!r) return null
-              return r?.score_total 
-                ? parseFloat(r.score_total) 
-                : (parseFloat(r?.average_score) || null)
-            })
-            ?.filter((score): score is number => score !== null && !isNaN(score)) || []
+          ?.map((r: any) => {
+            if (!r) return null
+            return r?.average_score
+              ? parseFloat(r.average_score)
+              : (parseFloat(r?.score_total) || null)
+          })
+          ?.filter((score): score is number => score !== null && !isNaN(score)) || []
         : []
-      
+
       const previousAverage = previousScores?.length > 0
         ? (previousScores.reduce((a: number, b: number) => (a || 0) + (b || 0), 0) / previousScores.length)
         : 0
@@ -393,7 +446,7 @@ export default function StatisticsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [selectedPathology, selectedPeriod])
 
   useEffect(() => {
     setIsMounted(true)
@@ -406,7 +459,7 @@ export default function StatisticsPage() {
       loadStatistics()
       loadCardStatistics()
     }
-  }, [selectedPathology, selectedPeriod, isMounted])
+  }, [selectedPathology, loadStatistics, loadCardStatistics, isMounted])
 
   // Fonction pour marquer une alerte comme traitée
   const markAlertAsTreated = async (alertId: string) => {
@@ -414,7 +467,7 @@ export default function StatisticsPage() {
       const { supabase } = await import('@/lib/supabase') as any
       const { error } = await supabase
         .from('alerts_log')
-        .update({ 
+        .update({
           treated: true,
           treated_at: new Date().toISOString()
         })
@@ -444,7 +497,7 @@ export default function StatisticsPage() {
     try {
       const { supabase } = await import('@/lib/supabase') as any
       const { data: { user } } = await supabase.auth.getUser()
-      
+
       if (!user) return
 
       const { data, error } = await supabase
@@ -478,7 +531,7 @@ export default function StatisticsPage() {
   // Fonction pour exporter le rapport en PDF
   const exportToPDF = async () => {
     if (exporting) return
-    
+
     setExporting(true)
     try {
       const doc = new jsPDF('landscape', 'mm', 'a4')
@@ -488,11 +541,11 @@ export default function StatisticsPage() {
       // Titre
       doc.setFontSize(20)
       doc.text('Rapport de Statistiques', pageWidth / 2, 20, { align: 'center' })
-      
+
       // Informations de période
       doc.setFontSize(12)
-      const periodLabel = selectedPeriod === '7' ? '7 derniers jours' : 
-                         selectedPeriod === '30' ? '30 derniers jours' : '1 an'
+      const periodLabel = selectedPeriod === '7' ? '7 derniers jours' :
+        selectedPeriod === '30' ? '30 derniers jours' : '1 an'
       doc.text(`Période: ${periodLabel}`, 20, 30)
       doc.text(`Pathologie: ${selectedPathology !== 'all' ? selectedPathology : 'Toutes'}`, 20, 37)
       doc.text(`Date du rapport: ${new Date().toLocaleDateString('fr-FR')}`, 20, 44)
@@ -514,7 +567,7 @@ export default function StatisticsPage() {
         doc.setTextColor(220, 38, 38) // Rouge
         doc.text('Alertes Critiques', 20, yPos)
         doc.setTextColor(0, 0, 0) // Noir
-        
+
         doc.setFontSize(10)
         criticalAlerts.slice(0, 10).forEach((alert, index) => {
           yPos += 7
@@ -532,16 +585,26 @@ export default function StatisticsPage() {
 
       // Notes/Commentaires
       if (statisticsNotes.length > 0) {
-        let yPos = yPos + 10
+        let yPos: number = (85 + (criticalAlerts.length > 0 ? (Math.min(criticalAlerts.length, 10) * 7) + 20 : 0))
+
+        // Si yPos est trop bas, nouvelle page
+        if (yPos > pageHeight - 50) {
+          doc.addPage()
+          yPos = 20
+        } else {
+          // Petit espace
+          yPos += 10
+        }
+
         if (yPos > pageHeight - 30) {
           doc.addPage()
           yPos = 20
         }
-        
+
         doc.setFontSize(14)
         doc.text('Notes et Commentaires', 20, yPos)
         doc.setFontSize(10)
-        
+
         statisticsNotes.slice(0, 10).forEach((note, index) => {
           yPos += 7
           if (yPos > pageHeight - 20) {
@@ -697,7 +760,7 @@ export default function StatisticsPage() {
               </p>
               <p className="text-xs text-gray-500 mt-1">Sur les 30 derniers jours</p>
             </div>
-            
+
             {/* Alertes critiques */}
             <div className="pt-4 border-t border-gray-200">
               <div className="flex items-center justify-between mb-2">
@@ -707,7 +770,7 @@ export default function StatisticsPage() {
               <p className="text-2xl font-bold text-red-600">
                 {criticalAlertsCount !== null ? criticalAlertsCount : '--'}
               </p>
-              <p className="text-xs text-gray-500 mt-1">Douleurs > 7/10 nécessitant un suivi urgent</p>
+              <p className="text-xs text-gray-500 mt-1">Douleurs &gt; 7/10 nécessitant un suivi urgent</p>
             </div>
           </div>
         </div>
@@ -716,14 +779,9 @@ export default function StatisticsPage() {
       {/* Graphique */}
       <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
         <h2 className="text-xl font-semibold text-gray-900 mb-4">Évolution des résultats</h2>
-        
+
         {loading ? (
-          <div className="h-96 flex items-center justify-center">
-            <div className="text-center">
-              <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-2" />
-              <p className="text-gray-600">Chargement des données...</p>
-            </div>
-          </div>
+          <ChartsSkeleton />
         ) : error ? (
           <div className="h-96 flex items-center justify-center">
             <div className="text-center">
@@ -756,17 +814,17 @@ export default function StatisticsPage() {
             <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 5 }}>
               <defs>
                 <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis 
-                dataKey="date" 
+              <XAxis
+                dataKey="date"
                 stroke="#6b7280"
                 style={{ fontSize: '12px' }}
               />
-              <YAxis 
+              <YAxis
                 stroke="#6b7280"
                 domain={[1, 5]}
                 ticks={[1, 2, 3, 4, 5]}
@@ -775,10 +833,10 @@ export default function StatisticsPage() {
               />
               <Tooltip content={<CustomTooltip />} />
               <Legend />
-              <Area 
-                type="monotone" 
-                dataKey="averageScore" 
-                stroke="#3b82f6" 
+              <Area
+                type="monotone"
+                dataKey="averageScore"
+                stroke="#3b82f6"
                 strokeWidth={2}
                 fillOpacity={1}
                 fill="url(#colorScore)"
@@ -924,7 +982,7 @@ export default function StatisticsPage() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Date de l'événement
+                  Date de l&apos;événement
                 </label>
                 <input
                   type="date"
@@ -993,7 +1051,7 @@ export default function StatisticsPage() {
 
         {statisticsNotes.length === 0 && !showComments && (
           <p className="text-sm text-gray-500 text-center py-4">
-            Aucune note enregistrée. Cliquez sur "Ajouter une note" pour commencer.
+            Aucune note enregistrée. Cliquez sur &quot;Ajouter une note&quot; pour commencer.
           </p>
         )}
       </div>

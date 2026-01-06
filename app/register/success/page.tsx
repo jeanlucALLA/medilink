@@ -82,7 +82,7 @@ export default function RegisterSuccessPage() {
                     </div>
 
                     <p className="mt-6 text-center text-sm text-gray-400">
-                        Besoin d'aide pour démarrer ? <a href="mailto:support@medilink.fr" className="font-medium text-primary hover:text-primary-dark">Contactez le support</a>
+                        Besoin d&apos;aide pour démarrer ? <a href="mailto:support@medilink.fr" className="font-medium text-primary hover:text-primary-dark">Contactez le support</a>
                     </p>
                 </div>
             </div>

@@ -136,7 +136,7 @@ export default function FeatureSection() {
                     <div className="md:col-span-1 bg-gradient-to-br from-primary to-blue-600 rounded-[24px] p-8 shadow-lg text-white flex flex-col justify-center items-center text-center relative overflow-hidden group cursor-pointer hover:scale-[1.02] transition-transform">
                         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
                         <h3 className="text-2xl font-bold mb-4 relative z-10">Prêt à commencer ?</h3>
-                        <p className="text-blue-100 mb-8 max-w-xs relative z-10">Rejoignez 5000+ praticiens aujourd'hui.</p>
+                        <p className="text-blue-100 mb-8 max-w-xs relative z-10">Rejoignez 5000+ praticiens aujourd&apos;hui.</p>
                         <button className="bg-white text-primary px-8 py-3 rounded-full font-bold hover:bg-blue-50 transition-colors shadow-lg relative z-10">
                             Créer un compte
                         </button>

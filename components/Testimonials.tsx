@@ -1,6 +1,7 @@
 'use client'
 
 import { Star } from 'lucide-react'
+import Image from 'next/image'
 
 const testimonials = [
     {
@@ -43,9 +44,9 @@ export default function Testimonials() {
                                     <Star key={j} className="w-5 h-5 text-yellow-500 fill-current" />
                                 ))}
                             </div>
-                            <p className="text-gray-700 italic mb-6">"{t.content}"</p>
+                            <p className="text-gray-700 italic mb-6">&quot;{t.content}&quot;</p>
                             <div className="flex items-center space-x-4">
-                                <img src={t.avatar} alt={t.name} className="w-12 h-12 rounded-full ring-2 ring-white" />
+                                <Image src={t.avatar} alt={t.name} width={48} height={48} className="rounded-full ring-2 ring-white" />
                                 <div>
                                     <h4 className="font-bold text-gray-900">{t.name}</h4>
                                     <p className="text-sm text-primary font-medium">{t.role}</p>

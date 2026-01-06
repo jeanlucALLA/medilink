@@ -33,7 +33,7 @@ export default function Hero() {
                             Essayer gratuitement
                         </button>
                     </div>
-                    <p className="text-sm text-gray-400 mt-3">14 jours d'essai gratuit • Sans carte bancaire</p>
+                    <p className="text-sm text-gray-400 mt-3">14 jours d&apos;essai gratuit • Sans carte bancaire</p>
                 </div>
 
                 {/* Scrolling Professions Ticker (Below CTA) */}
