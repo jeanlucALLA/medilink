@@ -15,6 +15,8 @@ export default function RegisterPage() {
     rpps: '',
     cabinet: '',
     adresseCabinet: '',
+    zip_code: '', // Ajout du champ Code Postal
+    referralCode: '', // Code de parrainage
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -28,7 +30,7 @@ export default function RegisterPage() {
       // Récupérer le paramètre ref de l'URL
       const urlParams = new URLSearchParams(window.location.search)
       const refParam = urlParams.get('ref')
-      
+
       if (refParam) {
         // Stocker le code dans localStorage pour ne pas le perdre
         localStorage.setItem('medi_link_referral_code', refParam)
@@ -59,7 +61,7 @@ export default function RegisterPage() {
     // Vérification des variables d'environnement
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    
+
     if (!supabaseUrl || !supabaseKey) {
       alert('Clés Supabase manquantes dans .env.local')
       setError('Configuration Supabase manquante. Vérifiez votre fichier .env.local')
@@ -71,7 +73,7 @@ export default function RegisterPage() {
       console.log("Appel Supabase en cours...")
       console.log("Email:", formData.email)
       console.log("Supabase URL:", supabaseUrl ? '✓' : '✗')
-      
+
       // Créer l'utilisateur avec Supabase Auth
       let authData, authError
       try {
@@ -99,10 +101,11 @@ export default function RegisterPage() {
             {
               id: authData.user.id,
               nom_complet: formData.nomComplet,
-              specialite: formData.specialite,
-              rpps: formData.rpps,
+              specialite: formData.specialite || null,
+              rpps: formData.rpps || null,
               cabinet: formData.cabinet,
               adresse_cabinet: formData.adresseCabinet,
+              zip_code: (formData as any).zip_code,
               email: formData.email,
             },
           ])
@@ -113,7 +116,7 @@ export default function RegisterPage() {
         }
 
         // Gérer le parrainage si un code de référence existe
-        const codeToUse = referralCode || localStorage.getItem('medi_link_referral_code')
+        const codeToUse = formData.referralCode || referralCode || localStorage.getItem('medi_link_referral_code')
         if (codeToUse) {
           try {
             // Récupérer l'ID du parrain depuis le code de référence
@@ -163,6 +166,16 @@ export default function RegisterPage() {
                   // On continue quand même, l'inscription est réussie
                 } else {
                   console.log('[Register] Parrainage créé avec succès')
+                  setSuccess(true) // Déclencher l'affichage du succès
+                  alert('Code de parrainage appliqué !') // Feedback explicite demandé
+
+                  // Envoyer l'email de notification au parrain (non bloquant)
+                  fetch('/api/send-referral-email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ referrerId: referrerId }),
+                  }).then(() => console.log('Email parrainage envoyé'))
+                    .catch(err => console.error('Erreur envoi email parrainage:', err))
                 }
                 // Nettoyer le code de localStorage après utilisation (succès ou échec)
                 localStorage.removeItem('medi_link_referral_code')
@@ -181,7 +194,7 @@ export default function RegisterPage() {
 
         // Afficher le message de succès
         setSuccess(true)
-        
+
         // Redirection vers le dashboard après l'inscription réussie
         // Utilisation de window.location pour garantir le bon port
         setTimeout(() => {
@@ -302,7 +315,7 @@ export default function RegisterPage() {
             {/* Spécialité */}
             <div>
               <label htmlFor="specialite" className="block text-sm font-medium text-gray-700 mb-2">
-                Spécialité médicale
+                Spécialité (Optionnel)
               </label>
               <div className="relative">
                 <GraduationCap className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -312,7 +325,6 @@ export default function RegisterPage() {
                   type="text"
                   value={formData.specialite}
                   onChange={handleChange}
-                  required
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                   placeholder="Ex: Podologue, Cardiologue..."
                 />
@@ -322,7 +334,7 @@ export default function RegisterPage() {
             {/* Numéro RPPS */}
             <div>
               <label htmlFor="rpps" className="block text-sm font-medium text-gray-700 mb-2">
-                Numéro RPPS
+                Numéro RPPS (Optionnel)
               </label>
               <div className="relative">
                 <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -332,7 +344,6 @@ export default function RegisterPage() {
                   type="text"
                   value={formData.rpps}
                   onChange={handleChange}
-                  required
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                   placeholder="00000000000"
                 />
@@ -360,21 +371,53 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          {/* Adresse du cabinet */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Adresse du cabinet</label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Adresse du cabinet</label>
+              <div className="relative">
+                <MapPin className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                <input
+                  name="adresse_cabinet"
+                  type="text"
+                  value={formData.adresseCabinet}
+                  onChange={handleChange}
+                  placeholder="Numéro, rue, ville..."
+                  required
+                  className="w-full pl-10 pr-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Code postal du cabinet</label>
+              <div className="relative">
+                <MapPin className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                <input
+                  name="zip_code"
+                  type="text"
+                  value={(formData as any).zip_code || ''}
+                  onChange={handleChange}
+                  placeholder="75000"
+                  required
+                  className="w-full pl-10 pr-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none"
+                />
+              </div>
+            </div>
+          </div>
+          <div className="space-y-2 pt-4 border-t border-gray-200">
+            <label className="text-sm font-medium text-gray-700 block">Code de parrainage (Optionnel)</label>
             <div className="relative">
-              <MapPin className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+              <Gift className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
               <input
-                name="adresse_cabinet"
+                name="referralCode"
                 type="text"
-                value={formData.adresseCabinet}
+                value={(formData as any).referralCode || ''}
                 onChange={handleChange}
-                placeholder="Numéro, rue, ville..."
-                required
-                className="w-full pl-10 pr-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none"
+                placeholder="Code parrain"
+                className="w-full pl-10 pr-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50 border-gray-200"
               />
             </div>
+            <p className="text-xs text-gray-500">Saisissez un code pour bénéficier d&apos;un mois offert.</p>
           </div>
 
           <button

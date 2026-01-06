@@ -15,15 +15,17 @@ export async function POST(req: Request) {
             return new NextResponse('Price ID manquante', { status: 400 })
         }
 
-        // 2. Créer la session Stripe
-        const session = await stripe.checkout.sessions.create({
+        // 1. Récupérer le user profile pour vérifier s'il a déjà un ID Stripe
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('stripe_customer_id, email')
+            .eq('id', userId)
+            .single()
+
+        const sessionParams: any = {
             mode: 'subscription',
             payment_method_types: ['card'],
             billing_address_collection: 'required',
-            customer_update: {
-                address: 'auto',
-                name: 'auto',
-            },
             automatic_tax: {
                 enabled: true,
             },
@@ -47,7 +49,26 @@ export async function POST(req: Request) {
                 }
             },
             client_reference_id: userId,
-        })
+        }
+
+        // Logique conditionnelle pour le client
+        if (profile?.stripe_customer_id) {
+            // Utilisateur existant côté Stripe
+            sessionParams.customer = profile.stripe_customer_id
+            sessionParams.customer_update = {
+                address: 'auto',
+                name: 'auto',
+            }
+        } else {
+            // Nouvel utilisateur Stripe
+            // On pré-remplit l'email pour éviter qu'il ne le ressaisisse
+            if (profile?.email) {
+                sessionParams.customer_email = profile.email
+            }
+        }
+
+        // 2. Créer la session Stripe
+        const session = await stripe.checkout.sessions.create(sessionParams)
 
         return NextResponse.json({ sessionId: session.id, url: session.url })
 

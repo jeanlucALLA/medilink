@@ -12,6 +12,7 @@ interface Profile {
   nom_complet: string
   cabinet: string
   adresse_cabinet: string
+  specialite?: string
 }
 
 interface Questionnaire {
@@ -349,7 +350,7 @@ export default function DashboardPage() {
 
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
-          .select('nom_complet, cabinet, adresse_cabinet, email')
+          .select('nom_complet, cabinet, adresse_cabinet, email, specialite')
           .eq('id', user.id)
           .single()
 
@@ -664,7 +665,7 @@ export default function DashboardPage() {
     )
   }
 
-  const displayName = profile ? profile.nom_complet.replace(/^Dr\.?\s*/i, '') : ''
+  const displayName = (profile?.nom_complet || profile?.specialite || 'Professionnel').replace(/^Dr\.?\s*/i, '')
 
   return (
     <div className="space-y-6">

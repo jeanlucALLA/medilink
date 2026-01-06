@@ -17,47 +17,63 @@ export default function AbonnementPage() {
 
     const handleSubscribe = async () => {
         setLoading(true)
+        console.log("👆 Clic sur 'Commencer maintenant'")
 
         try {
             // 1. Vérifier l'authentification via Supabase
+            console.log("🔍 Vérification auth...")
             const { supabase } = await import('@/lib/supabase') as any
             const { data: { user } } = await supabase.auth.getUser()
 
             if (!user) {
+                console.warn("🚫 Utilisateur non connecté")
                 toast.error('Veuillez vous connecter ou créer un compte pour vous abonner.')
                 router.push('/register')
                 return
             }
+            console.log("✅ Utilisateur connecté:", user.id)
 
             // 2. Créer la session Stripe via notre API
             const tier = 'pro' // Single tier now
+            const priceId = STRIPE_PRICE_IDS[tier];
+            console.log("🔄 Tentative création session Stripe pour:", tier, "PriceID:", priceId)
+
             const response = await fetch('/api/stripe/checkout', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    priceId: STRIPE_PRICE_IDS[tier],
+                    priceId: priceId,
                     tier: tier,
                     userId: user.id
                 })
             })
 
+            console.log("📡 Réponse API:", response.status, response.statusText)
+
             if (!response.ok) {
-                const error = await response.text()
-                throw new Error(error)
+                const errorText = await response.text()
+                console.error("❌ Erreur API:", errorText)
+                throw new Error(`Erreur API: ${errorText}`)
             }
 
             const { sessionId } = await response.json()
+            console.log("🎫 Session Stripe créée:", sessionId)
 
             // 3. Rediriger vers Stripe Checkout
             const stripe = await stripePromise
             if (!stripe) throw new Error('Stripe non chargé')
 
+            console.log("🚀 Redirection vers Stripe...")
             const { error } = await (stripe as any).redirectToCheckout({ sessionId })
-            if (error) throw error
+            if (error) {
+                console.error("❌ Erreur redirection Stripe:", error)
+                throw error
+            }
 
         } catch (error: any) {
-            console.error('Erreur souscription:', error)
-            toast.error("Impossible d'initier le paiement. Veuillez réessayer.")
+            console.error('❌ Erreur souscription:', error)
+            toast.error(`Erreur: ${error.message || "Impossible d'initier le paiement"}`)
+            alert(`Erreur technique : ${error.message}`) // Fallback visible
         } finally {
             setLoading(false)
         }

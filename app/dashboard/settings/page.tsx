@@ -32,6 +32,7 @@ function getInitials(nomComplet: string | null | undefined): string {
 export default function SettingsPage() {
   const [nomComplet, setNomComplet] = useState('')
   const [cabinet, setCabinet] = useState('')
+  const [adresseCabinet, setAdresseCabinet] = useState('')
   const [codePostal, setCodePostal] = useState('')
   const [city, setCity] = useState('')
   const [departmentCode, setDepartmentCode] = useState('')
@@ -84,6 +85,7 @@ export default function SettingsPage() {
         if (profile) {
           setNomComplet(profile.nom_complet || '')
           setCabinet(profile.cabinet || '')
+          setAdresseCabinet(profile.adresse_cabinet || '')
           // Utiliser zip_code si disponible, sinon code_postal (rétrocompatibilité)
           const postalCode = profile.zip_code || profile.code_postal || ''
           setCodePostal(postalCode)
@@ -195,6 +197,7 @@ export default function SettingsPage() {
       const updateData: any = {
         nom_complet: nomComplet.trim() || null,
         cabinet: cabinet.trim() || null,
+        adresse_cabinet: adresseCabinet.trim() || null,
         code_postal: trimmedCodePostal || null, // Rétrocompatibilité
         zip_code: trimmedCodePostal || null,
         city: finalCity,
@@ -447,6 +450,20 @@ export default function SettingsPage() {
                 value={cabinet}
                 onChange={(e) => setCabinet(e.target.value)}
                 placeholder="Ex: Cabinet de Podologie"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="adresseCabinet" className="block text-sm font-medium text-gray-700 mb-2">
+                Adresse du cabinet
+              </label>
+              <input
+                id="adresseCabinet"
+                type="text"
+                value={adresseCabinet}
+                onChange={(e) => setAdresseCabinet(e.target.value)}
+                placeholder="Ex: 12 Rue de la Paix"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
               />
             </div>
