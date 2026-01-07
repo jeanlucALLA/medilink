@@ -103,7 +103,8 @@ export default function QuestionnairePage() {
             label1: 'Pas du tout',
             label5: 'Énormément'
           })),
-          title: pathology.trim()
+          title: pathology.trim(),
+          patient_email: patientEmail.trim() || null
         })
         .select()
         .single()
