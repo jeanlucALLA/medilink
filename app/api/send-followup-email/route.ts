@@ -1,4 +1,5 @@
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { createClient } from '@supabase/supabase-js' // Fallback for Header Auth
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
@@ -9,7 +10,6 @@ const emailSchema = z.object({
   patientEmail: z.string().email("Email invalide"),
   questionnaireId: z.string().uuid("ID de questionnaire invalide"),
   sendDelayDays: z.number().min(0).default(0),
-  // On peut ajouter d'autres champs si nécessaire
 })
 
 export async function POST(request: Request) {
@@ -25,14 +25,41 @@ export async function POST(request: Request) {
     }
 
     const resend = new Resend(resendApiKey)
+    let userSession = null
+    let supabaseClient = null
 
-    // Modification: Utilisation de createRouteHandlerClient comme demandé pour régler l'erreur 401
-    const supabase = createRouteHandlerClient({ cookies })
+    // STRATÉGIE D'AUTHENTIFICATION ROBUSTE (Cookie + Header)
 
-    // 3. Vérification de la session utilisateur (Sécurité)
-    const { data: { session } } = await supabase.auth.getSession()
+    // A. Essai via Header Authorization (Prioritaire pour éviter les blocages de cookies tiers)
+    const authHeader = request.headers.get('Authorization')
+    if (authHeader) {
+      const token = authHeader.replace('Bearer ', '')
+      // Création d'un client temporaire juste avec le token
+      const sbUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+      const sbKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      const supabaseHeader = createClient(sbUrl, sbKey, {
+        global: { headers: { Authorization: `Bearer ${token}` } }
+      })
 
-    if (!session) {
+      const { data: { user }, error: userError } = await supabaseHeader.auth.getUser()
+      if (user && !userError) {
+        userSession = { user }
+        supabaseClient = supabaseHeader
+      }
+    }
+
+    // B. Fallback via Cookies (si Header échec ou absent)
+    if (!userSession) {
+      const supabaseCookie = createRouteHandlerClient({ cookies })
+      const { data: { session } } = await supabaseCookie.auth.getSession()
+      if (session) {
+        userSession = session
+        supabaseClient = supabaseCookie
+      }
+    }
+
+    // C. Vérification Finale
+    if (!userSession || !supabaseClient) {
       return NextResponse.json(
         { error: 'Non autorisé. Veuillez vous connecter.' } as any,
         { status: 401 }
@@ -53,10 +80,11 @@ export async function POST(request: Request) {
     const { patientEmail, questionnaireId, sendDelayDays } = validationResult.data
 
     // 5. Récupération des infos du praticien (Expéditeur)
-    const { data: profile, error: profileError } = await supabase
+    // On utilise le client authentifié défini plus haut
+    const { data: profile, error: profileError } = await supabaseClient
       .from('profiles')
       .select('nom_complet, email, cabinet')
-      .eq('id', session.user.id)
+      .eq('id', userSession.user.id)
       .single()
 
     if (profileError || !profile) {
@@ -69,8 +97,7 @@ export async function POST(request: Request) {
 
     const practitionerName = profile.nom_complet || 'Votre Praticien'
     const cabinetName = profile.cabinet || 'Cabinet Médical'
-    // Utiliser l'email du praticien pour le Reply-To
-    const practitionerEmail = profile.email || session.user.email
+    const practitionerEmail = profile.email || userSession.user.email
 
     // 6. Construction du lien et du contenu
     const origin = request.headers.get('origin')
@@ -110,29 +137,25 @@ export async function POST(request: Request) {
       </html>
     `
 
-    // 7. Logique de Planification (Scheduling)
     let scheduledAt: string | undefined = undefined
 
-    // Si un délai est demandé (> 0 jours)
     if (sendDelayDays > 0) {
       const date = new Date()
       date.setDate(date.getDate() + sendDelayDays)
       scheduledAt = date.toISOString()
     }
 
-    // 8. Envoi via Resend
     const data = await resend.emails.send({
-      from: `Dr. ${practitionerName} via Medi.Link <onboarding@resend.dev>`, // Ou votre domaine vérifié
+      from: `Dr. ${practitionerName} via Medi.Link <onboarding@resend.dev>`,
       to: [patientEmail],
       reply_to: practitionerEmail,
       subject: `Suivi médical - ${cabinetName}`,
       html: htmlContent,
-      scheduled_at: scheduledAt, // Sera ignoré/null si envoi immédiat
+      scheduled_at: scheduledAt,
     } as any)
 
     if (data.error) {
       console.error('Erreur API Resend:', data.error)
-      // Ne pas exposer les détails techniques bruts au client si possible, mais utile pour le debug
       return NextResponse.json(
         { error: 'Erreur lors de l\'envoi de l\'email (Provider)', details: data.error.message } as any,
         { status: 500 }
