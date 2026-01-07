@@ -110,7 +110,7 @@ export default function RegisterPage() {
               rpps: formData.rpps || null,
               cabinet: formData.cabinet,
               adresse_cabinet: formData.adresseCabinet,
-              zip_code: (formData as any).zip_code,
+              zip_code: formData.zip_code,
               email: formData.email,
             },
           ])
@@ -431,7 +431,7 @@ export default function RegisterPage() {
                 <input
                   name="zip_code"
                   type="text"
-                  value={(formData as any).zip_code || ''}
+                  value={formData.zip_code || ''}
                   onChange={handleChange}
                   placeholder="75000"
                   required
@@ -447,7 +447,7 @@ export default function RegisterPage() {
               <input
                 name="referralCode"
                 type="text"
-                value={(formData as any).referralCode || ''}
+                value={formData.referralCode || ''}
                 onChange={handleChange}
                 placeholder="Code parrain"
                 className="w-full pl-10 pr-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50 border-gray-200"
