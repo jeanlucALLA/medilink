@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { BarChart3, TrendingUp, Users, Calendar, Loader2, AlertCircle, AlertTriangle, Download, Check, MessageSquare, Plus, X, LineChart } from 'lucide-react'
 import { ChartsSkeleton } from '@/components/ChartsSkeleton'
@@ -34,6 +34,7 @@ export default function StatisticsPage() {
   const [statisticsNotes, setStatisticsNotes] = useState<any[]>([])
   const [exporting, setExporting] = useState(false)
   const [isMounted, setIsMounted] = useState(false)
+  const isMountedRef = useRef(true)
 
   // Statistiques pour les cartes
   const [averageSatisfaction, setAverageSatisfaction] = useState<number | null>(null)
