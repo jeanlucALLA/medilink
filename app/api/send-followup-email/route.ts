@@ -1,4 +1,4 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
@@ -25,25 +25,9 @@ export async function POST(request: Request) {
     }
 
     const resend = new Resend(resendApiKey)
-    const cookieStore = cookies()
 
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value
-          },
-          set(name: string, value: string, options: CookieOptions) {
-            cookieStore.set({ name, value, ...options })
-          },
-          remove(name: string, options: CookieOptions) {
-            cookieStore.set({ name, value: '', ...options })
-          },
-        },
-      }
-    )
+    // Modification: Utilisation de createRouteHandlerClient comme demandé pour régler l'erreur 401
+    const supabase = createRouteHandlerClient({ cookies })
 
     // 3. Vérification de la session utilisateur (Sécurité)
     const { data: { session } } = await supabase.auth.getSession()
@@ -134,11 +118,6 @@ export async function POST(request: Request) {
       const date = new Date()
       date.setDate(date.getDate() + sendDelayDays)
       scheduledAt = date.toISOString()
-
-      // Note: Resend accepte 'scheduled_at' format ISO 8601
-      // Limitation: Resend Gratuit permet-il le scheduling ? Vérifier votre plan.
-      // Si non supporté, nous pourrions stocker dans une table 'pending_emails' (cron job).
-      // Pour l'instant, on utilise l'API Resend native.
     }
 
     // 8. Envoi via Resend

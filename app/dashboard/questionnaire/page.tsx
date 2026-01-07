@@ -122,29 +122,35 @@ export default function QuestionnairePage() {
 
       // 3. Handle Email Sending (if email provided)
       if (patientEmail.trim()) {
-        const response = await fetch('/api/send-followup-email', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
-          },
-          body: JSON.stringify({
-            patientEmail: patientEmail.trim(),
-            questionnaireId: questionnaire.id,
-            sendDelayDays: sendImmediately ? 0 : sendDelayDays
+        try {
+          const response = await fetch('/api/send-followup-email', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+            },
+            body: JSON.stringify({
+              patientEmail: patientEmail.trim(),
+              questionnaireId: questionnaire.id,
+              sendDelayDays: sendImmediately ? 0 : sendDelayDays
+            })
           })
-        })
 
-        const result = await response.json()
-
-        if (!response.ok) {
-          throw new Error(result.error || 'Erreur lors de l’envoi de l’email')
-        }
-
-        if (sendImmediately) {
-          toast.success('Questionnaire créé et envoyé avec succès !')
-        } else {
-          toast.success('Questionnaire créé et envoi programmé !')
+          if (!response.ok) {
+            const result = await response.json()
+            console.error('Email error:', result.error)
+            // Ne pas bloquer : Warning seulement
+            toast('Questionnaire créé, mais erreur d\'envoi email.', { icon: '⚠️' })
+          } else {
+            if (sendImmediately) {
+              toast.success('Questionnaire créé et envoyé avec succès !')
+            } else {
+              toast.success('Questionnaire créé et envoi programmé !')
+            }
+          }
+        } catch (emailErr) {
+          console.error('Email network error:', emailErr)
+          toast('Questionnaire créé, mais échec de la notification email.', { icon: '⚠️' })
         }
       } else {
         toast.success('Questionnaire créé avec succès !')
