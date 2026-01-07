@@ -37,6 +37,8 @@ export async function POST(request: Request) {
       // Création d'un client temporaire juste avec le token
       const sbUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
       const sbKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+
+      // On utilise supabase-js standard pour valider le token manuellement
       const supabaseHeader = createClient(sbUrl, sbKey, {
         global: { headers: { Authorization: `Bearer ${token}` } }
       })
