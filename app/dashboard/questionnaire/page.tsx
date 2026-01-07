@@ -103,7 +103,7 @@ export default function QuestionnairePage() {
             label1: 'Pas du tout',
             label5: 'Énormément'
           })),
-          title: pathology.trim(),
+          title: pathology.trim(), // Mapping pathology to title as fallback
           patient_email: patientEmail.trim() || null
         })
         .select()
@@ -116,7 +116,7 @@ export default function QuestionnairePage() {
 
       // Generate Link
       const baseUrl = window.location.origin
-      const link = `${baseUrl}/questionnaire/${questionnaire.id}`
+      const link = `${baseUrl}/q/${questionnaire.id}`
       setGeneratedLink(link)
 
       // 3. Handle Email Sending (if email provided)

@@ -91,7 +91,7 @@ export async function POST(request: Request) {
     // 6. Construction du lien et du contenu
     const origin = request.headers.get('origin')
     const baseUrl = origin || process.env.NEXT_PUBLIC_BASE_URL
-    const questionnaireLink = `${baseUrl}/questionnaire/${questionnaireId}`
+    const questionnaireLink = `${baseUrl}/q/${questionnaireId}`
 
     const htmlContent = `
       <!DOCTYPE html>
