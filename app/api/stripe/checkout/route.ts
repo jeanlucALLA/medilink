@@ -9,7 +9,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey)
 export async function POST(req: Request) {
     try {
         const { priceId, tier, userId } = await req.json()
-        const origin = req.headers.get('origin') || 'http://localhost:3000'
+        const origin = req.headers.get('origin') || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
 
         if (!priceId) {
             return new NextResponse('Price ID manquante', { status: 400 })
