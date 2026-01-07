@@ -520,7 +520,7 @@ export default function DashboardPage() {
         .from('questionnaire_settings')
         .select('id')
         .eq('user_id', user.id)
-        .single()
+        .maybeSingle()
 
       if (error && error.code !== 'PGRST116') {
         console.error('[Dashboard] Erreur chargement paramètres questionnaire:', error.message)
