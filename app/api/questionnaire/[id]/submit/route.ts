@@ -102,6 +102,7 @@ export async function POST(
           answers: [scoreResultat], // Utiliser le score normalisé
           score_total: scoreResultat,
           average_score: scoreResultat,
+          patient_email: questionnaire.patient_email, // Sauvegarder l'email pour les alertes
           submitted_at: new Date().toISOString(),
         })
     } catch (err) {
@@ -121,13 +122,13 @@ export async function POST(
 
         if (!profileError && profile?.email) {
           const resendApiKey = process.env.RESEND_API_KEY
-          
+
           if (resendApiKey) {
             const dashboardUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001'
             const pathologie = questionnaire.pathologie || 'votre suivi'
             const praticienNom = profile.nom_complet ? `Dr. ${profile.nom_complet.split(' ')[0]}` : 'Docteur'
             const historyLink = `${dashboardUrl}/dashboard/history`
-            
+
             // Envoyer l'email via Resend
             const emailResponse = await fetch('https://api.resend.com/emails', {
               method: 'POST',
