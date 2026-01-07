@@ -123,11 +123,24 @@ export default function QuestionnairePage() {
       // 3. Handle Email Sending (if email provided)
       if (patientEmail.trim()) {
         try {
+          // Récupération explicite de la session avec tentative de refresh
+          let { data: { session } } = await supabase.auth.getSession()
+
+          if (!session?.access_token) {
+            console.log('Session vide, tentative de refresh...')
+            const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession()
+            if (refreshError || !refreshedSession) {
+              console.error('Echec refresh session:', refreshError)
+              throw new Error('Impossible de récupérer la session utilisateur')
+            }
+            session = refreshedSession
+          }
+
           const response = await fetch('/api/send-followup-email', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+              'Authorization': `Bearer ${session.access_token}`
             },
             body: JSON.stringify({
               patientEmail: patientEmail.trim(),
