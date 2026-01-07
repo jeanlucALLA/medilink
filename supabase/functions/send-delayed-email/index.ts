@@ -7,7 +7,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || ''
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
-const APP_URL = Deno.env.get('NEXT_PUBLIC_APP_URL') || 'http://localhost:3001'
+const APP_URL = Deno.env.get('NEXT_PUBLIC_BASE_URL') || 'https://medilink-kjl7.vercel.app'
 
 // Clé de service pour sécuriser l'appel (à définir dans les secrets Supabase)
 const SERVICE_KEY = Deno.env.get('SERVICE_KEY') || ''
@@ -58,15 +58,15 @@ serve(async (req) => {
     // Récupérer les questionnaires programmés qui doivent être envoyés
     let query = supabase
       .from('questionnaires')
-      .select('id, pathologie, patient_email, send_after_days, created_at, user_id, status')
+      .select('id, pathologie, patient_email, send_after_days, created_at, user_id, statut')
       .not('patient_email', 'is', null)
 
     // Si forceSend est spécifié, envoyer uniquement ce questionnaire (peu importe le status)
     if (forceSendId) {
       query = query.eq('id', forceSendId)
     } else {
-      // Sinon, récupérer uniquement ceux avec status = 'programmé' et send_after_days renseigné
-      query = query.eq('status', 'programmé').not('send_after_days', 'is', null)
+      // Sinon, récupérer uniquement ceux avec statut = 'programmé' et send_after_days renseigné
+      query = query.eq('statut', 'programmé').not('send_after_days', 'is', null)
     }
 
     const { data: questionnaires, error: fetchError } = await query
@@ -230,10 +230,10 @@ Vos données sont traitées de manière sécurisée et confidentielle.
 
         const resendData = await resendResponse.json()
 
-        // Mettre à jour le status du questionnaire en 'envoyé'
+        // Mettre à jour le statut du questionnaire en 'envoyé'
         const { error: updateError } = await supabase
           .from('questionnaires')
-          .update({ status: 'envoyé' })
+          .update({ statut: 'envoyé' })
           .eq('id', questionnaire.id)
 
         if (updateError) {

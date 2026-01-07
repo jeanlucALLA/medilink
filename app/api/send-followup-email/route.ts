@@ -1,4 +1,4 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js' // Fallback for Header Auth
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
@@ -52,7 +52,24 @@ export async function POST(request: Request) {
 
     // B. Fallback via Cookies (si Header échec ou absent)
     if (!userSession) {
-      const supabaseCookie = createRouteHandlerClient({ cookies })
+      const cookieStore = cookies()
+      const supabaseCookie = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+          cookies: {
+            get(name: string) {
+              return cookieStore.get(name)?.value
+            },
+            set(name: string, value: string, options: CookieOptions) {
+              cookieStore.set({ name, value, ...options })
+            },
+            remove(name: string, options: CookieOptions) {
+              cookieStore.set({ name, value: '', ...options })
+            },
+          },
+        }
+      )
       const { data: { session } } = await supabaseCookie.auth.getSession()
       if (session) {
         userSession = session
