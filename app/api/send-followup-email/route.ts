@@ -89,7 +89,8 @@ export async function POST(request: Request) {
     const practitionerEmail = profile.email || session.user.email
 
     // 6. Construction du lien et du contenu
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+    const origin = request.headers.get('origin')
+    const baseUrl = origin || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
     const questionnaireLink = `${baseUrl}/questionnaire/${questionnaireId}`
 
     const htmlContent = `
