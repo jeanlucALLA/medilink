@@ -105,7 +105,7 @@ export default function QuestionnairePage() {
           })),
           title: pathology.trim(), // Mapping pathology to title as fallback
           patient_email: patientEmail.trim() || null,
-          status: sendImmediately ? 'Envoyé' : 'Programmé'
+          statut: sendImmediately ? 'envoyé' : 'en_attente'
         })
         .select()
         .single()

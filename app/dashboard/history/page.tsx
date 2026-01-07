@@ -29,7 +29,7 @@ export default function HistoryPage() {
         setLoading(true)
         const { supabase } = await import('@/lib/supabase') as any
         const { data: { user }, error: authError } = await supabase.auth.getUser()
-        
+
         if (authError || !user) {
           console.error('Erreur authentification:', authError)
           setLoading(false)
@@ -39,7 +39,7 @@ export default function HistoryPage() {
         // Récupérer tous les questionnaires de l'utilisateur, triés par date de création (plus récents en premier)
         const { data, error } = await supabase
           .from('questionnaires')
-          .select('id, pathologie, status, created_at, updated_at, reponses, score_resultat, questions, send_after_days, patient_email')
+          .select('id, pathologie, status:statut, created_at, updated_at, reponses, score_resultat, questions, send_after_days, patient_email')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
 
@@ -132,7 +132,7 @@ export default function HistoryPage() {
   const getStatusBadgeWithSchedule = (questionnaire: Questionnaire) => {
     if (questionnaire.status === 'pending' && questionnaire.send_after_days && questionnaire.patient_email) {
       const daysRemaining = getDaysUntilScheduled(questionnaire)
-      
+
       if (daysRemaining !== null) {
         if (daysRemaining === 0) {
           return (
@@ -160,7 +160,7 @@ export default function HistoryPage() {
   const getScheduleBadge = (questionnaire: Questionnaire) => {
     if (questionnaire.status === 'pending' && questionnaire.send_after_days && questionnaire.patient_email) {
       const daysRemaining = getDaysUntilScheduled(questionnaire)
-      
+
       if (daysRemaining !== null) {
         if (daysRemaining === 0) {
           return (
@@ -182,10 +182,10 @@ export default function HistoryPage() {
 
   // Vérifier si l'email est visible (pas encore purgé)
   const isEmailVisible = (questionnaire: Questionnaire): boolean => {
-    return questionnaire.status === 'pending' && 
-           typeof questionnaire.patient_email === 'string' &&
-           questionnaire.patient_email !== 'PURGED' &&
-           questionnaire.patient_email.trim() !== ''
+    return questionnaire.status === 'pending' &&
+      typeof questionnaire.patient_email === 'string' &&
+      questionnaire.patient_email !== 'PURGED' &&
+      questionnaire.patient_email.trim() !== ''
   }
 
   // Obtenir le badge de statut
@@ -205,7 +205,8 @@ export default function HistoryPage() {
             Envoyé
           </span>
         )
-      case 'pending':
+      case 'en_attente':
+      case 'programmé':
         return (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
             <Clock className="w-3 h-3 mr-1" />
@@ -339,13 +340,12 @@ export default function HistoryPage() {
                           </span>
                           <div className="ml-2 w-16 bg-gray-200 rounded-full h-2">
                             <div
-                              className={`h-2 rounded-full ${
-                                questionnaire.score_resultat >= 4
-                                  ? 'bg-green-500'
-                                  : questionnaire.score_resultat >= 3
+                              className={`h-2 rounded-full ${questionnaire.score_resultat >= 4
+                                ? 'bg-green-500'
+                                : questionnaire.score_resultat >= 3
                                   ? 'bg-yellow-500'
                                   : 'bg-red-500'
-                              }`}
+                                }`}
                               style={{ width: `${(questionnaire.score_resultat / 5) * 100}%` }}
                             />
                           </div>
@@ -415,13 +415,12 @@ export default function HistoryPage() {
                         </span>
                         <div className="flex-1 bg-blue-200 rounded-full h-2 max-w-24">
                           <div
-                            className={`h-2 rounded-full ${
-                              selectedQuestionnaire.score_resultat >= 4
-                                ? 'bg-green-500'
-                                : selectedQuestionnaire.score_resultat >= 3
+                            className={`h-2 rounded-full ${selectedQuestionnaire.score_resultat >= 4
+                              ? 'bg-green-500'
+                              : selectedQuestionnaire.score_resultat >= 3
                                 ? 'bg-yellow-500'
                                 : 'bg-red-500'
-                            }`}
+                              }`}
                             style={{ width: `${(selectedQuestionnaire.score_resultat / 5) * 100}%` }}
                           />
                         </div>
@@ -443,11 +442,11 @@ export default function HistoryPage() {
                   {selectedQuestionnaire.questions && Array.isArray(selectedQuestionnaire.questions) && selectedQuestionnaire.questions.length > 0 ? (
                     selectedQuestionnaire.questions.map((question: any, index: number) => {
                       const questionText = typeof question === 'string' ? question : question.question || question.text || `Question ${index + 1}`
-                      const answer = selectedQuestionnaire.reponses?.answers?.[index] || 
-                                     selectedQuestionnaire.reponses?.painLevel || 
-                                     selectedQuestionnaire.reponses?.feeling || 
-                                     selectedQuestionnaire.reponses?.remarks || 
-                                     'Non répondue'
+                      const answer = selectedQuestionnaire.reponses?.answers?.[index] ||
+                        selectedQuestionnaire.reponses?.painLevel ||
+                        selectedQuestionnaire.reponses?.feeling ||
+                        selectedQuestionnaire.reponses?.remarks ||
+                        'Non répondue'
 
                       return (
                         <div key={index} className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow">
@@ -469,13 +468,12 @@ export default function HistoryPage() {
                                 <span className="text-sm text-gray-600">sur 5</span>
                                 <div className="flex-1 bg-gray-200 rounded-full h-2 max-w-32">
                                   <div
-                                    className={`h-2 rounded-full ${
-                                      answer >= 4
-                                        ? 'bg-green-500'
-                                        : answer >= 3
+                                    className={`h-2 rounded-full ${answer >= 4
+                                      ? 'bg-green-500'
+                                      : answer >= 3
                                         ? 'bg-yellow-500'
                                         : 'bg-red-500'
-                                    }`}
+                                      }`}
                                     style={{ width: `${(answer / 5) * 100}%` }}
                                   />
                                 </div>
