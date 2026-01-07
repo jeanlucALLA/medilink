@@ -104,7 +104,8 @@ export default function QuestionnairePage() {
             label5: 'Énormément'
           })),
           title: pathology.trim(), // Mapping pathology to title as fallback
-          patient_email: patientEmail.trim() || null
+          patient_email: patientEmail.trim() || null,
+          status: sendImmediately ? 'Envoyé' : 'Programmé'
         })
         .select()
         .single()
