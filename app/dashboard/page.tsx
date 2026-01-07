@@ -350,7 +350,7 @@ export default function DashboardPage() {
 
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
-          .select('nom_complet, cabinet, adresse_cabinet, email, specialite')
+          .select('nom_complet, cabinet, adresse_cabinet, email, specialite, zip_code, department_code')
           .eq('id', user.id)
           .single()
 

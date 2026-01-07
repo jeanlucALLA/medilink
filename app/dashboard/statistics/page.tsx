@@ -45,6 +45,7 @@ export default function StatisticsPage() {
   // Charger les statistiques pour les cartes avec try/catch
   const loadCardStatistics = useCallback(async () => {
     try {
+      setLoading(true) // Added setLoading(true)
       const { supabase } = await import('@/lib/supabase') as any
       const { data: { user } } = await supabase.auth.getUser()
 
@@ -186,8 +187,12 @@ export default function StatisticsPage() {
       setGlobalSatisfaction(null)
       setCompletedFollowups(null)
       setCriticalAlertsCount(null)
+    } finally {
+      if (isMountedRef.current) { // Added finally block
+        setLoading(false)
+      }
     }
-  }, [selectedPathology])
+  }, [selectedPathology]) // Updated dependency array for loadCardStatistics
 
   // Charger les pathologies disponibles (dynamique)
   const loadPathologies = async () => {
@@ -239,7 +244,7 @@ export default function StatisticsPage() {
       setError(null)
 
       const { supabase } = await import('@/lib/supabase') as any
-      const { data: { user } } = await supabase.auth.getUser()
+      const { data: { user } = {} } = await supabase.auth.getUser() // Destructure with default empty object
 
       if (!user) {
         setError('Utilisateur non authentifié')
@@ -444,14 +449,21 @@ export default function StatisticsPage() {
         totalResponses: 0,
       })
     } finally {
-      setLoading(false)
+      if (isMountedRef.current) { // Added finally block
+        setLoading(false)
+      }
     }
   }, [selectedPathology, selectedPeriod])
 
   useEffect(() => {
     setIsMounted(true)
+    isMountedRef.current = true; // Set ref on mount
     loadPathologies()
-    loadCardStatistics()
+    // loadCardStatistics est appelé dans le useEffect suivant qui dépend de isMounted
+
+    return () => {
+      isMountedRef.current = false; // Clean up ref on unmount
+    };
   }, [])
 
   useEffect(() => {
