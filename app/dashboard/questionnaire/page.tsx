@@ -115,7 +115,7 @@ export default function QuestionnairePage() {
       }
 
       // Generate Link
-      const baseUrl = window.location.origin
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || window.location.origin
       const link = `${baseUrl}/q/${questionnaire.id}`
       setGeneratedLink(link)
 
