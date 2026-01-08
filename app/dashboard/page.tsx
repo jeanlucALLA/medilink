@@ -854,10 +854,10 @@ export default function DashboardPage() {
 
       {/* Statistiques Questionnaires */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+        <Link href="/dashboard/history" className="block bg-white rounded-lg shadow-sm p-6 border border-gray-200 hover:shadow-md transition-shadow cursor-pointer group">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 mb-1">Total Questionnaires</p>
+              <p className="text-sm text-gray-600 mb-1 group-hover:text-primary transition-colors">Total Questionnaires</p>
               <p className="text-3xl font-bold text-gray-900">
                 {loadingQuestionnaires ? (
                   <Loader2 className="w-6 h-6 animate-spin text-primary" />
@@ -866,11 +866,11 @@ export default function DashboardPage() {
                 )}
               </p>
             </div>
-            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center group-hover:bg-blue-200 transition-colors">
               <FileText className="w-6 h-6 text-primary" />
             </div>
           </div>
-        </div>
+        </Link>
 
         <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
           <div className="flex items-center justify-between">
@@ -886,10 +886,10 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+        <Link href="/dashboard/history" className="block bg-white rounded-lg shadow-sm p-6 border border-gray-200 hover:shadow-md transition-shadow cursor-pointer group">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 mb-1">Patients suivis</p>
+              <p className="text-sm text-gray-600 mb-1 group-hover:text-purple-600 transition-colors">Patients suivis</p>
               <p className="text-3xl font-bold text-gray-900">
                 {(() => {
                   const uniqueEmails = new Set(
@@ -901,11 +901,11 @@ export default function DashboardPage() {
                 })()}
               </p>
             </div>
-            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center group-hover:bg-purple-200 transition-colors">
               <Mail className="w-6 h-6 text-purple-600" />
             </div>
           </div>
-        </div>
+        </Link>
       </div>
 
       {/* Tableau des derniers actes/patients */}
