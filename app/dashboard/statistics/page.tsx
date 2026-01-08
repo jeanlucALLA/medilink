@@ -704,7 +704,11 @@ export default function StatisticsPage() {
             onChange={(e) => setSelectedPathology(e.target.value)}
             className="w-full max-w-xs px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
           >
-            <option value="all">Toutes les spécialités</option>
+            {pathologies.map((pathology) => (
+              <option key={pathology.value} value={pathology.value}>
+                {pathology.label}
+              </option>
+            ))}
           </select>
         </div>
       </div>
