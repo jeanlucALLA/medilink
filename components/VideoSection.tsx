@@ -1,40 +1,31 @@
 'use client'
 
-import { Play } from 'lucide-react'
-
 export default function VideoSection() {
     return (
         <section className="py-12 px-4 sm:px-6 lg:px-8">
             <div className="max-w-7xl mx-auto">
-                <div className="relative w-full rounded-[32px] overflow-hidden shadow-2xl border-4 border-white/50 ring-1 ring-gray-200 aspect-video group cursor-pointer bg-gray-900">
-
-                    {/* Poster Image */}
-                    {/* Using the generated image path relative to public or as absolute if possible. 
-              Since we don't have the image in public/, I will use a placeholder or style it such that the user knows where to put it.
-              The prompt generated an image earlier. I should try to use that if I can move it, but I cannot move files easily to public without 'run_command'.
-              For now, I'll use a gradient placeholder or a stylized div, and suggest the user moves the file.
-          */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-black opacity-90 group-hover:scale-105 transition-transform duration-700 ease-out"></div>
-
-                    {/* Content Overlay */}
-                    <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center bg-black/30 backdrop-blur-[2px] hover:backdrop-blur-none transition-all">
-
-                        <div className="w-24 h-24 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center group-hover:scale-110 transition-all duration-300 ring-1 ring-white/50 mb-8">
-                            <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-lg pl-1">
-                                <Play className="w-8 h-8 text-primary fill-current" />
-                            </div>
-                        </div>
-
-                        <h3 className="text-3xl md:text-5xl font-bold text-white mb-4 tracking-tight drop-shadow-lg">
-                            Découvrez Medi.Link
-                        </h3>
-                        <p className="text-lg text-gray-200 max-w-2xl drop-shadow-md">
-                            Voyez comment nous transformons la gestion médicale.
-                        </p>
+                {/* 
+                  Container pour le centrage et la responsivité.
+                  max-w-4xl permet de ne pas avoir une vidéo trop grande sur les grands écrans.
+                */}
+                <div className="w-full max-w-4xl mx-auto rounded-[32px] overflow-hidden shadow-2xl border-4 border-white/50 ring-1 ring-gray-200 bg-gray-900 group">
+                    <div className="relative pb-[56.25%] h-0"> {/* Ratio 16:9 standard pour responsive iframe */}
+                        <iframe
+                            className="absolute top-0 left-0 w-full h-full rounded-[28px]" /* Coins arrondis internes pour matcher le container */
+                            src="https://www.youtube.com/embed/s2MuMbh6VWA"
+                            frameBorder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                            title="Présentation Medi.Link"
+                        ></iframe>
                     </div>
+                </div>
 
-                    {/* Border glow effect */}
-                    <div className="absolute inset-0 border border-white/10 rounded-[32px] pointer-events-none"></div>
+                {/* Titre optionnel en dessous pour rappeler la section, peut être retiré si le user veut juste la vidéo */}
+                <div className="text-center mt-8">
+                    <h3 className="text-2xl font-bold text-gray-900 tracking-tight">
+                        Découvrez Medi.Link en action
+                    </h3>
                 </div>
             </div>
         </section>

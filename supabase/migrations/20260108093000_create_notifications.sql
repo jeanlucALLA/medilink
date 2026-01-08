@@ -64,5 +64,16 @@ create trigger on_new_practitioner_notification
   after insert on public.profiles
   for each row execute procedure public.handle_new_practitioner_notification();
 
--- 6. Enable Realtime
-alter publication supabase_realtime add table public.notifications;
+-- 6. Enable Realtime (Safe execution)
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables 
+    where pubname = 'supabase_realtime' 
+    and schemaname = 'public' 
+    and tablename = 'notifications'
+  ) then
+    alter publication supabase_realtime add table public.notifications;
+  end if;
+end;
+$$;
