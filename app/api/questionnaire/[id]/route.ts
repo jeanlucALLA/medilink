@@ -29,9 +29,10 @@ export async function GET(
     const supabase = createClient(supabaseUrl, supabaseKey)
 
     // Récupérer le questionnaire depuis la base de données
+    // Note: La colonne peut s'appeler 'status' ou 'statut' selon la migration
     const { data: questionnaire, error } = await supabase
       .from('questionnaires')
-      .select('id, pathologie, questions, status, patient_email, patient_name')
+      .select('id, pathologie, questions, statut, patient_email, patient_name')
       .eq('id', id)
       .single()
 
@@ -50,8 +51,11 @@ export async function GET(
       )
     }
 
+    // Sécurisation : Utiliser 'statut' (FR)
+    const currentStatus = questionnaire.statut
+
     // Vérifier que le questionnaire est envoyé (statut = 'Envoyé') ou programmé
-    if (questionnaire.status !== 'Envoyé' && questionnaire.status !== 'Programmé') {
+    if (currentStatus !== 'Envoyé' && currentStatus !== 'Programmé') {
       return NextResponse.json(
         { error: 'Questionnaire non disponible' },
         { status: 403 }
@@ -59,7 +63,7 @@ export async function GET(
     }
 
     // Vérifier si déjà complété
-    if (questionnaire.status === 'Complété') {
+    if (currentStatus === 'Complété') {
       return NextResponse.json({
         id: questionnaire.id,
         pathologie: questionnaire.pathologie,
@@ -73,7 +77,7 @@ export async function GET(
     return NextResponse.json({
       id: questionnaire.id,
       pathologie: questionnaire.pathologie,
-      status: questionnaire.status,
+      status: currentStatus, // Le frontend attend "status"
       patient_name: questionnaire.patient_name,
       patient_email: questionnaire.patient_email,
       questions: questionnaire.questions || [],
