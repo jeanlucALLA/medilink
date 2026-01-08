@@ -20,7 +20,7 @@ const config: Config = {
         '3xl': '24px',
       },
       animation: {
-        'scroll': 'scroll 50s linear infinite',
+        'scroll': 'scroll 30s linear infinite',
       },
       keyframes: {
         scroll: {
