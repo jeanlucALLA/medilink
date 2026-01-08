@@ -49,15 +49,18 @@ export function EmailSendingSection({
             <div className="space-y-4">
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Email du patient (Optionnel)
+                        Emails des patients (un par ligne ou séparés par virgule)
                     </label>
-                    <input
-                        type="email"
+                    <textarea
                         value={patientEmail}
                         onChange={(e) => setPatientEmail(e.target.value)}
-                        placeholder="patient@example.com"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                        placeholder="patient1@example.com&#10;patient2@example.com"
+                        rows={4}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent font-mono text-sm"
                     />
+                    <p className="text-xs text-gray-500 mt-1">
+                        Un questionnaire unique sera généré pour chaque email détecté.
+                    </p>
                 </div>
 
                 {!sendImmediately && (

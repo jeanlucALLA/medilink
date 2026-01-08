@@ -76,7 +76,7 @@ export default function QuestionnairePage() {
   }
 
   const handleSubmit = async () => {
-    // 1. Validation
+    // 1. Validation de base
     if (!pathology.trim()) {
       toast.error('Veuillez saisir un titre (Pathologie)')
       return
@@ -91,82 +91,101 @@ export default function QuestionnairePage() {
     setGeneratedLink(null)
 
     try {
-      // 2. Create Questionnaire directly in Supabase
-      const { data: questionnaire, error: createError } = await supabase
-        .from('questionnaires')
-        .insert({
-          user_id: user.id,
-          pathologie: pathology.trim(),
-          questions: cleanQuestions.map(q => ({
-            question: q,
-            type: 'scale',
-            label1: 'Pas du tout',
-            label5: 'Énormément'
-          })),
-          title: pathology.trim(), // Mapping pathology to title as fallback
-          patient_email: patientEmail.trim() || null,
-          statut: sendImmediately ? 'envoyé' : 'en_attente'
-        })
-        .select()
-        .single()
+      // 2. Parsing des emails
+      // Supporte virgules, point-virgules, retours ligne, espaces
+      const rawEmails = patientEmail.split(/[\n,;\s]+/).map(e => e.trim()).filter(e => e.length > 0)
 
-      if (createError) {
-        console.error('Supabase Error:', createError)
-        throw new Error('Erreur lors de la création du questionnaire')
+      // Validation format email simple
+      const validEmails = rawEmails.filter(e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e))
+
+      if (patientEmail.trim() && validEmails.length === 0) {
+        toast.error('Aucun email valide détecté')
+        setLoading(false)
+        return
       }
 
-      // Generate Link
-      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || window.location.origin
-      const link = `${baseUrl}/q/${questionnaire.id}`
-      setGeneratedLink(link)
+      // Cas 1: Aucun email (création simple de modèle/lien générique)
+      if (validEmails.length === 0) {
+        const { data: questionnaire, error: createError } = await createQuestionnaire(null)
+        if (createError) throw createError
 
-      // 3. Handle Email Sending (if email provided)
-      if (patientEmail.trim()) {
-        try {
-          // Récupération explicite de la session avec tentative de refresh
-          let { data: { session } } = await supabase.auth.getSession()
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || window.location.origin
+        setGeneratedLink(`${baseUrl}/q/${questionnaire.id}`)
+        toast.success('Questionnaire générique créé avec succès !')
+        setLoading(false)
+        return
+      }
 
-          if (!session?.access_token) {
-            console.log('Session vide, tentative de refresh...')
-            const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession()
-            if (refreshError || !refreshedSession) {
-              console.error('Echec refresh session:', refreshError)
-              throw new Error('Impossible de récupérer la session utilisateur')
-            }
-            session = refreshedSession
-          }
+      // Cas 2: Envoi en masse
+      let successCount = 0
+      let failCount = 0
 
-          const response = await fetch('/api/send-followup-email', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${session.access_token}`
-            },
-            body: JSON.stringify({
-              patientEmail: patientEmail.trim(),
-              questionnaireId: questionnaire.id,
-              sendDelayDays: sendImmediately ? 0 : sendDelayDays
-            })
-          })
-
-          if (!response.ok) {
-            const result = await response.json()
-            console.error('Email error:', result.error)
-            // Ne pas bloquer : Warning seulement
-            toast('Questionnaire créé, mais erreur d\'envoi email.', { icon: '⚠️' })
-          } else {
-            if (sendImmediately) {
-              toast.success('Questionnaire créé et envoyé avec succès !')
-            } else {
-              toast.success('Questionnaire créé et envoi programmé !')
-            }
-          }
-        } catch (emailErr) {
-          console.error('Email network error:', emailErr)
-          toast('Questionnaire créé, mais échec de la notification email.', { icon: '⚠️' })
+      // Récupération session une seule fois
+      let sessionToken: string | null = null
+      try {
+        let { data: { session } } = await supabase.auth.getSession()
+        if (!session?.access_token) {
+          const { data: { session: refreshed } } = await supabase.auth.refreshSession()
+          if (refreshed) session = refreshed
         }
-      } else {
-        toast.success('Questionnaire créé avec succès !')
+        sessionToken = session?.access_token || null
+      } catch (err) { console.error('Session error', err) }
+
+
+      for (let i = 0; i < validEmails.length; i++) {
+        const email = validEmails[i]
+        const promise = (async () => {
+          // A. Créer Questionnaire pour ce patient
+          const { data: q, error: qErr } = await createQuestionnaire(email)
+          if (qErr) throw new Error(`Création BDD échouée: ${qErr.message}`)
+
+          // B. Envoyer Email
+          if (sessionToken) {
+            const response = await fetch('/api/send-followup-email', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${sessionToken}`
+              },
+              body: JSON.stringify({
+                patientEmail: email,
+                questionnaireId: q.id,
+                sendDelayDays: sendImmediately ? 0 : sendDelayDays
+              })
+            })
+            const resData = await response.json()
+            if (!response.ok) throw new Error(resData.error || 'Erreur API Email')
+          } else {
+            throw new Error('Session expirée, email non envoyé')
+          }
+        })()
+
+        try {
+          await toast.promise(promise, {
+            loading: `Envoi ${i + 1}/${validEmails.length} vers ${email}...`,
+            success: `Envoyé à ${email}`,
+            error: (err) => `Échec ${email}: ${err.message}`
+          })
+          successCount++
+        } catch (e) {
+          failCount++
+        }
+      }
+
+      if (successCount > 0) {
+        const msg = sendImmediately
+          ? `${successCount} questionnaire(s) envoyé(s) avec succès !`
+          : `${successCount} questionnaire(s) programmé(s) !`
+        toast.success(msg, { duration: 5000 })
+      }
+
+      if (failCount > 0) {
+        toast.error(`${failCount} échec(s) lors de l'envoi.`, { duration: 5000 })
+      }
+
+      // Reset si tout est ok
+      if (failCount === 0) {
+        setPatientEmail('')
       }
 
     } catch (error: any) {
@@ -175,6 +194,28 @@ export default function QuestionnairePage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  // Helper pour ne pas dupliquer la logique de création
+  const createQuestionnaire = async (email: string | null) => {
+    const { data: questionnaire, error } = await supabase
+      .from('questionnaires')
+      .insert({
+        user_id: user.id,
+        pathologie: pathology.trim(),
+        questions: questions.filter(q => q.trim()).map(q => ({
+          question: q,
+          type: 'scale',
+          label1: 'Pas du tout',
+          label5: 'Énormément'
+        })),
+        title: pathology.trim(),
+        patient_email: email, // Email spécifique ou null
+        statut: (email && sendImmediately) ? 'envoyé' : 'en_attente'
+      })
+      .select()
+      .single()
+    return { data: questionnaire, error }
   }
 
   const copyLink = () => {
