@@ -17,15 +17,18 @@ export async function GET(
     }
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    // Utiliser la clé Service Role pour contourner RLS (car le patient n'est pas authentifié)
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
     if (!supabaseUrl || !supabaseKey) {
+      console.error('SUPABASE_SERVICE_ROLE_KEY manquant server-side')
       return NextResponse.json(
-        { error: 'Configuration Supabase manquante' },
+        { error: 'Configuration serveur incomplète' },
         { status: 500 }
       )
     }
 
+    // Client Admin (Bypass RLS)
     const supabase = createClient(supabaseUrl, supabaseKey)
 
     // Récupérer le questionnaire depuis la base de données
@@ -52,10 +55,12 @@ export async function GET(
     }
 
     // Sécurisation : Utiliser 'statut' (FR)
-    const currentStatus = questionnaire.statut
+    // Normaliser en minuscules pour la comparaison
+    const currentStatus = (questionnaire.statut || '').toLowerCase()
 
-    // Vérifier que le questionnaire est envoyé (statut = 'Envoyé') ou programmé
-    if (currentStatus !== 'Envoyé' && currentStatus !== 'Programmé') {
+    // Vérifier que le questionnaire est envoyé ou programmé/en_attente
+    // Accepte: 'envoyé', 'Envoyé', 'programmé', 'Programmé', 'en_attente'
+    if (currentStatus !== 'envoyé' && currentStatus !== 'programmé' && currentStatus !== 'en_attente') {
       return NextResponse.json(
         { error: 'Questionnaire non disponible' },
         { status: 403 }

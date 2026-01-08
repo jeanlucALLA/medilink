@@ -24,6 +24,8 @@ export default function HistoryPage() {
 
   // Charger les questionnaires depuis Supabase
   useEffect(() => {
+    let channel: any
+
     const loadQuestionnaires = async () => {
       try {
         setLoading(true)
@@ -36,7 +38,9 @@ export default function HistoryPage() {
           return
         }
 
-        // Récupérer tous les questionnaires de l'utilisateur, triés par date de création (plus récents en premier)
+        console.log('Chargement historique pour user:', user.id)
+
+        // 1. Chargement initial
         const { data, error } = await supabase
           .from('questionnaires')
           .select('id, pathologie, status:statut, created_at, updated_at, reponses, score_resultat, questions, send_after_days, patient_email')
@@ -44,20 +48,54 @@ export default function HistoryPage() {
           .order('created_at', { ascending: false })
 
         if (error) {
-          console.error('Erreur lors du chargement:', error)
+          console.error('Erreur SQL:', error)
           setLoading(false)
           return
         }
 
+        console.log('Données reçues:', data?.length)
         setQuestionnaires(data || [])
+        setLoading(false)
+
+        // 2. Subscription Realtime (Affichage instantané)
+        channel = supabase
+          .channel('realtime-history')
+          .on(
+            'postgres_changes',
+            {
+              event: 'INSERT',
+              schema: 'public',
+              table: 'questionnaires',
+              filter: `user_id=eq.${user.id}`
+            },
+            (payload: any) => {
+              console.log('Realtime INSERT:', payload)
+              // Convertir le snake_case du payload en structure compatible state
+              const newQ = {
+                ...payload.new,
+                status: payload.new.statut // Mapping statut -> status
+              }
+              setQuestionnaires((current) => [newQ, ...current])
+            }
+          )
+          .subscribe()
+
       } catch (err: any) {
-        console.error('Erreur lors du chargement des questionnaires:', err)
-      } finally {
+        console.error('Erreur chargement:', err)
         setLoading(false)
       }
     }
 
     loadQuestionnaires()
+
+    // Cleanup
+    return () => {
+      if (channel) {
+        import('@/lib/supabase').then(({ supabase }) => {
+          supabase.removeChannel(channel)
+        })
+      }
+    }
   }, [])
 
   // Ouvrir le modal avec les détails du questionnaire
