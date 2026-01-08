@@ -30,7 +30,7 @@ export default function QuestionnairePage() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [formData, setFormData] = useState<FormData>({
-    painLevel: 5,
+    painLevel: 3,
     feeling: '',
     remarks: '',
   })
@@ -42,7 +42,7 @@ export default function QuestionnairePage() {
         setError(null)
 
         const response = await fetch(`/api/questionnaire/${questionnaireId}`)
-        
+
         if (!response.ok) {
           if (response.status === 404) {
             setError('Questionnaire non trouvé ou expiré')
@@ -53,7 +53,7 @@ export default function QuestionnairePage() {
         }
 
         const data = await response.json()
-        
+
         // Vérifier si le questionnaire est déjà complété
         if (data.status === 'Complété') {
           setError('Complété')
@@ -96,7 +96,8 @@ export default function QuestionnairePage() {
 
     try {
       // Calculer un score global (moyenne de l'échelle de douleur, normalisée)
-      const scoreGlobal = formData.painLevel // Score sur 10, on peut le normaliser sur 5 si nécessaire
+      // Normalisation: 1-5 vers 1-10 pour garder la cohérence des stats
+      const scoreGlobal = formData.painLevel * 2
 
       const response = await fetch(`/api/questionnaire/${questionnaireId}/submit`, {
         method: 'POST',
@@ -117,7 +118,7 @@ export default function QuestionnairePage() {
       }
 
       setSuccess(true)
-      
+
       // Rediriger vers la page de remerciement après 2 secondes
       setTimeout(() => {
         router.push('/questionnaire/merci')
@@ -184,7 +185,7 @@ export default function QuestionnairePage() {
   }
 
   // Extraire le nom du patient depuis l'email ou utiliser une valeur par défaut
-  const patientName = questionnaire.patient_name || 
+  const patientName = questionnaire.patient_name ||
     (questionnaire.patient_email ? questionnaire.patient_email.split('@')[0] : 'Patient')
 
   return (
@@ -223,37 +224,36 @@ export default function QuestionnairePage() {
               </div>
             )}
 
-            {/* Échelle de douleur/confort 1-10 */}
+            {/* Échelle de douleur/confort 1-5 */}
             <div className="space-y-3">
               <label className="block text-sm font-medium text-gray-700 mb-3">
-                Sur une échelle de 1 à 10, comment évaluez-vous votre niveau de douleur ou de confort ?
+                Sur une échelle de 1 à 5, comment évaluez-vous votre niveau de douleur ou de confort ?
               </label>
-              
+
               <div className="flex items-center justify-between space-x-2 mb-2">
                 <span className="text-xs text-gray-500">1 - Très faible</span>
-                <span className="text-xs text-gray-500">10 - Très élevé</span>
+                <span className="text-xs text-gray-500">5 - Très élevé</span>
               </div>
-              
-              <div className="flex items-center justify-center space-x-1 sm:space-x-2">
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((value) => (
+
+              <div className="flex items-center justify-center space-x-2 sm:space-x-4">
+                {[1, 2, 3, 4, 5].map((value) => (
                   <button
                     key={value}
                     type="button"
                     onClick={() => handlePainLevelChange(value)}
-                    className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg font-semibold text-sm transition-all ${
-                      formData.painLevel === value
-                        ? 'bg-primary text-white scale-110 shadow-md ring-2 ring-primary ring-offset-2'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
+                    className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl font-bold text-lg transition-all ${formData.painLevel === value
+                      ? 'bg-primary text-white scale-110 shadow-lg ring-4 ring-primary/20'
+                      : 'bg-white border-2 border-gray-100 text-gray-600 hover:border-primary hover:text-primary'
+                      }`}
                   >
                     {value}
                   </button>
                 ))}
               </div>
-              
-              <div className="text-center mt-2">
-                <span className="text-sm font-medium text-gray-700">
-                  Votre sélection : <span className="text-primary">{formData.painLevel}/10</span>
+
+              <div className="text-center mt-4">
+                <span className="text-sm font-medium text-gray-500">
+                  Votre sélection : <span className="text-primary font-bold text-lg">{formData.painLevel}/5</span>
                 </span>
               </div>
             </div>
