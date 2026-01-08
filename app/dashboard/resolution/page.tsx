@@ -1,11 +1,11 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { 
-  AlertTriangle, 
-  CheckCircle, 
-  Clock, 
-  User, 
+import {
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  User,
   X,
   FileText,
   Loader2,
@@ -13,19 +13,24 @@ import {
 } from 'lucide-react'
 
 // Types
+// Types
 type AlertStatus = 'all' | 'critical' | 'in-progress' | 'resolved'
 
 interface QuestionnaireResponse {
   id: string
   questionnaire_id: string
   pathologie: string
-  score_total: number
+  score_total: number | null // Null pour les programmés
   average_score: number | null
-  submitted_at: string
+  submitted_at: string // Date de soumission OU de création pour les programmés
   answers: number[]
   patient_email: string | null
   patient_name?: string // Extrait de l'email ou null
-  questions?: Array<{ text: string; [key: string]: any }> // Libellés des questions
+  questions?: Array<{ text: string;[key: string]: any }> // Libellés des questions
+  // Nouveaux champs pour les questionnaires programmés
+  isPending?: boolean
+  status?: string // 'programmé', 'en_attente', etc.
+  sendDate?: string | null
 }
 
 interface AlertResolution {
@@ -40,6 +45,19 @@ const formatTimestamp = (date: Date | string): string => {
   const dateObj = typeof date === 'string' ? new Date(date) : date
   const now = new Date()
   const diffMs = now.getTime() - dateObj.getTime()
+
+  // Si la date est dans le futur (pour les programmés)
+  if (diffMs < 0) {
+    const diffMins = Math.abs(Math.floor(diffMs / 60000))
+    const diffHours = Math.abs(Math.floor(diffMs / 3600000))
+    const diffDays = Math.abs(Math.floor(diffMs / 86400000))
+
+    if (diffDays === 1) return 'Demain'
+    if (diffDays > 1) return `Dans ${diffDays} jours`
+    if (diffHours > 0) return `Dans ${diffHours}h`
+    return 'Bientôt'
+  }
+
   const diffMins = Math.floor(diffMs / 60000)
   const diffHours = Math.floor(diffMs / 3600000)
   const diffDays = Math.floor(diffMs / 86400000)
@@ -55,26 +73,25 @@ const formatTimestamp = (date: Date | string): string => {
 const extractNameFromEmail = (email: string | null): string => {
   if (!email) return 'Patient inconnu'
   const namePart = email.split('@')[0]
-  // Convertir email format "prenom.nom" en "Prénom Nom"
   return namePart
     .split(/[._-]/)
     .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
     .join(' ')
 }
 
-// Obtenir la réponse spécifique qui a déclenché l'alerte avec le libellé de la question
+// Obtenir la réponse spécifique qui a déclenché l'alerte
 const getCriticalResponses = (
   answers: number[],
-  questions?: Array<{ text: string; [key: string]: any }>
+  questions?: Array<{ text: string;[key: string]: any }>
 ): Array<{ text: string; score: number; index: number }> => {
   const criticalResponses: Array<{ text: string; score: number; index: number }> = []
-  
+
   answers.forEach((answer, index) => {
     if (answer <= 2) {
-      const questionText = questions && questions[index] 
-        ? questions[index].text 
+      const questionText = questions && questions[index]
+        ? questions[index].text
         : `Question ${index + 1}`
-      
+
       criticalResponses.push({
         text: questionText,
         score: answer,
@@ -82,7 +99,7 @@ const getCriticalResponses = (
       })
     }
   })
-  
+
   return criticalResponses
 }
 
@@ -100,25 +117,20 @@ export default function ResolutionPage() {
   useEffect(() => {
     setIsMounted(true)
     isMountedRef.current = true
-    
-    return () => {
-      isMountedRef.current = false
-    }
+    return () => { isMountedRef.current = false }
   }, [])
 
-  // Charger les réponses de questionnaires depuis Supabase
+  // Charger les données (Réponses + Questionnaires programmés)
   useEffect(() => {
-    const loadQuestionnaireResponses = async () => {
+    const loadData = async () => {
       if (!isMountedRef.current) return
 
       try {
-        if (isMountedRef.current) {
-          setLoading(true)
-        }
+        if (isMountedRef.current) setLoading(true)
 
         const { supabase } = await import('@/lib/supabase') as any
         const { data: { user }, error: authError } = await supabase.auth.getUser()
-        
+
         if (authError || !user) {
           if (isMountedRef.current) {
             setResponses([])
@@ -127,52 +139,42 @@ export default function ResolutionPage() {
           return
         }
 
-        // Récupérer les réponses
+        // 1. Récupérer les RÉPONSES (Questionnaires complétés)
         const { data: responsesData, error: responsesError } = await supabase
           .from('responses')
           .select('id, questionnaire_id, pathologie, score_total, average_score, submitted_at, answers')
           .eq('user_id', user.id)
           .order('submitted_at', { ascending: false })
 
-        if (responsesError) {
-          console.error('[Resolution] Erreur chargement réponses:', responsesError.message)
-          if (isMountedRef.current) {
-            setResponses([])
-            setLoading(false)
-          }
-          return
-        }
+        if (responsesError) console.error('[Resolution] Erreur chargement réponses:', responsesError.message)
 
-        // Récupérer les questionnaires correspondants pour obtenir les emails et les questions
+        // 2. Récupérer les questionnaires EN ATTENTE / PROGRAMMÉS
+        const { data: pendingData, error: pendingError } = await supabase
+          .from('questionnaires')
+          .select('id, pathologie, patient_email, questions, created_at, send_after_days, statut')
+          .eq('user_id', user.id)
+          .in('statut', ['programmé', 'en_attente']) // Seulement ceux à venir
+          .order('created_at', { ascending: false })
+
+        if (pendingError) console.error('[Resolution] Erreur chargement programmés:', pendingError.message)
+
+        // --- TRAITEMENT DES RÉPONSES ---
+        // Récupérer les infos manquantes (email, questions) pour les réponses
         const questionnaireIds = [...new Set((responsesData || []).map((r: any) => r.questionnaire_id).filter(Boolean))]
-        let questionnairesData: any[] = []
-        
+        let qsInfoMap = new Map()
+
         if (questionnaireIds.length > 0) {
           const { data } = await supabase
             .from('questionnaires')
             .select('id, patient_email, questions')
             .eq('user_id', user.id)
             .in('id', questionnaireIds)
-          
-          questionnairesData = data || []
+
+          qsInfoMap = new Map((data || []).map((q: any) => [q.id, q]))
         }
 
-        // Créer un map pour accéder rapidement aux emails et questions
-        const questionnaireMap = new Map(
-          (questionnairesData || []).map((q: any) => [
-            q.id, 
-            { 
-              patient_email: q.patient_email,
-              questions: Array.isArray(q.questions) ? q.questions : []
-            }
-          ])
-        )
-
-        // Transformer les données pour ajouter patient_email et questions
         const formattedResponses: QuestionnaireResponse[] = (responsesData || []).map((r: any) => {
-          const questionnaireData = questionnaireMap.get(r.questionnaire_id) || { patient_email: null, questions: [] }
-          const patient_email = questionnaireData.patient_email || null
-          
+          const qInfo = qsInfoMap.get(r.questionnaire_id) || {}
           return {
             id: r.id,
             questionnaire_id: r.questionnaire_id,
@@ -181,58 +183,92 @@ export default function ResolutionPage() {
             average_score: r.average_score,
             submitted_at: r.submitted_at,
             answers: Array.isArray(r.answers) ? r.answers : [],
-            patient_email,
-            patient_name: extractNameFromEmail(patient_email),
-            questions: questionnaireData.questions,
+            patient_email: qInfo.patient_email || null,
+            patient_name: extractNameFromEmail(qInfo.patient_email),
+            questions: Array.isArray(qInfo.questions) ? qInfo.questions : [],
+            isPending: false
+          }
+        })
+
+        // --- TRAITEMENT DES PROGRAMMÉS ---
+        const formattedPending: QuestionnaireResponse[] = (pendingData || []).map((q: any) => {
+          // Calculer la date d'envoi théorique
+          const createdDate = new Date(q.created_at)
+          const sendDate = new Date(createdDate)
+          if (q.send_after_days) {
+            sendDate.setDate(sendDate.getDate() + q.send_after_days)
+          }
+
+          return {
+            id: q.id,
+            questionnaire_id: q.id, // Idem
+            pathologie: q.pathologie,
+            score_total: null, // Pas de score
+            average_score: null,
+            submitted_at: q.created_at, // Date de création pour le tri
+            answers: [],
+            patient_email: q.patient_email,
+            patient_name: extractNameFromEmail(q.patient_email),
+            questions: q.questions,
+            isPending: true,
+            status: q.statut,
+            sendDate: sendDate.toISOString()
           }
         })
 
         if (isMountedRef.current) {
-          setResponses(formattedResponses)
-          
-          // Charger les résolutions depuis le localStorage (ou depuis une table dédiée plus tard)
+          // Fusionner et trier par date (le plus récent en premier)
+          const merged = [...formattedPending, ...formattedResponses].sort((a, b) => {
+            // Pour le tri, on utilise submitted_at (qui est created_at pour les pending)
+            return new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime()
+          })
+
+          setResponses(merged)
+
+          // Charger les résolutions localStorage
           const savedResolutions = localStorage.getItem('alert_resolutions')
           if (savedResolutions) {
             try {
-              const parsed = JSON.parse(savedResolutions)
-              setResolutions(new Map(Object.entries(parsed)))
+              setResolutions(new Map(Object.entries(JSON.parse(savedResolutions))))
             } catch (e) {
-              console.error('Erreur parsing résolutions:', e)
+              console.error('Erreur parsing résolutions', e)
             }
           }
-          
           setLoading(false)
         }
       } catch (err: any) {
-        console.error('[Resolution] Erreur:', err?.message)
-        if (isMountedRef.current) {
-          setResponses([])
-          setLoading(false)
-        }
+        console.error('[Resolution] Erreur globale:', err?.message)
+        if (isMountedRef.current) setLoading(false)
       }
     }
 
-    if (isMounted) {
-      loadQuestionnaireResponses()
-    }
+    if (isMounted) loadData()
   }, [isMounted])
 
-  // Obtenir le statut d'une alerte
-  const getAlertStatus = (responseId: string): 'new' | 'in-progress' | 'resolved' => {
-    const resolution = resolutions.get(responseId)
+  const getAlertStatus = (response: QuestionnaireResponse): 'new' | 'in-progress' | 'resolved' => {
+    // Si c'est un questionnaire programmé, il est automatiquement "En cours"
+    if (response.isPending) return 'in-progress'
+    // Sinon, on regarde les résolutions manuelles
+    const resolution = resolutions.get(response.id)
     return resolution?.status || 'new'
   }
 
-  // Filtrer les alertes selon le statut sélectionné
   const filteredResponses = responses.filter((response) => {
-    const status = getAlertStatus(response.id)
-    
+    const status = getAlertStatus(response)
+
     if (selectedStatus === 'all') return true
-    if (selectedStatus === 'critical') return response.score_total <= 2
+    // Critique seulement si score existe et <= 2
+    if (selectedStatus === 'critical') return (response.score_total !== null && response.score_total <= 2)
     if (selectedStatus === 'in-progress') return status === 'in-progress'
     if (selectedStatus === 'resolved') return status === 'resolved'
     return true
   })
+
+  // Compteurs
+  const countCritical = responses.filter(r => r.score_total !== null && r.score_total <= 2).length
+  // En cours : status 'in-progress' (incluant les pending)
+  const countInProgress = responses.filter(r => getAlertStatus(r) === 'in-progress').length
+  const countResolved = responses.filter(r => getAlertStatus(r) === 'resolved').length
 
   const handleTakeAction = (response: QuestionnaireResponse) => {
     const resolution: AlertResolution = {
@@ -240,15 +276,10 @@ export default function ResolutionPage() {
       status: 'in-progress',
       assigned_to: 'Vous',
     }
-    
     const newResolutions = new Map(resolutions)
     newResolutions.set(response.id, resolution)
     setResolutions(newResolutions)
-    
-    // Sauvegarder dans localStorage
-    const toSave = Object.fromEntries(newResolutions)
-    localStorage.setItem('alert_resolutions', JSON.stringify(toSave))
-    
+    localStorage.setItem('alert_resolutions', JSON.stringify(Object.fromEntries(newResolutions)))
     setSelectedAlert(response)
     setResolutionNote('')
   }
@@ -262,97 +293,45 @@ export default function ResolutionPage() {
         resolved_at: new Date().toISOString(),
         assigned_to: 'Vous',
       }
-      
       const newResolutions = new Map(resolutions)
       newResolutions.set(selectedAlert.id, resolution)
       setResolutions(newResolutions)
-      
-      // Sauvegarder dans localStorage
-      const toSave = Object.fromEntries(newResolutions)
-      localStorage.setItem('alert_resolutions', JSON.stringify(toSave))
-      
+      localStorage.setItem('alert_resolutions', JSON.stringify(Object.fromEntries(newResolutions)))
       setSelectedAlert(null)
       setResolutionNote('')
     }
   }
 
   const statusFilters: { id: AlertStatus; label: string; count: number }[] = [
-    {
-      id: 'all',
-      label: 'Toutes',
-      count: responses.length,
-    },
-    {
-      id: 'critical',
-      label: 'Critiques',
-      count: responses.filter((r) => r.score_total <= 2).length,
-    },
-    {
-      id: 'in-progress',
-      label: 'En cours',
-      count: responses.filter((r) => getAlertStatus(r.id) === 'in-progress').length,
-    },
-    {
-      id: 'resolved',
-      label: 'Résolues',
-      count: responses.filter((r) => getAlertStatus(r.id) === 'resolved').length,
-    },
+    { id: 'all', label: 'Toutes', count: responses.length },
+    { id: 'critical', label: 'Critiques', count: countCritical },
+    { id: 'in-progress', label: 'En cours', count: countInProgress },
+    { id: 'resolved', label: 'Résolues', count: countResolved },
   ]
 
-  // Protection contre les erreurs d'hydratation
-  if (!isMounted) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-2" />
-          <div className="text-gray-600">Chargement...</div>
-        </div>
-      </div>
-    )
-  }
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <Loader2 className="w-10 h-10 animate-spin text-primary mx-auto mb-4" />
-          <div className="text-lg font-medium text-gray-900 mb-1">Chargement des retours...</div>
-          <div className="text-sm text-gray-500">Récupération des questionnaires patients</div>
-        </div>
-      </div>
-    )
-  }
+  if (!isMounted) return <div className="flex justify-center p-12"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
+  if (loading) return <div className="flex justify-center p-12"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
         <h1 className="text-3xl font-bold text-gray-900">Centre de Résolution</h1>
-        <p className="text-gray-600 mt-2">Gérez et résolvez les retours de questionnaires patients</p>
+        <p className="text-gray-600 mt-2">Gérez vos retours patients et visualisez les envois programmés.</p>
       </div>
 
-      {/* Filtres de statut */}
+      {/* Filtres */}
       <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
         <div className="flex flex-wrap gap-3">
           {statusFilters.map((filter) => (
             <button
               key={filter.id}
-              onClick={() => {
-                setSelectedStatus(filter.id)
-                setSelectedAlert(null)
-              }}
-              className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
-                selectedStatus === filter.id
-                  ? 'bg-primary text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+              onClick={() => { setSelectedStatus(filter.id); setSelectedAlert(null); }}
+              className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${selectedStatus === filter.id ? 'bg-primary text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
             >
               {filter.label}
-              <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
-                selectedStatus === filter.id
-                  ? 'bg-white/20 text-white'
-                  : 'bg-gray-200 text-gray-600'
-              }`}>
+              <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${selectedStatus === filter.id ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-600'}`}>
                 {filter.count}
               </span>
             </button>
@@ -360,124 +339,75 @@ export default function ResolutionPage() {
         </div>
       </div>
 
-      {/* Contenu principal - Deux colonnes */}
+      {/* Contenu */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Colonne gauche - Liste des alertes */}
         <div className={`space-y-4 ${selectedAlert ? 'lg:col-span-2' : 'lg:col-span-3'}`}>
           {filteredResponses.length === 0 ? (
             <div className="bg-white rounded-lg shadow-sm p-12 border border-gray-200 text-center">
               <CheckCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 text-lg">Aucun retour à afficher</p>
-              <p className="text-gray-400 text-sm mt-2">
-                {selectedStatus === 'all' 
-                  ? 'Aucun questionnaire retourné pour le moment' 
-                  : selectedStatus === 'critical'
-                  ? 'Aucune alerte critique'
-                  : selectedStatus === 'in-progress'
-                  ? 'Aucune alerte en cours'
-                  : 'Aucune alerte résolue'}
-              </p>
+              <p className="text-gray-500 text-lg">Aucun élément</p>
             </div>
           ) : (
             filteredResponses.map((response) => {
-              const status = getAlertStatus(response.id)
+              const status = getAlertStatus(response)
               const isSelected = selectedAlert?.id === response.id
-              const criticalResponses = getCriticalResponses(response.answers, response.questions)
-              const isCritical = response.score_total <= 2
+              const isCritical = response.score_total !== null && response.score_total <= 2
+              const isPending = response.isPending
 
               return (
                 <div
                   key={response.id}
                   onClick={() => setSelectedAlert(response)}
-                  className={`bg-white rounded-lg shadow-sm border-2 transition-all duration-200 cursor-pointer hover:shadow-md ${
-                    isSelected
-                      ? 'border-primary shadow-md'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
+                  className={`bg-white rounded-lg shadow-sm border-2 transition-all duration-200 cursor-pointer hover:shadow-md ${isSelected ? 'border-primary shadow-md' : 'border-gray-200 hover:border-gray-300'
+                    }`}
                 >
                   <div className="p-5">
-                    {/* En-tête de la carte */}
+                    {/* Header Carte */}
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center space-x-3 flex-1">
-                        {/* Indicateur de sévérité */}
-                        <div
-                          className={`w-3 h-3 rounded-full flex-shrink-0 ${
-                            isCritical
-                              ? 'bg-red-500'
-                              : 'bg-orange-500'
-                          }`}
-                        />
-                        {/* Type d'alerte */}
+                        <div className={`w-3 h-3 rounded-full flex-shrink-0 ${isPending ? 'bg-blue-400' : (isCritical ? 'bg-red-500' : 'bg-orange-500')
+                          }`} />
                         <div className="flex items-center space-x-2">
-                          <FileText className="w-5 h-5 text-gray-600" />
+                          {isPending ? <Clock className="w-5 h-5 text-gray-600" /> : <FileText className="w-5 h-5 text-gray-600" />}
                           <span className="text-sm font-medium text-gray-900">
-                            Retour Questionnaire
+                            {isPending ? 'Envoi Programmé' : 'Retour Questionnaire'}
                           </span>
                         </div>
                       </div>
-                      {/* Badge de statut */}
-                      <div
-                        className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          status === 'resolved'
-                            ? 'bg-green-100 text-green-800'
-                            : status === 'in-progress'
-                            ? 'bg-blue-100 text-blue-800'
-                            : 'bg-yellow-100 text-yellow-800'
-                        }`}
-                      >
-                        {status === 'resolved'
-                          ? 'Résolue'
-                          : status === 'in-progress'
-                          ? 'En cours'
-                          : 'Nouvelle'}
+                      <div className={`px-3 py-1 rounded-full text-xs font-medium ${status === 'resolved' ? 'bg-green-100 text-green-800' :
+                          status === 'in-progress' ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                        {status === 'resolved' ? 'Résolue' : status === 'in-progress' ? 'En cours' : 'Nouvelle'}
                       </div>
                     </div>
 
-                    {/* Informations patient */}
+                    {/* Patient */}
                     <div className="flex items-center space-x-2 mb-3">
                       <User className="w-4 h-4 text-gray-400" />
-                      <span className="font-semibold text-gray-900">
-                        {response.patient_name || 'Patient inconnu'}
-                      </span>
-                      {response.patient_email && (
-                        <span className="text-sm text-gray-500">({response.patient_email})</span>
-                      )}
+                      <span className="font-semibold text-gray-900">{response.patient_name}</span>
+                      {response.patient_email && <span className="text-sm text-gray-500">({response.patient_email})</span>}
                     </div>
 
-                    {/* Pathologie */}
                     <div className="mb-3">
                       <span className="text-sm font-medium text-gray-700">Pathologie: </span>
                       <span className="text-sm text-gray-900">{response.pathologie}</span>
                     </div>
 
-                    {/* Score et réponse spécifique */}
-                    <div className="mb-4 space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <span className={`text-sm font-semibold ${
-                          isCritical ? 'text-red-600' : 'text-orange-600'
-                        }`}>
-                          Score: {response.score_total}/5
-                        </span>
-                        {isCritical && (
-                          <span className="px-2 py-0.5 bg-red-100 text-red-700 text-xs rounded">
-                            Critique
+                    {/* Score ou Date d'envoi */}
+                    <div className="mb-4">
+                      {isPending ? (
+                        <div className="flex items-center space-x-2 text-blue-600 bg-blue-50 px-3 py-2 rounded-lg w-fit">
+                          <Mail className="w-4 h-4" />
+                          <span className="text-sm font-medium">
+                            Prévu pour : {response.sendDate ? formatTimestamp(response.sendDate) : 'Date inconnue'}
                           </span>
-                        )}
-                      </div>
-                      {criticalResponses.length > 0 && (
-                        <div className="space-y-1">
-                          <span className="text-xs font-medium text-gray-600">Réponses critiques:</span>
-                          {criticalResponses.slice(0, 2).map((resp, idx) => (
-                            <div key={idx} className="text-sm text-gray-700 bg-red-50 p-2 rounded border border-red-100">
-                              <span className="font-medium">{resp.text}</span>
-                              <span className="text-red-600 ml-2">({resp.score}/5)</span>
-                            </div>
-                          ))}
-                          {criticalResponses.length > 2 && (
-                            <div className="text-xs text-gray-500 italic">
-                              +{criticalResponses.length - 2} autre{criticalResponses.length - 2 > 1 ? 's' : ''} réponse{criticalResponses.length - 2 > 1 ? 's' : ''}
-                            </div>
-                          )}
+                        </div>
+                      ) : (
+                        <div className="flex items-center space-x-2">
+                          <span className={`text-sm font-semibold ${isCritical ? 'text-red-600' : 'text-orange-600'}`}>
+                            Score: {response.score_total}/5
+                          </span>
+                          {isCritical && <span className="px-2 py-0.5 bg-red-100 text-red-700 text-xs rounded">Critique</span>}
                         </div>
                       )}
                     </div>
@@ -486,22 +416,19 @@ export default function ResolutionPage() {
                     <div className="flex items-center justify-between pt-4 border-t border-gray-100">
                       <div className="flex items-center space-x-2 text-sm text-gray-500">
                         <Clock className="w-4 h-4" />
-                        <span>{formatTimestamp(response.submitted_at)}</span>
+                        <span>Créé {formatTimestamp(response.submitted_at)}</span>
                       </div>
-                      {status !== 'resolved' && (
+                      {!isPending && status !== 'resolved' && (
                         <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleTakeAction(response)
-                          }}
+                          onClick={(e) => { e.stopPropagation(); handleTakeAction(response); }}
                           className="px-4 py-1.5 bg-primary hover:bg-primary-dark text-white text-sm font-medium rounded-lg transition-colors"
                         >
                           Prendre en charge
                         </button>
                       )}
-                      {status === 'resolved' && (
-                        <span className="text-xs text-gray-500">
-                          Résolu par {resolutions.get(response.id)?.assigned_to || 'Vous'}
+                      {isPending && (
+                        <span className="text-xs text-blue-600 font-medium bg-blue-50 px-2 py-1 rounded">
+                          Automatique
                         </span>
                       )}
                     </div>
@@ -512,147 +439,86 @@ export default function ResolutionPage() {
           )}
         </div>
 
-        {/* Colonne droite - Panneau de détails (conditionnel) */}
+        {/* Détails Side Panel */}
         {selectedAlert && (
           <div className="lg:col-span-1">
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 sticky top-6">
-              {/* En-tête du panneau */}
               <div className="p-5 border-b border-gray-200 flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-gray-900">Détails du retour</h2>
-                <button
-                  onClick={() => {
-                    setSelectedAlert(null)
-                    setResolutionNote('')
-                  }}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
-                >
+                <h2 className="text-lg font-semibold text-gray-900">
+                  {selectedAlert.isPending ? 'Détails de l\'envoi' : 'Détails du retour'}
+                </h2>
+                <button onClick={() => setSelectedAlert(null)} className="text-gray-400 hover:text-gray-600">
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
-              {/* Contenu du panneau */}
               <div className="p-5 space-y-6">
-                {/* Informations patient */}
+                {/* Info Patient */}
                 <div>
                   <h3 className="text-sm font-medium text-gray-700 mb-3">Patient</h3>
                   <div className="space-y-2">
                     <div className="flex items-center space-x-2">
                       <User className="w-4 h-4 text-gray-400" />
-                      <span className="text-gray-900 font-medium">
-                        {selectedAlert.patient_name || 'Patient inconnu'}
-                      </span>
+                      <span className="text-gray-900 font-medium">{selectedAlert.patient_name}</span>
                     </div>
                     {selectedAlert.patient_email && (
                       <div className="flex items-center space-x-2 text-sm text-gray-600 ml-6">
-                        <Mail className="w-4 h-4" />
-                        <span>{selectedAlert.patient_email}</span>
+                        <Mail className="w-4 h-4" /><span>{selectedAlert.patient_email}</span>
                       </div>
                     )}
                   </div>
                 </div>
 
-                {/* Pathologie */}
-                <div>
-                  <h3 className="text-sm font-medium text-gray-700 mb-3">Pathologie</h3>
-                  <div className="flex items-center space-x-2">
-                    <FileText className="w-5 h-5 text-gray-600" />
-                    <span className="text-gray-900">{selectedAlert.pathologie}</span>
-                  </div>
-                </div>
-
-                {/* Score */}
-                <div>
-                  <h3 className="text-sm font-medium text-gray-700 mb-3">Score</h3>
-                  <div className="flex items-center space-x-2">
-                    <span className={`text-2xl font-bold ${
-                      selectedAlert.score_total <= 2 ? 'text-red-600' : 'text-orange-600'
-                    }`}>
-                      {selectedAlert.score_total}/5
-                    </span>
-                    {selectedAlert.score_total <= 2 && (
-                      <span className="px-3 py-1 bg-red-100 text-red-700 text-sm rounded-full font-medium">
-                        Critique
+                {/* Info Specifique Pending vs Response */}
+                {selectedAlert.isPending ? (
+                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                    <h3 className="text-sm font-medium text-blue-900 mb-2">Statut de l'envoi</h3>
+                    <p className="text-sm text-blue-700 mb-2">
+                      Ce questionnaire est programmé pour être envoyé automatiquement via le système de suivi.
+                    </p>
+                    <div className="flex items-center space-x-2 text-blue-800 font-semibold">
+                      <Clock className="w-4 h-4" />
+                      <span>
+                        Envoi prévu : {selectedAlert.sendDate ? new Date(selectedAlert.sendDate).toLocaleDateString() : 'N/A'}
                       </span>
-                    )}
-                  </div>
-                  {selectedAlert.average_score && (
-                    <div className="text-xs text-gray-500 mt-1">
-                      Moyenne précise: {selectedAlert.average_score.toFixed(2)}/5
                     </div>
-                  )}
-                </div>
-
-                {/* Réponses critiques */}
-                {getCriticalResponses(selectedAlert.answers, selectedAlert.questions).length > 0 && (
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-700 mb-3">Réponses critiques</h3>
-                    <div className="space-y-2">
-                      {getCriticalResponses(selectedAlert.answers, selectedAlert.questions).map((resp, idx) => (
-                        <div key={idx} className="text-sm text-gray-700 bg-red-50 p-2 rounded border border-red-100">
-                          <div className="font-medium mb-1">{resp.text}</div>
-                          <div className="text-xs text-red-600">Score: {resp.score}/5</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Horodatage */}
-                <div>
-                  <h3 className="text-sm font-medium text-gray-700 mb-3">Date de retour</h3>
-                  <div className="flex items-center space-x-2 text-sm text-gray-600">
-                    <Clock className="w-4 h-4" />
-                    <span>{formatTimestamp(selectedAlert.submitted_at)}</span>
-                  </div>
-                  <div className="text-xs text-gray-500 mt-1 ml-6">
-                    {new Date(selectedAlert.submitted_at).toLocaleString('fr-FR')}
-                  </div>
-                </div>
-
-                {/* Note de résolution */}
-                {getAlertStatus(selectedAlert.id) !== 'resolved' ? (
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-700 mb-3">
-                      Note de résolution
-                    </h3>
-                    <textarea
-                      value={resolutionNote}
-                      onChange={(e) => setResolutionNote(e.target.value)}
-                      placeholder="Ajoutez une note expliquant la résolution..."
-                      rows={4}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm resize-none"
-                    />
-                    <button
-                      onClick={handleResolve}
-                      disabled={!resolutionNote.trim()}
-                      className="mt-3 w-full px-4 py-2 bg-primary hover:bg-primary-dark text-white font-medium rounded-lg transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-                    >
-                      <CheckCircle className="w-4 h-4" />
-                      <span>Marquer comme résolu</span>
-                    </button>
                   </div>
                 ) : (
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-700 mb-3">
-                      Note de résolution
-                    </h3>
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                      <div className="flex items-start space-x-2">
-                        <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-                        <div className="flex-1">
-                          <p className="text-sm text-green-900 font-medium mb-1">Résolue</p>
-                          <p className="text-sm text-green-700">
-                            {resolutions.get(selectedAlert.id)?.resolution_note || 'Aucune note'}
-                          </p>
-                          {resolutions.get(selectedAlert.id)?.resolved_at && (
-                            <p className="text-xs text-green-600 mt-1">
-                              {formatTimestamp(resolutions.get(selectedAlert.id)!.resolved_at!)}
-                            </p>
-                          )}
-                        </div>
-                      </div>
+                  <>
+                    {/* Score */}
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-700 mb-3">Score</h3>
+                      <span className={`text-2xl font-bold ${selectedAlert.score_total! <= 2 ? 'text-red-600' : 'text-orange-600'}`}>
+                        {selectedAlert.score_total}/5
+                      </span>
                     </div>
-                  </div>
+
+                    {/* Note Resolution */}
+                    {getAlertStatus(selectedAlert) !== 'resolved' ? (
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-700 mb-3">Note de résolution</h3>
+                        <textarea
+                          value={resolutionNote}
+                          onChange={(e) => setResolutionNote(e.target.value)}
+                          placeholder="Note..."
+                          className="w-full px-3 py-2 border rounded-lg text-sm"
+                          rows={4}
+                        />
+                        <button
+                          onClick={handleResolve}
+                          disabled={!resolutionNote.trim()}
+                          className="mt-3 w-full px-4 py-2 bg-primary text-white rounded-lg disabled:bg-gray-300"
+                        >
+                          Marquer comme résolu
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="bg-green-50 p-3 rounded-lg">
+                        <p className="text-green-900 font-medium">Résolue</p>
+                        <p className="text-green-700 text-sm">{resolutions.get(selectedAlert.id)?.resolution_note}</p>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>
