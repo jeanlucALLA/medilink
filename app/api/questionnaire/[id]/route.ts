@@ -22,8 +22,9 @@ export async function GET(
 
     if (!supabaseUrl || !supabaseKey) {
       console.error('SUPABASE_SERVICE_ROLE_KEY manquant server-side')
+      // DEBUG: Renvoyer l'erreur exacte au client pour le diagnostic
       return NextResponse.json(
-        { error: 'Configuration serveur incomplète' },
+        { error: 'Configuration serveur incomplète: SUPABASE_SERVICE_ROLE_KEY manquant ou invalide sur Vercel' },
         { status: 500 }
       )
     }
@@ -89,8 +90,9 @@ export async function GET(
     })
   } catch (error) {
     console.error('Erreur lors de la récupération:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Détails inconnus'
     return NextResponse.json(
-      { error: 'Erreur lors de la récupération' },
+      { error: `Erreur interne: ${errorMessage}` },
       { status: 500 }
     )
   }
