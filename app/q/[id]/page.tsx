@@ -11,12 +11,7 @@ interface Questionnaire {
   patient_name?: string
   patient_email?: string
   status: string
-}
-
-interface FormData {
-  painLevel: number // Échelle 1-10
-  feeling: string // Comment vous sentez-vous
-  remarks: string // Remarques particulières
+  questions?: Array<{ text: string;[key: string]: any }> | any[]
 }
 
 export default function QuestionnairePage() {
@@ -25,15 +20,13 @@ export default function QuestionnairePage() {
   const questionnaireId = params.id as string
 
   const [questionnaire, setQuestionnaire] = useState<Questionnaire | null>(null)
+  const [questions, setQuestions] = useState<string[]>([])
+  const [answers, setAnswers] = useState<number[]>([])
+  const [comment, setComment] = useState('')
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
-  const [formData, setFormData] = useState<FormData>({
-    painLevel: 3,
-    feeling: '',
-    remarks: '',
-  })
 
   useEffect(() => {
     const loadQuestionnaire = async () => {
@@ -61,6 +54,23 @@ export default function QuestionnairePage() {
         }
 
         setQuestionnaire(data)
+
+        // Initialiser les questions
+        let initQuestions: string[] = []
+        if (data.questions && Array.isArray(data.questions) && data.questions.length > 0) {
+          // Gérer si c'est un tableau de strings ou d'objets
+          initQuestions = data.questions.map((q: any) => typeof q === 'string' ? q : q.text || 'Question')
+        } else {
+          // Questions par défaut si aucune définie
+          initQuestions = [
+            "Sur une échelle de 1 à 5, comment évaluez-vous votre niveau de douleur ou de confort ?",
+            "Comment vous sentez-vous globalement depuis votre dernière séance ?"
+          ]
+        }
+        setQuestions(initQuestions)
+        // Initialiser les réponses à 3 (neutre) par défaut
+        setAnswers(new Array(initQuestions.length).fill(3))
+
       } catch (err: any) {
         console.error('Erreur lors du chargement:', err)
         setError('Une erreur est survenue lors du chargement')
@@ -74,19 +84,10 @@ export default function QuestionnairePage() {
     }
   }, [questionnaireId])
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: value,
-    }))
-  }
-
-  const handlePainLevelChange = (value: number) => {
-    setFormData(prev => ({
-      ...prev,
-      painLevel: value,
-    }))
+  const handleAnswerChange = (index: number, value: number) => {
+    const newAnswers = [...answers]
+    newAnswers[index] = value
+    setAnswers(newAnswers)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -95,20 +96,14 @@ export default function QuestionnairePage() {
     setError(null)
 
     try {
-      // Calculer un score global (moyenne de l'échelle de douleur, normalisée)
-      // Normalisation: 1-5 vers 1-10 pour garder la cohérence des stats
-      const scoreGlobal = formData.painLevel * 2
-
       const response = await fetch(`/api/questionnaire/${questionnaireId}/submit`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          painLevel: formData.painLevel,
-          feeling: formData.feeling.trim(),
-          remarks: formData.remarks.trim(),
-          scoreGlobal: scoreGlobal,
+          answers: answers,
+          comment: comment.trim(),
         }),
       })
 
@@ -143,7 +138,6 @@ export default function QuestionnairePage() {
     )
   }
 
-  // Afficher un message si le questionnaire est déjà complété
   if (error === 'Complété') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-white p-4">
@@ -180,17 +174,13 @@ export default function QuestionnairePage() {
     )
   }
 
-  if (!questionnaire) {
-    return null
-  }
+  if (!questionnaire) return null
 
-  // Extraire le nom du patient depuis l'email ou utiliser une valeur par défaut
   const patientName = questionnaire.patient_name ||
     (questionnaire.patient_email ? questionnaire.patient_email.split('@')[0] : 'Patient')
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50">
-      {/* Logo Medi.Link en haut */}
       <div className="bg-white border-b border-gray-200 py-4 px-4 sm:px-6">
         <div className="max-w-4xl mx-auto">
           <Link href="/" className="inline-flex items-center space-x-2">
@@ -202,7 +192,6 @@ export default function QuestionnairePage() {
 
       <div className="py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-2xl mx-auto">
-          {/* Message de bienvenue personnalisé */}
           <div className="text-center mb-8">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-4">
               <Smile className="w-8 h-8 text-primary" />
@@ -216,82 +205,63 @@ export default function QuestionnairePage() {
             </p>
           </div>
 
-          {/* Formulaire */}
-          <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 md:p-8 space-y-6">
+          <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 md:p-8 space-y-8">
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
                 {error}
               </div>
             )}
 
-            {/* Échelle de douleur/confort 1-5 */}
-            <div className="space-y-3">
-              <label className="block text-sm font-medium text-gray-700 mb-3">
-                Sur une échelle de 1 à 5, comment évaluez-vous votre niveau de douleur ou de confort ?
-              </label>
+            {questions.map((question, index) => (
+              <div key={index} className="space-y-4 pt-4 first:pt-0 border-t first:border-0 border-gray-100">
+                <label className="block text-base font-medium text-gray-800">
+                  {question}
+                </label>
 
-              <div className="flex items-center justify-between space-x-2 mb-2">
-                <span className="text-xs text-gray-500">1 - Très faible</span>
-                <span className="text-xs text-gray-500">5 - Très élevé</span>
+                <div className="flex items-center justify-between space-x-2 mb-2 pb-1">
+                  <span className="text-xs text-gray-500 font-medium">Faible / Mauvais</span>
+                  <span className="text-xs text-gray-500 font-medium">Élevé / Très bon</span>
+                </div>
+
+                <div className="flex items-center justify-between space-x-2 sm:space-x-4">
+                  {[1, 2, 3, 4, 5].map((value) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => handleAnswerChange(index, value)}
+                      className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl font-bold text-lg transition-all transform duration-200 ${answers[index] === value
+                          ? 'bg-primary text-white scale-110 shadow-lg ring-4 ring-primary/20 translate-y-[-2px]'
+                          : 'bg-white border-2 border-gray-100 text-gray-600 hover:border-primary hover:text-primary hover:bg-blue-50'
+                        }`}
+                    >
+                      {value}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="text-center">
+                  <div className="inline-block px-3 py-1 bg-gray-50 rounded-full text-xs font-medium text-gray-500">
+                    Votre choix : <span className="text-primary font-bold">{answers[index]}/5</span>
+                  </div>
+                </div>
               </div>
+            ))}
 
-              <div className="flex items-center justify-center space-x-2 sm:space-x-4">
-                {[1, 2, 3, 4, 5].map((value) => (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => handlePainLevelChange(value)}
-                    className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl font-bold text-lg transition-all ${formData.painLevel === value
-                      ? 'bg-primary text-white scale-110 shadow-lg ring-4 ring-primary/20'
-                      : 'bg-white border-2 border-gray-100 text-gray-600 hover:border-primary hover:text-primary'
-                      }`}
-                  >
-                    {value}
-                  </button>
-                ))}
-              </div>
-
-              <div className="text-center mt-4">
-                <span className="text-sm font-medium text-gray-500">
-                  Votre sélection : <span className="text-primary font-bold text-lg">{formData.painLevel}/5</span>
-                </span>
-              </div>
-            </div>
-
-            {/* Champ texte : Comment vous sentez-vous */}
-            <div>
-              <label htmlFor="feeling" className="block text-sm font-medium text-gray-700 mb-2">
-                Comment vous sentez-vous depuis votre dernière séance ?
-              </label>
-              <textarea
-                id="feeling"
-                name="feeling"
-                value={formData.feeling}
-                onChange={handleInputChange}
-                rows={4}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
-                placeholder="Décrivez votre état général, vos progrès, vos difficultés..."
-              />
-            </div>
-
-            {/* Champ texte : Remarques particulières */}
-            <div>
-              <label htmlFor="remarks" className="block text-sm font-medium text-gray-700 mb-2">
-                Avez-vous des remarques particulières pour votre praticien ?
-              </label>
-              <textarea
-                id="remarks"
-                name="remarks"
-                value={formData.remarks}
-                onChange={handleInputChange}
-                rows={4}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
-                placeholder="Questions, observations, points à aborder lors de votre prochaine consultation..."
-              />
-            </div>
-
-            {/* Bouton de soumission */}
             <div className="pt-6 border-t border-gray-200">
+              <label htmlFor="comment" className="block text-sm font-medium text-gray-700 mb-2">
+                Commentaire optionnel
+              </label>
+              <textarea
+                id="comment"
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                rows={3}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent resize-none text-sm"
+                placeholder="Avez-vous quelque chose à ajouter ? (Détails, remarque, question...)"
+              />
+            </div>
+
+            <div className="pt-2">
               <button
                 type="submit"
                 disabled={submitting || success}
@@ -312,7 +282,6 @@ export default function QuestionnairePage() {
             </div>
           </form>
 
-          {/* Footer */}
           <div className="mt-8 text-center text-sm text-gray-500">
             <p>Vos réponses sont confidentielles et sécurisées.</p>
           </div>

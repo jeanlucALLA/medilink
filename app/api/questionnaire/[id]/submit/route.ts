@@ -60,18 +60,18 @@ export async function POST(
       )
     }
 
+    // Calculer le score global (Moyenne des réponses 1-5)
+    const totalScore = answers.reduce((acc: number, curr: number) => acc + curr, 0)
+    const averageScore = totalScore / answers.length
+    const scoreResultat = Math.round(averageScore) // Arrondi pour l'affichage note globale
+
     // Préparer les réponses au format JSONB
     const reponses = {
-      painLevel: body.painLevel || 5,
-      feeling: body.feeling || '',
-      remarks: body.remarks || '',
-      scoreGlobal: body.scoreGlobal || body.painLevel || 5,
+      answers: answers,
+      comment: body.comment || '',
       submittedAt: new Date().toISOString(),
+      scoreCalculated: averageScore
     }
-
-    // Calculer le score global (normalisé sur 5 si nécessaire)
-    const scoreGlobal = body.scoreGlobal || body.painLevel || 5
-    const scoreResultat = Math.round((scoreGlobal / 10) * 5) // Normaliser de 1-10 à 1-5
 
     // Mettre à jour le questionnaire : statut 'Complété' et enregistrer les réponses
     const { error: updateError } = await supabase
@@ -79,7 +79,7 @@ export async function POST(
       .update({
         status: 'Complété',
         reponses: reponses, // Stocker dans une colonne JSONB reponses
-        score_resultat: scoreResultat, // Score calculé
+        score_resultat: scoreResultat, // Score calculé (1-5)
         updated_at: new Date().toISOString(),
       })
       .eq('id', id)
@@ -100,10 +100,10 @@ export async function POST(
           questionnaire_id: id,
           user_id: questionnaire.user_id,
           pathologie: questionnaire.pathologie,
-          answers: [scoreResultat], // Utiliser le score normalisé
+          answers: answers, // Tableau des réponses
           score_total: scoreResultat,
-          average_score: scoreResultat,
-          patient_email: questionnaire.patient_email, // Sauvegarder l'email pour les alertes
+          average_score: averageScore, // Stocker la moyenne précise
+          patient_email: questionnaire.patient_email,
           submitted_at: new Date().toISOString(),
         })
     } catch (err) {
