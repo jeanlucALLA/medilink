@@ -5,6 +5,7 @@ import Hero from '@/components/Hero'
 import FeatureSection from '@/components/FeatureSection'
 import VideoSection from '@/components/VideoSection'
 import Testimonials from '@/components/Testimonials'
+import FAQ from '@/components/FAQ'
 
 export default function HomePage() {
   return (
@@ -14,6 +15,7 @@ export default function HomePage() {
       <FeatureSection />
       <VideoSection />
       <Testimonials />
+      <FAQ />
 
       {/* Footer Minimaliste */}
       <footer className="bg-secondary py-12 border-t border-gray-200">
