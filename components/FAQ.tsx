@@ -13,34 +13,30 @@ type CategoryContext = 'patient' | 'praticien'
 const FAQs: Record<CategoryContext, FAQItem[]> = {
     patient: [
         {
-            question: "Qu'est-ce que Medi.Link ?",
-            answer: "Medi.Link est une plateforme sécurisée qui permet à votre praticien (médecin, podologue, kiné...) de vous envoyer des questionnaires de suivi personnalisés. Cela aide à mieux comprendre l'évolution de votre santé entre deux consultations."
+            question: "Pourquoi ai-je reçu ce lien par email ?",
+            answer: "Votre praticien vous a envoyé ce lien pour assurer un suivi personnalisé de votre état de santé après votre consultation. Vos réponses lui permettent d'adapter au mieux votre prise en charge thérapeutique."
         },
         {
-            question: "Est-ce que mes données sont protégées ?",
-            answer: "Absolument. La sécurité de vos données de santé est notre priorité absolue. Medi.Link respecte strictement le RGPD et utilise des serveurs sécurisés. Vos réponses ne sont accessibles qu'à votre praticien traitant."
+            question: "Mes données de santé sont-elles en sécurité ?",
+            answer: "Oui, la sécurité est totale. Toutes vos données sont chiffrées de bout en bout et hébergées sur des serveurs conformes au RGPD. Elles sont strictement confidentielles et accessibles uniquement par votre praticien."
         },
         {
-            question: "Dois-je payer ou créer un compte pour répondre ?",
-            answer: "Non, c'est totalement gratuit pour vous et sans inscription. Vous recevez un lien unique et sécurisé par email, vous cliquez, vous répondez, et c'est tout !"
-        },
-        {
-            question: "Comment les réponses sont-elles transmises à mon praticien ?",
-            answer: "Dès que vous validez le questionnaire, vos réponses sont instantanément et sécuritairement transmises sur le tableau de bord de votre praticien, qui pourra les analyser avant ou pendant votre prochain rendez-vous."
+            question: "Est-ce que répondre est payant ou nécessite une inscription ?",
+            answer: "Non, l'accès est entièrement gratuit pour vous et ne nécessite aucune création de compte. Il vous suffit de cliquer sur le lien sécurisé reçu par email pour répondre au questionnaire."
         }
     ],
     praticien: [
         {
-            question: "Comment envoyer un suivi à un patient ?",
-            answer: "C'est très simple. Depuis votre tableau de bord, cliquez sur 'Nouveau Suivi', sélectionnez le modèle de questionnaire adapté, entrez l'email du patient et validez. Le patient reçoit le lien instantanément."
+            question: "Puis-je personnaliser les questions selon la pathologie ?",
+            answer: "Absolument. Notre interface intuitive vous permet de modifier les modèles existants ou de créer vos propres questions pour s'adapter parfaitement à chaque pathologie et à vos besoins spécifiques."
         },
         {
-            question: "Puis-je personnaliser les modèles de questionnaires ?",
-            answer: "Oui, Medi.Link propose une bibliothèque de modèles validés par des experts, mais vous avez la liberté totale de créer vos propres questions ou d'adapter les modèles existants à votre pratique spécifique."
+            question: "Comment sont stockées les réponses de mes patients ?",
+            answer: "Les réponses sont centralisées automatiquement dans votre tableau de bord sécurisé. Vous pouvez consulter l'historique complet de chaque patient et visualiser l'évolution de leur état de santé en un coup d'œil."
         },
         {
-            question: "Comment sont archivées les réponses ?",
-            answer: "Toutes les réponses sont automatiquement classées dans votre historique patient. Vous pouvez suivre l'évolution des symptômes graphiquement et exporter les données en PDF pour les intégrer à votre dossier médical."
+            question: "Le service fonctionne-t-il pour les patients à l'étranger ?",
+            answer: "Oui, Medi.Link est accessible partout dans le monde via notre plateforme web. Vos patients résidant en Belgique, Suisse ou ailleurs peuvent répondre à vos questionnaires sans aucune restriction géographique."
         }
     ]
 }
@@ -73,8 +69,8 @@ export default function FAQ() {
                         <button
                             onClick={() => { setActiveTab('patient'); setOpenIndex(0) }}
                             className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all duration-300 ${activeTab === 'patient'
-                                    ? 'bg-white text-blue-900 shadow-sm ring-1 ring-black/5'
-                                    : 'text-gray-500 hover:text-gray-700'
+                                ? 'bg-white text-blue-900 shadow-sm ring-1 ring-black/5'
+                                : 'text-gray-500 hover:text-gray-700'
                                 }`}
                         >
                             <User className="w-4 h-4" />
@@ -83,8 +79,8 @@ export default function FAQ() {
                         <button
                             onClick={() => { setActiveTab('praticien'); setOpenIndex(0) }}
                             className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all duration-300 ${activeTab === 'praticien'
-                                    ? 'bg-white text-blue-900 shadow-sm ring-1 ring-black/5'
-                                    : 'text-gray-500 hover:text-gray-700'
+                                ? 'bg-white text-blue-900 shadow-sm ring-1 ring-black/5'
+                                : 'text-gray-500 hover:text-gray-700'
                                 }`}
                         >
                             <Stethoscope className="w-4 h-4" />
@@ -99,8 +95,8 @@ export default function FAQ() {
                         <div
                             key={index}
                             className={`group border rounded-2xl transition-all duration-300 ${openIndex === index
-                                    ? 'border-blue-200 bg-blue-50/30'
-                                    : 'border-slate-200 bg-white hover:border-blue-100 hover:shadow-sm'
+                                ? 'border-blue-200 bg-blue-50/30'
+                                : 'border-slate-200 bg-white hover:border-blue-100 hover:shadow-sm'
                                 }`}
                         >
                             <button
