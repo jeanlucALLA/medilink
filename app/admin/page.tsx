@@ -17,7 +17,8 @@ import {
     Bell,
     Send,
     X,
-    FileText
+    FileText,
+    Mail
 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import jsPDF from 'jspdf'
@@ -48,6 +49,13 @@ export default function AdminDashboard() {
     const [notifTarget, setNotifTarget] = useState<'selection' | 'all'>('selection')
     const [isSending, setIsSending] = useState(false)
     const [sendingProgress, setSendingProgress] = useState(0)
+
+    // États pour le modal d'email personnalisé (Inviter/Contacter)
+    const [showEmailModal, setShowEmailModal] = useState(false)
+    const [emailTarget, setEmailTarget] = useState('')
+    const [emailSubject, setEmailSubject] = useState('')
+    const [emailBody, setEmailBody] = useState('')
+    const [isSendingEmail, setIsSendingEmail] = useState(false)
 
     const router = useRouter()
     const menuRef = useRef<HTMLDivElement>(null)
@@ -181,6 +189,49 @@ export default function AdminDashboard() {
         setNotifSubject('')
         setNotifMessage('')
         setSendingProgress(0)
+    }
+
+    const handleSendCustomEmail = async () => {
+        if (!emailTarget || !emailSubject || !emailBody) {
+            toast.error('Veuillez remplir tous les champs')
+            return
+        }
+
+        setIsSendingEmail(true)
+
+        try {
+            const { supabase } = await import('@/lib/supabase') as any
+            const { data: { session } } = await supabase.auth.getSession()
+
+            const response = await fetch('/api/admin/send-custom-email', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session?.access_token}`
+                },
+                body: JSON.stringify({
+                    email: emailTarget,
+                    subject: emailSubject,
+                    message: emailBody
+                })
+            })
+
+            if (!response.ok) {
+                const errorData = await response.json()
+                throw new Error(errorData.error?.message || 'Erreur lors de l\'envoi')
+            }
+
+            toast.success('Email envoyé avec succès !')
+            setShowEmailModal(false)
+            setEmailTarget('')
+            setEmailSubject('')
+            setEmailBody('')
+        } catch (error: any) {
+            console.error('Erreur envoi email:', error)
+            toast.error('Erreur: ' + error.message)
+        } finally {
+            setIsSendingEmail(false)
+        }
     }
 
     if (loading) {
@@ -332,6 +383,14 @@ export default function AdminDashboard() {
                     </div>
 
                     <div className="flex items-center gap-4">
+                        <button
+                            onClick={() => setShowEmailModal(true)}
+                            className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white font-bold rounded-xl hover:bg-gray-800 transition-all shadow-lg"
+                        >
+                            <Mail className="w-4 h-4" />
+                            Envoyer Email
+                        </button>
+
                         <button
                             onClick={generateReport}
                             className="flex items-center gap-2 px-4 py-2 bg-white text-gray-700 font-bold rounded-xl border border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
@@ -595,6 +654,91 @@ export default function AdminDashboard() {
                                     className="px-6 py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary-dark transition-all shadow-lg hover:shadow-primary/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                                 >
                                     {isSending ? (
+                                        <>
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                            Envoi...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Send className="w-4 h-4" />
+                                            Envoyer
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Modal Email Personnalisé */}
+                {showEmailModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+                        <div className="bg-white rounded-[24px] shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
+                            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                                    <Mail className="w-5 h-5 text-primary" />
+                                    Envoyer un email
+                                </h2>
+                                <button
+                                    onClick={() => setShowEmailModal(false)}
+                                    className="p-2 hover:bg-gray-100 rounded-full text-gray-400 hover:text-gray-900 transition-colors"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+
+                            <div className="p-6 space-y-4">
+                                {/* Destinataire */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Email du destinataire</label>
+                                    <input
+                                        type="email"
+                                        value={emailTarget}
+                                        onChange={(e) => setEmailTarget(e.target.value)}
+                                        placeholder="exemple@email.com"
+                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                                    />
+                                </div>
+
+                                {/* Sujet */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Sujet</label>
+                                    <input
+                                        type="text"
+                                        value={emailSubject}
+                                        onChange={(e) => setEmailSubject(e.target.value)}
+                                        placeholder="Sujet de votre email..."
+                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                                    />
+                                </div>
+
+                                {/* Message */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Message</label>
+                                    <textarea
+                                        value={emailBody}
+                                        onChange={(e) => setEmailBody(e.target.value)}
+                                        placeholder="Votre message ici..."
+                                        rows={6}
+                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="p-6 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
+                                <button
+                                    onClick={() => setShowEmailModal(false)}
+                                    disabled={isSendingEmail}
+                                    className="px-6 py-3 text-gray-600 font-bold hover:bg-gray-100 rounded-xl transition-colors disabled:opacity-50"
+                                >
+                                    Annuler
+                                </button>
+                                <button
+                                    onClick={handleSendCustomEmail}
+                                    disabled={isSendingEmail || !emailTarget || !emailSubject || !emailBody}
+                                    className="px-6 py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary-dark transition-all shadow-lg hover:shadow-primary/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                >
+                                    {isSendingEmail ? (
                                         <>
                                             <Loader2 className="w-4 h-4 animate-spin" />
                                             Envoi...
