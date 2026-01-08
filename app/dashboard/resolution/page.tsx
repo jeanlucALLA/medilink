@@ -375,7 +375,7 @@ export default function ResolutionPage() {
                         </div>
                       </div>
                       <div className={`px-3 py-1 rounded-full text-xs font-medium ${status === 'resolved' ? 'bg-green-100 text-green-800' :
-                          status === 'in-progress' ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'
+                        status === 'in-progress' ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'
                         }`}>
                         {status === 'resolved' ? 'Résolue' : status === 'in-progress' ? 'En cours' : 'Nouvelle'}
                       </div>
@@ -472,7 +472,7 @@ export default function ResolutionPage() {
                 {/* Info Specifique Pending vs Response */}
                 {selectedAlert.isPending ? (
                   <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                    <h3 className="text-sm font-medium text-blue-900 mb-2">Statut de l'envoi</h3>
+                    <h3 className="text-sm font-medium text-blue-900 mb-2">Statut de l&apos;envoi</h3>
                     <p className="text-sm text-blue-700 mb-2">
                       Ce questionnaire est programmé pour être envoyé automatiquement via le système de suivi.
                     </p>
