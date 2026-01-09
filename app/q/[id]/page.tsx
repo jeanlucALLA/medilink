@@ -55,6 +55,9 @@ export default function QuestionnairePage() {
 
         setQuestionnaire(data)
 
+        console.log('📋 Questionnaire loaded:', data)
+        console.log('❓ Raw questions:', data.questions)
+
         // Initialiser les questions
         let initQuestions: string[] = []
         if (data.questions && Array.isArray(data.questions) && data.questions.length > 0) {
@@ -230,8 +233,8 @@ export default function QuestionnairePage() {
                       type="button"
                       onClick={() => handleAnswerChange(index, value)}
                       className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl font-bold text-lg transition-all transform duration-200 ${answers[index] === value
-                          ? 'bg-primary text-white scale-110 shadow-lg ring-4 ring-primary/20 translate-y-[-2px]'
-                          : 'bg-white border-2 border-gray-100 text-gray-600 hover:border-primary hover:text-primary hover:bg-blue-50'
+                        ? 'bg-primary text-white scale-110 shadow-lg ring-4 ring-primary/20 translate-y-[-2px]'
+                        : 'bg-white border-2 border-gray-100 text-gray-600 hover:border-primary hover:text-primary hover:bg-blue-50'
                         }`}
                     >
                       {value}
