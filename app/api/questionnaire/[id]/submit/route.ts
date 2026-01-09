@@ -87,7 +87,7 @@ export async function POST(
     if (updateError) {
       console.error('Erreur lors de la mise à jour:', updateError)
       return NextResponse.json(
-        { error: 'Erreur lors de la sauvegarde des réponses' },
+        { error: `Erreur sauvegarde Supabase: ${updateError.message} (${updateError.code})` },
         { status: 500 }
       )
     }
