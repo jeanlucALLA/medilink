@@ -40,7 +40,7 @@ export default function MerciPage() {
                         className="w-full inline-flex items-center justify-center px-8 py-4 bg-primary text-white rounded-xl font-semibold shadow-lg shadow-blue-500/30 hover:shadow-blue-500/40 hover:-translate-y-0.5 transition-all duration-200 group"
                     >
                         <Home className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
-                        Retour à l'accueil
+                        Retour à l&apos;accueil
                     </Link>
 
                     <p className="text-sm text-gray-400">
