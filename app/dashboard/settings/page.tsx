@@ -36,6 +36,7 @@ export default function SettingsPage() {
   const [codePostal, setCodePostal] = useState('')
   const [city, setCity] = useState('')
   const [departmentCode, setDepartmentCode] = useState('')
+  const [googleReviewUrl, setGoogleReviewUrl] = useState('')
   const [geocoding, setGeocoding] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -91,6 +92,7 @@ export default function SettingsPage() {
           setCodePostal(postalCode)
           setCity(profile.city || '')
           setDepartmentCode(profile.department_code || '')
+          setGoogleReviewUrl(profile.google_review_url || '')
           // Pré-remplir l'email de test avec l'email de l'utilisateur si disponible
           if (user.email) {
             setTestEmail(user.email)
@@ -202,6 +204,7 @@ export default function SettingsPage() {
         zip_code: trimmedCodePostal || null,
         city: finalCity,
         department_code: finalDepartmentCode,
+        google_review_url: googleReviewUrl.trim() || null,
         updated_at: new Date().toISOString(),
       }
 
@@ -491,6 +494,24 @@ export default function SettingsPage() {
                   <span>Géocodage en cours...</span>
                 </p>
               )}
+            </div>
+
+            <div>
+              <label htmlFor="googleReviewUrl" className="block text-sm font-medium text-gray-700 mb-2">
+                <Map className="w-4 h-4 inline mr-1" />
+                Lien Google Reviews
+              </label>
+              <input
+                id="googleReviewUrl"
+                type="url"
+                value={googleReviewUrl}
+                onChange={(e) => setGoogleReviewUrl(e.target.value)}
+                placeholder="Ex: https://g.page/r/CbO..."
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Lien de redirection pour les patients satisfaits (Note 5/5).
+              </p>
             </div>
 
             {/* Message d'erreur */}

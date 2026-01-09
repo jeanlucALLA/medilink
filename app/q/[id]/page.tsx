@@ -12,6 +12,7 @@ interface Questionnaire {
   patient_email?: string
   status: string
   questions?: Array<{ text: string;[key: string]: any }> | any[]
+  google_review_url?: string | null
 }
 
 export default function QuestionnairePage() {
@@ -126,10 +127,22 @@ export default function QuestionnairePage() {
 
       setSuccess(true)
 
-      // Rediriger vers la page de remerciement après 2 secondes
-      setTimeout(() => {
-        router.push('/questionnaire/merci')
-      }, 2000)
+      // Calculer la moyenne des réponses
+      const averageScore = answers.reduce((a, b) => a + b, 0) / answers.length
+      const isPerfectScore = averageScore === 5
+
+      // Redirection conditionnelle
+      if (isPerfectScore && questionnaire?.google_review_url) {
+        console.log('🌟 Score parfait (5/5) ! Redirection vers Google Reviews...')
+        setTimeout(() => {
+          window.location.href = questionnaire.google_review_url!
+        }, 2000)
+      } else {
+        // Redirection standard vers la page de remerciement
+        setTimeout(() => {
+          router.push('/questionnaire/merci')
+        }, 2000)
+      }
 
     } catch (err: any) {
       console.error('Erreur lors de la soumission:', err)
@@ -180,7 +193,11 @@ export default function QuestionnairePage() {
         <div className="max-w-md w-full bg-white rounded-xl shadow-lg border border-gray-200 p-8 text-center">
           <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Merci !</h1>
-          <p className="text-gray-600">Vos réponses ont été enregistrées avec succès.</p>
+          <p className="text-gray-600">
+            {questionnaire?.google_review_url && (answers.reduce((a, b) => a + b, 0) / answers.length) === 5
+              ? "Redirection vers Google Reviews..."
+              : "Vos réponses ont été enregistrées avec succès."}
+          </p>
         </div>
       </div>
     )

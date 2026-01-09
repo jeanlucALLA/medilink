@@ -36,7 +36,7 @@ export async function GET(
     // Note: La colonne peut s'appeler 'status' ou 'statut' selon la migration
     const { data: questionnaire, error } = await supabase
       .from('questionnaires')
-      .select('id, pathologie, questions, statut, patient_email, patient_name')
+      .select('id, pathologie, questions, statut, patient_email, patient_name, user_id')
       .eq('id', id)
       .single()
 
@@ -80,14 +80,30 @@ export async function GET(
     }
 
     // Retourner uniquement les données nécessaires
-    return NextResponse.json({
+    const response_data: any = {
       id: questionnaire.id,
       pathologie: questionnaire.pathologie,
       status: currentStatus, // Le frontend attend "status"
       patient_name: questionnaire.patient_name,
       patient_email: questionnaire.patient_email,
       questions: questionnaire.questions || [],
-    })
+      google_review_url: null, // Initialiser à null
+    }
+
+    // Récupérer le lien Google Reviews du praticien si disponible
+    if (questionnaire.user_id) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('google_review_url')
+        .eq('id', questionnaire.user_id)
+        .single()
+
+      if (profile && profile.google_review_url) {
+        response_data.google_review_url = profile.google_review_url
+      }
+    }
+
+    return NextResponse.json(response_data)
   } catch (error) {
     console.error('Erreur lors de la récupération:', error)
     const errorMessage = error instanceof Error ? error.message : 'Détails inconnus'
