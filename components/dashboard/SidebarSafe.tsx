@@ -14,7 +14,8 @@ import {
   Settings,
   LogOut,
   TestTube,
-  X
+  X,
+  Library
 } from 'lucide-react'
 import NotificationsBell from './NotificationsBell'
 
@@ -74,6 +75,7 @@ export default function SidebarSafe({ onLogout, sidebarOpen = true, onToggleSide
     { href: '/dashboard/history', label: 'Historique', icon: History },
     { href: '/dashboard/questionnaire', label: 'Questionnaire', icon: FileText },
     { href: '/dashboard/parrainage', label: 'Parrainage', icon: Gift },
+    { href: '/dashboard/library', label: 'Bibliothèque', icon: Library },
     { href: '/dashboard/settings', label: 'Paramètres', icon: Settings },
   ]
 
@@ -138,8 +140,8 @@ export default function SidebarSafe({ onLogout, sidebarOpen = true, onToggleSide
                 href={item.href}
                 onClick={(e) => handleLinkClick(item.href, e)}
                 className={`group flex items-center space-x-3 px-4 py-3 rounded-2xl transition-all duration-200 ${isActive
-                    ? 'bg-primary/5 text-primary font-semibold shadow-sm'
-                    : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+                  ? 'bg-primary/5 text-primary font-semibold shadow-sm'
+                  : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
                   }`}
               >
                 <Icon className={`w-5 h-5 transition-colors ${isActive ? 'text-primary' : 'text-gray-400 group-hover:text-gray-600'}`} />
@@ -158,8 +160,8 @@ export default function SidebarSafe({ onLogout, sidebarOpen = true, onToggleSide
             href={testMenuItem.href}
             onClick={(e) => handleLinkClick(testMenuItem.href, e)}
             className={`flex items-center space-x-3 px-4 py-3 rounded-2xl transition-all duration-200 ${pathname === testMenuItem.href
-                ? 'bg-primary/5 text-primary font-semibold'
-                : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+              ? 'bg-primary/5 text-primary font-semibold'
+              : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
               }`}
           >
             <TestTube className="w-5 h-5" />
