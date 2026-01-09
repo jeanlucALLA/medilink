@@ -61,8 +61,12 @@ export default function QuestionnairePage() {
         // Initialiser les questions
         let initQuestions: string[] = []
         if (data.questions && Array.isArray(data.questions) && data.questions.length > 0) {
-          // Gérer si c'est un tableau de strings ou d'objets
-          initQuestions = data.questions.map((q: any) => typeof q === 'string' ? q : q.text || 'Question')
+          // Gérer si c'est un tableau de strings ou d'objets avec champs variés
+          initQuestions = data.questions.map((q: any) => {
+            if (typeof q === 'string') return q;
+            // Essayer plusieurs clés possibles pour le texte
+            return q.text || q.label || q.question || q.title || JSON.stringify(q);
+          })
         } else {
           // Questions par défaut si aucune définie
           initQuestions = [
