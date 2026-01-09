@@ -73,42 +73,45 @@ export async function POST(
       scoreCalculated: averageScore
     }
 
-    // Mettre à jour le questionnaire : statut 'Complété' et enregistrer les réponses
-    const { error: updateError } = await supabase
-      .from('questionnaires')
-      .update({
-        status: 'Complété',
-        reponses: reponses, // Stocker dans une colonne JSONB reponses
-        score_resultat: scoreResultat, // Score calculé (1-5)
-        updated_at: new Date().toISOString(),
+    // 1. D'abord insérer les réponses dans la table 'responses' (Source de vérité)
+    // On utilise insert() standard. Si échec, on arrête tout.
+    const { error: insertError } = await supabase
+      .from('responses')
+      .insert({
+        questionnaire_id: id,
+        user_id: questionnaire.user_id,
+        pathologie: questionnaire.pathologie,
+        answers: answers, // Tableau des réponses
+        score_total: scoreResultat,
+        average_score: averageScore,
+        patient_email: questionnaire.patient_email,
+        submitted_at: new Date().toISOString(),
+        // On sauvegarde aussi le commentaire et le JSON complet pour référence future si besoin
+        comment: body.comment || '',
+        metadata: { scoreCalculated: averageScore }
       })
-      .eq('id', id)
 
-    if (updateError) {
-      console.error('Erreur lors de la mise à jour:', updateError)
+    if (insertError) {
+      console.error('Erreur insertion responses:', insertError)
       return NextResponse.json(
-        { error: `Erreur sauvegarde Supabase: ${updateError.message} (${updateError.code})` },
+        { error: `Erreur sauvegarde (Table Responses): ${insertError.message}` },
         { status: 500 }
       )
     }
 
-    // Optionnel : Sauvegarder aussi dans la table responses pour les statistiques
-    try {
-      await supabase
-        .from('responses')
-        .insert({
-          questionnaire_id: id,
-          user_id: questionnaire.user_id,
-          pathologie: questionnaire.pathologie,
-          answers: answers, // Tableau des réponses
-          score_total: scoreResultat,
-          average_score: averageScore, // Stocker la moyenne précise
-          patient_email: questionnaire.patient_email,
-          submitted_at: new Date().toISOString(),
-        })
-    } catch (err) {
-      // Ne pas bloquer si la table responses n'existe pas encore
-      console.warn('Impossible de sauvegarder dans responses:', err)
+    // 2. Ensuite mettre à jour le statut du questionnaire (Link invalidation)
+    // On retire 'reponses' et 'score_resultat' qui n'existent pas dans cette table
+    const { error: updateError } = await supabase
+      .from('questionnaires')
+      .update({
+        status: 'Complété',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id)
+
+    // Si la mise à jour du statut échoue, ce n'est pas critique pour les données, mais on le log
+    if (updateError) {
+      console.warn('Warning: Impossible de mettre à jour le statut du questionnaire:', updateError)
     }
 
     // Envoyer une notification email au praticien (non bloquant)
