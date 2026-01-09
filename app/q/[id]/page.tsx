@@ -62,10 +62,15 @@ export default function QuestionnairePage() {
         let initQuestions: string[] = []
         if (data.questions && Array.isArray(data.questions) && data.questions.length > 0) {
           // Gérer si c'est un tableau de strings ou d'objets avec champs variés
-          initQuestions = data.questions.map((q: any) => {
+          initQuestions = data.questions.map((q: any, idx: number) => {
             if (typeof q === 'string') return q;
             // Essayer plusieurs clés possibles pour le texte
-            return q.text || q.label || q.question || q.title || JSON.stringify(q);
+            const text = q.text || q.label || q.question || q.title;
+            if (!text) {
+              console.warn(`Question ${idx} sans texte:`, q);
+              return `Question ${idx + 1} (Texte manquant)`;
+            }
+            return text;
           })
         } else {
           // Questions par défaut si aucune définie
