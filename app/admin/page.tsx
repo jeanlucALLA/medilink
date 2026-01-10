@@ -655,7 +655,7 @@ export default function AdminDashboard() {
                                         <span className="font-semibold text-primary">Un email sera envoyé à chaque destinataire.</span>
                                         {notifTarget === 'selection' && (
                                             <span className="block mt-1 text-gray-400 italic">
-                                                (Astuce : Utilisez les filtres "Spécialité / Métier" de la page pour affiner cette sélection)
+                                                (Astuce : Utilisez les filtres &quot;Spécialité / Métier&quot; de la page pour affiner cette sélection)
                                             </span>
                                         )}
                                     </p>
@@ -818,6 +818,6 @@ export default function AdminDashboard() {
                     </div>
                 )}
             </div>
-        </div>
+        </div >
     )
 }
