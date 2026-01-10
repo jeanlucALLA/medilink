@@ -72,7 +72,7 @@ export default function HistoryPage() {
         // Ajouter les réponses (Complétés)
         if (responsesData) {
           responsesData.forEach((r: any) => {
-            const qDetails = questionnairesMap.get(r.questionnaire_id)
+            const qDetails = questionnairesMap.get(r.questionnaire_id) as any
             mergedList.push({
               id: r.id, // ID de la réponse
               pathologie: r.pathologie || qDetails?.pathologie || 'Sans nom',
