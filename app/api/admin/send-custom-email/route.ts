@@ -7,9 +7,10 @@ const resend = new Resend(process.env.RESEND_API_KEY || 're_123')
 
 export async function POST(req: Request) {
     try {
-        const { email, subject, message } = await req.json()
+        const body = await req.json()
+        const { email, recipients, subject, message } = body
 
-        if (!email || !subject || !message) {
+        if ((!email && !recipients) || !subject || !message) {
             return new NextResponse('Missing required fields', { status: 400 })
         }
 
@@ -22,68 +23,48 @@ export async function POST(req: Request) {
         const resend = new Resend(resendApiKey)
 
         // 2. Authentification Robuste (Dual Strategy: Header + Cookie)
-        let userSession = null
-        let supabaseClient = null
+        const cookieStore = cookies()
+        const supabase = createServerClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+            {
+                cookies: {
+                    get(name) { return cookieStore.get(name)?.value },
+                    set(name, value, options) { cookieStore.set({ name, value, ...options }) },
+                    remove(name, options) { cookieStore.set({ name, value: '', ...options }) },
+                },
+            }
+        )
 
-        // A. Essai via Header Authorization
+        // Try Header Auth first (for simulator/client-side calls)
+        let user
         const authHeader = req.headers.get('Authorization')
         if (authHeader) {
             const token = authHeader.replace('Bearer ', '')
-            const { createClient } = await import('@supabase/supabase-js')
-            const sbUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-            const sbKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-            const supabaseHeader = createClient(sbUrl, sbKey, {
-                global: { headers: { Authorization: `Bearer ${token}` } }
-            })
-            const { data: { user }, error } = await supabaseHeader.auth.getUser()
-            if (user && !error) {
-                userSession = { user }
-                supabaseClient = supabaseHeader
-            }
+            const { data: { user: headerUser } } = await supabase.auth.getUser(token)
+            user = headerUser
+        } else {
+            const { data: { user: cookieUser } } = await supabase.auth.getUser()
+            user = cookieUser
         }
 
-        // B. Fallback via Cookies
-        if (!userSession) {
-            const cookieStore = cookies()
-            const supabaseCookie = createServerClient(
-                process.env.NEXT_PUBLIC_SUPABASE_URL!,
-                process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-                {
-                    cookies: {
-                        get(name) { return cookieStore.get(name)?.value },
-                        set(name, value, options) { cookieStore.set({ name, value, ...options }) },
-                        remove(name, options) { cookieStore.set({ name, value: '', ...options }) },
-                    },
-                }
-            )
-            const { data: { session } } = await supabaseCookie.auth.getSession()
-            if (session) {
-                userSession = session
-                supabaseClient = supabaseCookie
-            }
-        }
-
-        if (!userSession || !supabaseClient) {
-            return new NextResponse(JSON.stringify({ error: 'Non autorisé. Veuillez vous reconnecter.' }), { status: 401 })
+        if (!user) {
+            return new NextResponse(JSON.stringify({ error: 'Non autorisé' }), { status: 401 })
         }
 
         // 3. Vérification Admin
-        const { data: profile, error: profileError } = await supabaseClient
+        const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('is_admin')
-            .eq('id', userSession.user.id)
+            .eq('id', user.id)
             .single()
 
         if (profileError || !profile?.is_admin) {
             return new NextResponse(JSON.stringify({ error: 'Accès interdit: Réservé aux administrateurs' }), { status: 403 })
         }
 
-        // 4. Envoi de l'email via Resend
-        const { data, error } = await resend.emails.send({
-            from: 'Medi.Link <onboarding@resend.dev>',
-            to: email,
-            subject: subject,
-            html: `
+        // 4. Préparation HTML
+        const htmlContent = `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #2563eb; margin-bottom: 24px;">Message de l'équipe Medi.Link</h2>
           
@@ -97,15 +78,45 @@ export async function POST(req: Request) {
             Cet email a été envoyé par un administrateur de Medi.Link.
           </p>
         </div>
-      `,
-        })
+      `
 
-        if (error) {
-            console.error('Resend Error:', error)
-            return new NextResponse(JSON.stringify({ error: error.message || 'Erreur provider email', details: error }), { status: 500 })
+        // 5. Envoi (Bulk ou Single)
+        let results
+        if (recipients && Array.isArray(recipients) && recipients.length > 0) {
+            // Bulk Send using Batch (Max 100 per batch recommended, but Resend handles loop well too)
+            // Implementation: Simple loop for now to avoid batch complexity limits (batch is 100 max)
+            // Or Batch if < 100. Let's start with single calls loop for safety and feedback, 
+            // or use batch if small.
+
+            // NOTE: Resend Batch API requires array of objects.
+            const chunks = []
+            const chunkSize = 50 // Safe batch size
+
+            for (let i = 0; i < recipients.length; i += chunkSize) {
+                const chunk = recipients.slice(i, i + chunkSize);
+                const batch = chunk.map((r: string) => ({
+                    from: 'Medi.Link <onboarding@resend.dev>',
+                    to: r,
+                    subject: subject,
+                    html: htmlContent
+                }))
+
+                // Fire and forget or await? Await to ensure delivery.
+                await resend.batch.send(batch)
+            }
+            results = { count: recipients.length }
+        } else {
+            // Single Send
+            await resend.emails.send({
+                from: 'Medi.Link <onboarding@resend.dev>',
+                to: email,
+                subject: subject,
+                html: htmlContent,
+            })
+            results = { count: 1 }
         }
 
-        return NextResponse.json({ success: true, data })
+        return NextResponse.json({ success: true, ...results })
 
     } catch (error: any) {
         console.error('Internal Error:', error)

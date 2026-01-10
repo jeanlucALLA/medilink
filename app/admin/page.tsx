@@ -100,14 +100,24 @@ export default function AdminDashboard() {
 
                 setIsAdmin(true)
 
-                // 3. Charger les vrais utilisateurs
-                const { data: realUsers } = await supabase
-                    .from('profiles')
-                    .select('*')
-                    .order('created_at', { ascending: false })
+                // Get session for API call
+                const { data: { session } } = await supabase.auth.getSession()
 
-                if (realUsers && realUsers.length > 0) {
-                    setUsers(realUsers)
+                // 3. Charger les utilisateurs VIA API (pour avoir les emails)
+                const response = await fetch('/api/admin/users', {
+                    headers: {
+                        'Authorization': `Bearer ${session?.access_token}`
+                    }
+                })
+
+                if (response.ok) {
+                    const { users: realUsers } = await response.json()
+                    if (realUsers && realUsers.length > 0) {
+                        setUsers(realUsers)
+                    }
+                } else {
+                    console.error('Erreur chargement users API')
+                    // Fallback ? Non, car pour l'emailing, l'API est critique.
                 }
 
                 setLoading(false)
@@ -155,40 +165,85 @@ export default function AdminDashboard() {
         return matchCity && matchSpecialty
     })
 
-    const handleSendNotification = async () => {
+    const handleSendBroadcast = async () => {
         if (!notifSubject || !notifMessage) {
             toast.error('Veuillez remplir le sujet et le message')
             return
         }
 
-        const recipients = notifTarget === 'selection' ? filteredUsers : users
+        const recipientsList = notifTarget === 'selection' ? filteredUsers : users
+        // Filter out users without emails (though auth requires it, profiles might not have it synced if bug, but usually ok)
+        // Adjust based on your profile schema (assuming auth.users has email, profiles has... wait, profiles table usually stores email or link to auth).
+        // WARNING: Profiles table typically might NOT have email column if it relies on Auth. 
+        // Let's check `users` mock/real data in `checkAdmin`.
+        // `realUsers` are fetched from `profiles`. Does `profiles` have `email`? 
+        // `MOCK_USERS` doesn't show email.
+        // We might need to fetch emails if not in profiles. 
+        // HOWEVER, looking at previous steps (`users` state initialization), it fetches `profiles`.
+        // If `profiles` doesn't have email, we can't send.
+        // Let's assume `email` is in profiles for now or we need to fix the fetch.
 
-        setIsSending(true)
-        setSendingProgress(0)
+        // Let's verify if `profiles` has email. If not, this is a blocker.
+        // The migration `20260110...fix_public_templates` doesn't show profiles. 
+        // Usually Supabase `profiles` triggers copy email or we join.
+        // Let's assume `email` is present or `user_id` allows fetching (but that's hard from client).
 
-        // Simulation d'envoi
-        const total = recipients.length
+        // BETTER STRATEGY: 
+        // If `profiles` table doesn't have email, we should fail or update query?
+        // Let's check the `checkAdmin` function line 106: `.select('*')`.
+        // If `profiles` lacks email, we are stuck.
+        // Let's check `MOCK_USERS` line 27 - no email.
 
-        // Si peu de destinataires, c'est instantané
-        if (total < 50) {
-            await new Promise(resolve => setTimeout(resolve, 1500))
-        } else {
-            // Simulation progression
-            for (let i = 0; i <= 100; i += 10) {
-                setSendingProgress(i)
-                await new Promise(resolve => setTimeout(resolve, 200))
-            }
+        // I will add a check. If no email, I'll log/alert.
+        // BUT, looking at `api/send-custom-email`, it takes `email` (string) or `recipients` (string[]).
+        // I'll try to map `u.email`. 
+
+        const emails = recipientsList.map(u => u.email).filter(Boolean)
+
+        if (emails.length === 0) {
+            toast.error("Aucune adresse email trouvée pour ces utilisateurs.")
+            return
         }
 
-        // TODO: Implémenter le vrai appel API/Supabase ici
-        // await supabase.from('notifications').insert(...)
+        setIsSending(true)
+        setSendingProgress(10) // Start visual progress
 
-        toast.success(`Notification envoyée à ${total} praticien(s)`)
-        setIsSending(false)
-        setShowNotificationModal(false)
-        setNotifSubject('')
-        setNotifMessage('')
-        setSendingProgress(0)
+        try {
+            const { supabase } = await import('@/lib/supabase') as any
+            const { data: { session } } = await supabase.auth.getSession()
+
+            const response = await fetch('/api/admin/send-custom-email', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session?.access_token}`
+                },
+                body: JSON.stringify({
+                    recipients: emails,
+                    subject: notifSubject,
+                    message: notifMessage
+                })
+            })
+
+            setSendingProgress(80)
+
+            if (!response.ok) {
+                const errorData = await response.json()
+                throw new Error(errorData.error?.message || 'Erreur lors de l\'envoi')
+            }
+
+            setSendingProgress(100)
+            toast.success(`Message diffusé à ${emails.length} praticien(s)`)
+            setShowNotificationModal(false)
+            setNotifSubject('')
+            setNotifMessage('')
+        } catch (error: any) {
+            console.error('Erreur diffusion:', error)
+            toast.error('Erreur: ' + error.message)
+        } finally {
+            setIsSending(false)
+            setSendingProgress(0)
+        }
     }
 
     const handleSendCustomEmail = async () => {
@@ -445,7 +500,7 @@ export default function AdminDashboard() {
                             className="w-full md:w-auto px-6 py-3 bg-gray-900 text-white font-bold rounded-xl hover:bg-gray-800 transition-all flex items-center justify-center gap-2 shadow-lg shadow-gray-900/10"
                         >
                             <Bell className="w-4 h-4" />
-                            Envoyer une notification
+                            Diffuser un message
                         </button>
                     </div>
                 </div>
@@ -557,7 +612,7 @@ export default function AdminDashboard() {
                             <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
                                 <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
                                     <Bell className="w-5 h-5 text-primary" />
-                                    Nouvelle Notification
+                                    Diffusion de Message (Email)
                                 </h2>
                                 <button
                                     onClick={() => setShowNotificationModal(false)}
@@ -593,20 +648,22 @@ export default function AdminDashboard() {
                                     </div>
                                     <p className="text-xs text-gray-500 mt-2 ml-1">
                                         {notifTarget === 'selection'
-                                            ? `Cible les comptes correspondants aux filtres : ${filterCity ? `Ville "${filterCity}"` : ''} ${filterCity && filterSpecialty ? 'et' : ''} ${filterSpecialty ? `Spécialité "${filterSpecialty}"` : ''} ${!filterCity && !filterSpecialty ? 'Aucun filtre (Tous)' : ''}`
-                                            : "Cible l'intégralité de la base de données."
+                                            ? `Cible : ${filteredUsers.length} praticien(s) correspondant aux filtres.`
+                                            : `Cible : ${users.length} praticien(s) (base complète).`
                                         }
+                                        <br />
+                                        <span className="font-semibold text-primary">Un email sera envoyé à chaque destinataire.</span>
                                     </p>
                                 </div>
 
                                 {/* Sujet */}
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Sujet</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Sujet de l'email</label>
                                     <input
                                         type="text"
                                         value={notifSubject}
                                         onChange={(e) => setNotifSubject(e.target.value)}
-                                        placeholder="Ex: Maintenance programmée..."
+                                        placeholder="Ex: Nouveauté sur la plateforme..."
                                         className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                                     />
                                 </div>
@@ -624,10 +681,10 @@ export default function AdminDashboard() {
                                 </div>
 
                                 {/* Progress Bar */}
-                                {isSending && targetCount > 50 && (
+                                {isSending && (
                                     <div className="mt-4">
                                         <div className="flex justify-between text-xs text-gray-500 mb-1">
-                                            <span>Envoi en cours...</span>
+                                            <span>Diffusion en cours...</span>
                                             <span>{sendingProgress}%</span>
                                         </div>
                                         <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
@@ -649,7 +706,7 @@ export default function AdminDashboard() {
                                     Annuler
                                 </button>
                                 <button
-                                    onClick={handleSendNotification}
+                                    onClick={handleSendBroadcast}
                                     disabled={isSending || !notifSubject || !notifMessage}
                                     className="px-6 py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary-dark transition-all shadow-lg hover:shadow-primary/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                                 >
@@ -664,6 +721,7 @@ export default function AdminDashboard() {
                                             Envoyer
                                         </>
                                     )}
+
                                 </button>
                             </div>
                         </div>
