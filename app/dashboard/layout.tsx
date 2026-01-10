@@ -32,16 +32,16 @@ export default function DashboardLayout({
 
   useEffect(() => {
     let isMounted = true
-    
+
     const getUserAndCheckProfile = async () => {
       try {
         setLoading(true)
         // Import dynamique pour éviter les problèmes de chargement
         const { supabase }: { supabase: SupabaseClient } = await import('@/lib/supabase')
-        
+
         // Vérifier d'abord la session
         const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-        
+
         if (sessionError || !session) {
           console.log('🚫 Aucune session dans le layout, redirection vers /login')
           if (isMounted) {
@@ -50,9 +50,9 @@ export default function DashboardLayout({
           }
           return
         }
-        
+
         const { data: { user }, error } = await supabase.auth.getUser()
-        
+
         if (error || !user) {
           console.log('🚫 Aucun utilisateur dans le layout, redirection vers /login')
           if (isMounted) {
@@ -93,8 +93,8 @@ export default function DashboardLayout({
           }
 
           // Logique de redirection onboarding
-          const isProfileComplete = profileData && 
-            profileData.nom_complet && 
+          const isProfileComplete = profileData &&
+            profileData.nom_complet &&
             profileData.specialite &&
             profileData.nom_complet.trim() !== '' &&
             profileData.specialite.trim() !== ''
@@ -109,8 +109,8 @@ export default function DashboardLayout({
           }
         } else {
           // Si déjà vérifié, vérifier si le profil est toujours incomplet
-          const isProfileComplete = profile && 
-            profile.nom_complet && 
+          const isProfileComplete = profile &&
+            profile.nom_complet &&
             profile.specialite &&
             profile.nom_complet.trim() !== '' &&
             profile.specialite.trim() !== ''
@@ -138,9 +138,9 @@ export default function DashboardLayout({
         }
       }
     }
-    
+
     getUserAndCheckProfile()
-    
+
     return () => {
       isMounted = false
     }
@@ -153,7 +153,7 @@ export default function DashboardLayout({
     const checkPerformance = async () => {
       try {
         const { supabase }: { supabase: SupabaseClient } = await import('@/lib/supabase')
-        
+
         // Récupérer le code département du profil
         const { data: profileData } = await supabase
           .from('profiles')
@@ -161,7 +161,7 @@ export default function DashboardLayout({
           .eq('id', user.id)
           .single()
 
-        const departmentCode = profileData?.department_code || 
+        const departmentCode = profileData?.department_code ||
           (profileData?.zip_code || profileData?.code_postal)?.substring(0, 2) || null
 
         // Calculer le score du cabinet actuel
@@ -180,7 +180,7 @@ export default function DashboardLayout({
               department_code_param: departmentCode,
               user_id_param: user.id
             })
-          
+
           if (regionalData && regionalData.length > 0) {
             benchmarkScore = parseFloat(regionalData[0].average_score)
           }
@@ -190,7 +190,7 @@ export default function DashboardLayout({
         if (benchmarkScore === 0) {
           const { data: nationalData } = await supabase
             .rpc('get_national_satisfaction_average', { user_id_param: user.id })
-          
+
           if (nationalData && nationalData.length > 0) {
             benchmarkScore = parseFloat(nationalData[0].average_score)
           }
@@ -210,7 +210,7 @@ export default function DashboardLayout({
         if (notification.shouldShow) {
           // Importer toast dynamiquement
           const toast = (await import('react-hot-toast')).default
-          
+
           toast.success(
             `✨ Félicitations ! Votre taux de satisfaction est exceptionnel. Vous dépassez la moyenne de votre région de ${notification.percentageDiff}% !`,
             {
@@ -241,7 +241,8 @@ export default function DashboardLayout({
 
     // Attendre un peu avant de vérifier (pour éviter de surcharger au chargement)
     const timeoutId = setTimeout(() => {
-      checkPerformance()
+      // Temporairement désactivé pour éviter les erreurs 404 sur les RPC manquants
+      // checkPerformance()
     }, 2000)
 
     return () => clearTimeout(timeoutId)
@@ -278,7 +279,7 @@ export default function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Toaster 
+      <Toaster
         position="top-right"
         toastOptions={{
           success: {
@@ -298,8 +299,8 @@ export default function DashboardLayout({
       <div className="flex">
         {/* Sidebar Safe - masquée sur la page welcome */}
         {!isWelcomePage && isMounted && (
-          <SidebarSafe 
-            onLogout={handleLogout} 
+          <SidebarSafe
+            onLogout={handleLogout}
             sidebarOpen={sidebarOpen}
             onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
           />
