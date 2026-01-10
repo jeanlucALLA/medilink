@@ -105,7 +105,7 @@ export default function NotificationsBell({ variant = 'header' }: NotificationsB
 
       // Filtrer les réponses pour ne garder que les non-vues
       const responses = responsesData || []
-      const unseenResponses = responses.filter(r => new Date(r.submitted_at).getTime() > lastViewed)
+      const unseenResponses = responses.filter((r: any) => new Date(r.submitted_at).getTime() > lastViewed)
 
       // Compter les réponses critiques (score ≤ 2) PARMI les non-vues
       const criticalCount = unseenResponses.filter((r: any) => r.score_total <= 2).length
