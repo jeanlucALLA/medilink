@@ -329,7 +329,7 @@ export default function ParrainagePage() {
             </div>
             <div>
               <h2 className="text-xl font-semibold text-gray-900">Progression de Récompense</h2>
-              <p className="text-sm text-gray-600">Débloquez 1 mois d'abonnement supplémentaire</p>
+              <p className="text-sm text-gray-600">Débloquez 1 mois d&apos;abonnement supplémentaire</p>
             </div>
           </div>
           {referralsCount >= 5 && (
@@ -462,7 +462,7 @@ export default function ParrainagePage() {
                   <>Encore <strong>{5 - referralsCount} parrainage{5 - referralsCount > 1 ? 's' : ''}</strong> pour obtenir 1 mois offert !</>
                 )}
                 {referralsCount >= 5 && (
-                  <>Félicitations ! Vous avez débloqué <strong>1 mois d'abonnement offert</strong>.</>
+                  <>Félicitations ! Vous avez débloqué <strong>1 mois d&apos;abonnement offert</strong>.</>
                 )}
               </p>
               {referralsCount >= 5 && (
@@ -484,7 +484,7 @@ export default function ParrainagePage() {
             <ul className="space-y-1 text-sm text-gray-700 ml-7">
               <li className="flex items-center space-x-2">
                 <div className="w-1.5 h-1.5 bg-primary rounded-full" />
-                <span>Mois d'abonnement Pro offert (Valeur 9,99€)</span>
+                <span>Mois d&apos;abonnement Pro offert (Valeur 9,99€)</span>
               </li>
               <li className="flex items-center space-x-2">
                 <div className="w-1.5 h-1.5 bg-primary rounded-full" />
