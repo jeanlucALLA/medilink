@@ -487,7 +487,7 @@ export default function AdminDashboard() {
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                         <input
                             type="text"
-                            placeholder="Filtrer par Spécialité..."
+                            placeholder="Filtrer par Spécialité / Métier..."
                             value={filterSpecialty}
                             onChange={(e) => setFilterSpecialty(e.target.value)}
                             className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all bg-gray-50/50"
@@ -653,6 +653,11 @@ export default function AdminDashboard() {
                                         }
                                         <br />
                                         <span className="font-semibold text-primary">Un email sera envoyé à chaque destinataire.</span>
+                                        {notifTarget === 'selection' && (
+                                            <span className="block mt-1 text-gray-400 italic">
+                                                (Astuce : Utilisez les filtres "Spécialité / Métier" de la page pour affiner cette sélection)
+                                            </span>
+                                        )}
                                     </p>
                                 </div>
 
