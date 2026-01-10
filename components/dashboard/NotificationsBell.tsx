@@ -89,7 +89,7 @@ export default function NotificationsBell({ variant = 'header' }: NotificationsB
       // Charger les résolutions depuis localStorage
       const savedResolutions = localStorage.getItem('alert_resolutions')
       let resolutionsMap = new Map<string, any>()
-      
+
       if (savedResolutions) {
         try {
           const parsed = JSON.parse(savedResolutions)
@@ -101,17 +101,17 @@ export default function NotificationsBell({ variant = 'header' }: NotificationsB
 
       // Compter les notifications
       const responses = responsesData || []
-      
+
       // Compter les réponses critiques (score ≤ 2)
       const criticalCount = responses.filter((r: any) => r.score_total <= 2).length
-      
+
       // Compter les réponses avec statut 'nouveau' (pas de résolution ou statut 'new')
       const newCount = responses.filter((r: any) => {
         const resolution = resolutionsMap.get(r.id)
         // Pas de résolution OU statut explicitement 'new'
         return !resolution || resolution.status === 'new' || !resolution.status
       }).length
-      
+
       // Le total est le nombre de réponses qui sont nouvelles OU critiques
       // (une réponse peut être à la fois nouvelle et critique)
       const totalCount = responses.filter((r: any) => {
@@ -169,32 +169,22 @@ export default function NotificationsBell({ variant = 'header' }: NotificationsB
       {/* Bouton de notification */}
       <button
         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-        className={`relative p-2 rounded-lg transition-colors ${
-          isSidebar
+        className={`relative p-2 rounded-lg transition-colors ${isSidebar
             ? 'text-white/80 hover:text-white hover:bg-white/10'
             : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'
-        }`}
+          }`}
         aria-label="Notifications"
       >
         <Bell className="w-6 h-6" />
-        
+
         {/* Badge de notification */}
         {hasNotifications && !loading && (
           <>
-            {/* Point rouge pour petites notifications */}
-            {notificationCount.total <= 9 && (
-              <span className={`absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full ${
-                isSidebar ? 'border-2 border-primary' : 'border-2 border-white'
-              }`}></span>
-            )}
-            {/* Badge numérique pour plus de notifications */}
-            {notificationCount.total > 9 && (
-              <span className={`absolute -top-1 -right-1 min-w-[20px] h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center px-1.5 ${
-                isSidebar ? 'border-2 border-primary' : 'border-2 border-white'
+            {/* Badge numérique pour toutes les notifications */}
+            <span className={`absolute -top-1 -right-1 min-w-[20px] h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center px-1.5 ${isSidebar ? 'border-2 border-primary' : 'border-2 border-white'
               }`}>
-                {notificationCount.total > 99 ? '99+' : notificationCount.total}
-              </span>
-            )}
+              {notificationCount.total > 99 ? '99+' : notificationCount.total}
+            </span>
           </>
         )}
       </button>
@@ -226,7 +216,7 @@ export default function NotificationsBell({ variant = 'header' }: NotificationsB
                   <FileText className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
                   <div className="flex-1">
                     <p className="text-sm font-medium text-gray-900">
-                      {notificationCount.total > 0 
+                      {notificationCount.total > 0
                         ? `${notificationCount.total} retour${notificationCount.total > 1 ? 's' : ''} de questionnaire ${notificationCount.new > 0 ? 'nouveau' + (notificationCount.new > 1 ? 'x' : '') : 'à traiter'}`
                         : 'Aucun retour'}
                     </p>

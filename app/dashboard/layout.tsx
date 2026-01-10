@@ -318,7 +318,17 @@ export default function DashboardLayout({
                   <Menu className="w-6 h-6" />
                 </button>
                 {/* Header avec notifications */}
-                <div className="hidden lg:flex lg:items-center">
+                <div className="hidden lg:flex lg:items-center lg:gap-4">
+                  {/* User Profile Info */}
+                  <div className="flex flex-col items-end mr-2">
+                    <span className="text-sm font-semibold text-gray-900">
+                      {profile?.nom_complet || user?.email?.split('@')[0] || 'Utilisateur'}
+                    </span>
+                    <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                      Médecin
+                    </span>
+                  </div>
+
                   <NotificationsBell variant="header" />
                 </div>
               </div>
