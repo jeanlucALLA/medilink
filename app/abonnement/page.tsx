@@ -106,7 +106,7 @@ export default function AbonnementPage() {
                             <h3 className="text-xl font-bold text-gray-900 mb-2">Abonnement Professionnel Complet</h3>
                             <p className="text-gray-500 text-sm h-6">Pour les praticiens exigeants.</p>
                             <div className="mt-6 flex items-baseline justify-center">
-                                <span className="text-5xl font-bold text-gray-900">19,99€</span>
+                                <span className="text-5xl font-bold text-gray-900">9,99€</span>
                                 <span className="text-gray-500 ml-2">/ mois</span>
                             </div>
                         </div>
