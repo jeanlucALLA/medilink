@@ -84,7 +84,7 @@ export default function SidebarSafe({ onLogout, sidebarOpen = true, onToggleSide
     { href: '/dashboard', label: 'Tableau de bord', icon: LayoutDashboard },
     { href: '/dashboard/resolution', label: 'Centre de Résolution', icon: Target },
     { href: '/dashboard/statistics', label: 'Statistiques', icon: TrendingUp },
-    { href: '/dashboard/analytics-pro', label: 'Statistiques Avancées', icon: BarChart3 },
+
     { href: '/dashboard/history', label: 'Historique', icon: History },
     { href: '/dashboard/questionnaire', label: 'Questionnaire', icon: FileText },
     { href: '/dashboard/parrainage', label: 'Parrainage', icon: Gift },
