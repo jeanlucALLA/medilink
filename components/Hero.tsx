@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { Search, MapPin, Stethoscope, ArrowRight } from 'lucide-react'
 
 export default function Hero() {
@@ -21,17 +22,15 @@ export default function Hero() {
                     La plateforme intelligente qui automatise votre suivi post-consultation, booste votre réputation Google et sécurise vos données.
                 </p>
 
-                {/* Email Capture Action */}
+                {/* Action Button */}
                 <div className="max-w-lg mx-auto mb-16 relative z-20">
-                    <div className="flex flex-col sm:flex-row gap-3">
-                        <input
-                            type="email"
-                            placeholder="Votre email professionnel"
-                            className="flex-1 px-6 py-4 rounded-full border border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-sm text-lg"
-                        />
-                        <button className="bg-primary hover:bg-primary-dark text-white px-8 py-4 rounded-full text-lg font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 whitespace-nowrap">
-                            Essayer gratuitement
-                        </button>
+                    <div className="flex justify-center">
+                        <Link
+                            href="/abonnement"
+                            className="bg-primary hover:bg-primary-dark text-white px-8 py-4 rounded-full text-lg font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 whitespace-nowrap"
+                        >
+                            Débuter
+                        </Link>
                     </div>
                     <p className="text-sm text-gray-400 mt-3">14 jours d&apos;essai gratuit • Sans carte bancaire</p>
                 </div>
