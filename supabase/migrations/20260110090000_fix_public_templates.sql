@@ -1,3 +1,7 @@
+-- Drop previous versions to ensure clean schema (Fix for "column name does not exist")
+DROP TABLE IF EXISTS public.public_template_questions CASCADE;
+DROP TABLE IF EXISTS public.public_templates CASCADE;
+
 -- Ensure public_templates table exists
 CREATE TABLE IF NOT EXISTS public.public_templates (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,

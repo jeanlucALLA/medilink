@@ -14,6 +14,7 @@ alter table public.notifications enable row level security;
 
 -- 3. RLS Policies
 -- Only admins can view notifications (simplified for now, ideally check is_admin)
+drop policy if exists "Admins can view all notifications" on public.notifications;
 create policy "Admins can view all notifications"
   on public.notifications for select
   using (
@@ -25,6 +26,7 @@ create policy "Admins can view all notifications"
   );
 
 -- Admins can update (mark as read)
+drop policy if exists "Admins can update notifications" on public.notifications;
 create policy "Admins can update notifications"
   on public.notifications for update
   using (
@@ -41,19 +43,25 @@ returns trigger as $$
 declare
   practitioner_name text;
 begin
-  -- Get name safely
-  practitioner_name := new.nom_complet;
-  if practitioner_name is null then
-    practitioner_name := 'Nouveau Praticien';
-  end if;
+  -- Safe execution to prevent blocking registration flow
+  begin
+    -- Get name safely
+    practitioner_name := new.nom_complet;
+    if practitioner_name is null then
+      practitioner_name := 'Nouveau Praticien';
+    end if;
 
-  insert into public.notifications (message, type, practitioner_id, metadata)
-  values (
-    'Nouveau praticien inscrit : ' || practitioner_name,
-    'signup',
-    new.id,
-    jsonb_build_object('email', new.email)
-  );
+    insert into public.notifications (message, type, practitioner_id, metadata)
+    values (
+      'Nouveau praticien inscrit : ' || practitioner_name,
+      'signup',
+      new.id,
+      jsonb_build_object('email', new.email)
+    );
+  exception when others then
+    -- Log error but do not fail the transaction
+    raise warning 'Notification trigger failed: %', SQLERRM;
+  end;
   return new;
 end;
 $$ language plpgsql security definer;
