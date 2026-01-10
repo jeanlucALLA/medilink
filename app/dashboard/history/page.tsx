@@ -40,43 +40,107 @@ export default function HistoryPage() {
 
         console.log('Chargement historique pour user:', user.id)
 
-        // 1. Chargement initial
-        const { data, error } = await supabase
+        // 1. Récupérer les RÉPONSES (Questionnaires complétés)
+        const { data: responsesData, error: responsesError } = await supabase
+          .from('responses')
+          .select('id, questionnaire_id, pathologie, score_total, submitted_at, answers, metadata')
+          .eq('user_id', user.id)
+          .order('submitted_at', { ascending: false })
+
+        if (responsesError) console.error('Erreur loading responses:', responsesError)
+
+        // 2. Récupérer les questionnaires (Tous pour avoir les infos, ou juste les non-complétés)
+        // On récupère tout pour avoir les métadonnées (titre, etc) des réponses
+        const { data: questionnairesData, error: questionnairesError } = await supabase
           .from('questionnaires')
-          .select('id, pathologie, status:statut, created_at, updated_at, reponses, score_resultat, questions, send_after_days, patient_email')
+          .select('id, pathologie, statut, created_at, send_after_days, patient_email, questions')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
 
-        if (error) {
-          console.error('Erreur SQL:', error)
+        if (questionnairesError) {
+          console.error('Erreur SQL questionnaires:', questionnairesError)
           setLoading(false)
           return
         }
 
-        console.log('Données reçues:', data?.length)
-        setQuestionnaires(data || [])
+        // Créer une Map des questionnaires pour accès rapide
+        const questionnairesMap = new Map(questionnairesData?.map((q: any) => [q.id, q]))
+
+        // Fusionner les données
+        const mergedList: Questionnaire[] = []
+
+        // Ajouter les réponses (Complétés)
+        if (responsesData) {
+          responsesData.forEach((r: any) => {
+            const qDetails = questionnairesMap.get(r.questionnaire_id)
+            mergedList.push({
+              id: r.id, // ID de la réponse
+              pathologie: r.pathologie || qDetails?.pathologie || 'Sans nom',
+              status: 'Complété',
+              created_at: qDetails?.created_at || r.submitted_at, // Date de création du questionnaire
+              updated_at: r.submitted_at, // Date de réponse
+              reponses: {
+                answers: r.answers,
+                ...r.metadata // Inclure metadata si existe
+              },
+              score_resultat: r.score_total,
+              questions: qDetails?.questions || [],
+              send_after_days: qDetails?.send_after_days,
+              patient_email: qDetails?.patient_email
+            })
+          })
+        }
+
+        // Ajouter les questionnaires NON complétés (En attente / Programmé / Envoyé)
+        if (questionnairesData) {
+          questionnairesData.forEach((q: any) => {
+            // Si le statut n'est PAS complété (ou si on n'a pas trouvé de réponse correspondante dans responsesData)
+            // Note: On se base sur le fait que s'il y a une réponse, elle est dans mergedList via le bloc précédent.
+            // On veut afficher ceux qui n'ont PAS encore de réponse.
+            // Une façon simple : vérifier si l'ID du questionnaire est déjà référencé dans une réponse ?
+            // Ou se fier au statut 'Complété'.
+            const isCompleted = responsesData?.some((r: any) => r.questionnaire_id === q.id)
+
+            if (!isCompleted && q.statut !== 'Complété') {
+              mergedList.push({
+                id: q.id,
+                pathologie: q.pathologie,
+                status: q.statut,
+                created_at: q.created_at,
+                updated_at: undefined,
+                reponses: undefined,
+                score_resultat: undefined,
+                questions: q.questions,
+                send_after_days: q.send_after_days,
+                patient_email: q.patient_email
+              })
+            }
+          })
+        }
+
+        // Trier par date la plus récente (updated_at ou created_at)
+        mergedList.sort((a, b) => {
+          const dateA = new Date(a.updated_at || a.created_at).getTime()
+          const dateB = new Date(b.updated_at || b.created_at).getTime()
+          return dateB - dateA
+        })
+
+        console.log('Données fusionnées:', mergedList.length)
+        setQuestionnaires(mergedList)
         setLoading(false)
 
-        // 2. Subscription Realtime (Affichage instantané)
+        // Subscription Realtime (Simplifiée : recharger tout si changement)
         channel = supabase
-          .channel('realtime-history')
+          .channel('realtime-history-global')
           .on(
             'postgres_changes',
-            {
-              event: 'INSERT',
-              schema: 'public',
-              table: 'questionnaires',
-              filter: `user_id=eq.${user.id}`
-            },
-            (payload: any) => {
-              console.log('Realtime INSERT:', payload)
-              // Convertir le snake_case du payload en structure compatible state
-              const newQ = {
-                ...payload.new,
-                status: payload.new.statut // Mapping statut -> status
-              }
-              setQuestionnaires((current) => [newQ, ...current])
-            }
+            { event: '*', schema: 'public', table: 'responses', filter: `user_id=eq.${user.id}` },
+            () => loadQuestionnaires()
+          )
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'questionnaires', filter: `user_id=eq.${user.id}` },
+            () => loadQuestionnaires()
           )
           .subscribe()
 
