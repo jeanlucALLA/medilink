@@ -15,7 +15,8 @@ import {
   LogOut,
   TestTube,
   X,
-  Library
+  Library,
+  Shield
 } from 'lucide-react'
 import NotificationsBell from './NotificationsBell'
 
@@ -38,6 +39,7 @@ function getInitials(nomComplet: string | null | undefined): string {
 export default function SidebarSafe({ onLogout, sidebarOpen = true, onToggleSidebar }: SidebarSafeProps) {
   const [isMounted, setIsMounted] = useState(false)
   const [praticienNom, setPraticienNom] = useState<string | null>(null)
+  const [isAdmin, setIsAdmin] = useState(false)
   const pathname = usePathname()
 
   useEffect(() => {
@@ -60,6 +62,17 @@ export default function SidebarSafe({ onLogout, sidebarOpen = true, onToggleSide
         if (!profileError && profile?.nom_complet) {
           setPraticienNom(profile.nom_complet)
         }
+
+        // Check for admin status
+        const { data: adminProfile } = await supabase
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', user.id)
+          .single()
+
+        if (adminProfile?.is_admin) {
+          setIsAdmin(true)
+        }
       } catch (err) {
         console.error('Erreur lors du chargement du nom du praticien:', err)
       }
@@ -77,6 +90,7 @@ export default function SidebarSafe({ onLogout, sidebarOpen = true, onToggleSide
     { href: '/dashboard/parrainage', label: 'Parrainage', icon: Gift },
     { href: '/dashboard/library', label: 'Bibliothèque', icon: Library },
     { href: '/dashboard/settings', label: 'Paramètres', icon: Settings },
+    ...(isAdmin ? [{ href: '/admin', label: 'Administration', icon: Shield }] : [])
   ]
 
   const testMenuItem = { href: '/dashboard/test-links', label: 'Test Liens', icon: TestTube }
