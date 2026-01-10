@@ -252,8 +252,8 @@ export default function ParrainagePage() {
               <button
                 onClick={handleCopyLink}
                 className={`absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-md transition-all duration-200 ${copied
-                    ? 'text-green-600 bg-green-50 scale-100'
-                    : 'text-gray-500 hover:text-primary hover:bg-gray-100 active:scale-95'
+                  ? 'text-green-600 bg-green-50 scale-100'
+                  : 'text-gray-500 hover:text-primary hover:bg-gray-100 active:scale-95'
                   }`}
                 title={copied ? 'Lien copié !' : 'Copier le lien'}
               >
@@ -267,8 +267,8 @@ export default function ParrainagePage() {
             <button
               onClick={handleCopyLink}
               className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${copied
-                  ? 'bg-green-100 text-green-700 border-2 border-green-300 scale-100'
-                  : 'bg-primary hover:bg-primary-dark text-white active:scale-95 hover:scale-105 shadow-sm hover:shadow-md'
+                ? 'bg-green-100 text-green-700 border-2 border-green-300 scale-100'
+                : 'bg-primary hover:bg-primary-dark text-white active:scale-95 hover:scale-105 shadow-sm hover:shadow-md'
                 }`}
             >
               {copied ? (
@@ -329,7 +329,7 @@ export default function ParrainagePage() {
             </div>
             <div>
               <h2 className="text-xl font-semibold text-gray-900">Progression de Récompense</h2>
-              <p className="text-sm text-gray-600">Débloquez les Statistiques Avancées à vie</p>
+              <p className="text-sm text-gray-600">Débloquez 1 mois d'abonnement supplémentaire</p>
             </div>
           </div>
           {referralsCount >= 5 && (
@@ -347,8 +347,8 @@ export default function ParrainagePage() {
             <div className="flex flex-col items-center flex-1">
               <div
                 className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center mb-2 transition-all ${referralsCount >= 1
-                    ? 'bg-primary text-white shadow-md scale-110'
-                    : 'bg-gray-200 text-gray-400'
+                  ? 'bg-primary text-white shadow-md scale-110'
+                  : 'bg-gray-200 text-gray-400'
                   }`}
               >
                 {referralsCount >= 1 ? <Check className="w-4 h-4 md:w-5 md:h-5" /> : <span className="text-sm md:text-base font-bold">1</span>}
@@ -364,8 +364,8 @@ export default function ParrainagePage() {
             <div className="flex flex-col items-center flex-1">
               <div
                 className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center mb-2 transition-all ${referralsCount >= 2
-                    ? 'bg-primary text-white shadow-md scale-110'
-                    : 'bg-gray-200 text-gray-400'
+                  ? 'bg-primary text-white shadow-md scale-110'
+                  : 'bg-gray-200 text-gray-400'
                   }`}
               >
                 {referralsCount >= 2 ? <Check className="w-4 h-4 md:w-5 md:h-5" /> : <span className="text-sm md:text-base font-bold">2</span>}
@@ -381,8 +381,8 @@ export default function ParrainagePage() {
             <div className="flex flex-col items-center flex-1">
               <div
                 className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center mb-2 transition-all ${referralsCount >= 3
-                    ? 'bg-primary text-white shadow-md scale-110'
-                    : 'bg-gray-200 text-gray-400'
+                  ? 'bg-primary text-white shadow-md scale-110'
+                  : 'bg-gray-200 text-gray-400'
                   }`}
               >
                 {referralsCount >= 3 ? <Check className="w-4 h-4 md:w-5 md:h-5" /> : <span className="text-sm md:text-base font-bold">3</span>}
@@ -398,8 +398,8 @@ export default function ParrainagePage() {
             <div className="flex flex-col items-center flex-1">
               <div
                 className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center mb-2 transition-all ${referralsCount >= 4
-                    ? 'bg-primary text-white shadow-md scale-110'
-                    : 'bg-gray-200 text-gray-400'
+                  ? 'bg-primary text-white shadow-md scale-110'
+                  : 'bg-gray-200 text-gray-400'
                   }`}
               >
                 {referralsCount >= 4 ? <Check className="w-4 h-4 md:w-5 md:h-5" /> : <span className="text-sm md:text-base font-bold">4</span>}
@@ -415,8 +415,8 @@ export default function ParrainagePage() {
             <div className="flex flex-col items-center flex-1">
               <div
                 className={`w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center mb-2 transition-all ${referralsCount >= 5
-                    ? 'bg-gradient-to-br from-yellow-400 to-yellow-600 text-white shadow-lg scale-110'
-                    : 'bg-gray-200 text-gray-400'
+                  ? 'bg-gradient-to-br from-yellow-400 to-yellow-600 text-white shadow-lg scale-110'
+                  : 'bg-gray-200 text-gray-400'
                   }`}
               >
                 {referralsCount >= 5 ? <Crown className="w-5 h-5 md:w-6 md:h-6" /> : <span className="text-base md:text-lg font-bold">5</span>}
@@ -440,8 +440,8 @@ export default function ParrainagePage() {
         {/* Message incitatif dynamique */}
         <div
           className={`rounded-lg p-4 border-2 ${referralsCount >= 5
-              ? 'bg-green-50 border-green-200'
-              : 'bg-blue-50 border-blue-200'
+            ? 'bg-green-50 border-green-200'
+            : 'bg-blue-50 border-blue-200'
             }`}
         >
           <div className="flex items-start space-x-3">
@@ -456,18 +456,18 @@ export default function ParrainagePage() {
                   }`}
               >
                 {referralsCount === 0 && (
-                  <>Plus que <strong>5 parrainages</strong> pour débloquer les Statistiques Avancées !</>
+                  <>Plus que <strong>5 parrainages</strong> pour obtenir 1 mois offert !</>
                 )}
                 {referralsCount > 0 && referralsCount < 5 && (
-                  <>Encore <strong>{5 - referralsCount} parrainage{5 - referralsCount > 1 ? 's' : ''}</strong> pour débloquer les Statistiques Avancées !</>
+                  <>Encore <strong>{5 - referralsCount} parrainage{5 - referralsCount > 1 ? 's' : ''}</strong> pour obtenir 1 mois offert !</>
                 )}
                 {referralsCount >= 5 && (
-                  <>Félicitations ! Votre accès <strong>Statistiques Avancées à vie</strong> est activé.</>
+                  <>Félicitations ! Vous avez débloqué <strong>1 mois d'abonnement offert</strong>.</>
                 )}
               </p>
               {referralsCount >= 5 && (
                 <p className="text-sm text-green-700 mt-1">
-                  Vous avez maintenant un accès permanent aux fonctionnalités avancées d&apos;analyse et de statistiques.
+                  Ce mois gratuit sera automatiquement ajouté à votre abonnement.
                 </p>
               )}
             </div>
@@ -475,28 +475,24 @@ export default function ParrainagePage() {
         </div>
 
         {/* Récompense débloquée - Détails */}
-        {referralsCount >= 3 && (
+        {referralsCount >= 5 && (
           <div className="mt-4 pt-4 border-t border-green-200">
             <div className="flex items-center space-x-2 mb-2">
               <Check className="w-5 h-5 text-green-600" />
-              <span className="text-sm font-semibold text-gray-900">Statistiques Avancées activées :</span>
+              <span className="text-sm font-semibold text-gray-900">Bonus débloqué :</span>
             </div>
             <ul className="space-y-1 text-sm text-gray-700 ml-7">
               <li className="flex items-center space-x-2">
                 <div className="w-1.5 h-1.5 bg-primary rounded-full" />
-                <span>Analyses détaillées par pathologie</span>
+                <span>Mois d'abonnement Pro offert (Valeur 9,99€)</span>
               </li>
               <li className="flex items-center space-x-2">
                 <div className="w-1.5 h-1.5 bg-primary rounded-full" />
-                <span>Graphiques de tendances avancés</span>
+                <span>Cumulable avec vos autres réductions</span>
               </li>
               <li className="flex items-center space-x-2">
                 <div className="w-1.5 h-1.5 bg-primary rounded-full" />
-                <span>Export de rapports personnalisés</span>
-              </li>
-              <li className="flex items-center space-x-2">
-                <div className="w-1.5 h-1.5 bg-primary rounded-full" />
-                <span>Accès à vie - Sans frais supplémentaires</span>
+                <span>Merci de faire grandir la communauté Medi.Link !</span>
               </li>
             </ul>
           </div>

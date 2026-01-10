@@ -148,7 +148,7 @@ export default function AbonnementPage() {
                                 'Commencer maintenant'
                             )}
                         </button>
-                        <p className="text-xs text-center text-gray-400 mt-4">Essai de 14 jours inclus • Annulable en 1 clic</p>
+                        <p className="text-xs text-center text-gray-400 mt-4">Paiement sécurisé • 9,99€ / mois</p>
                     </div>
                 </div>
 
@@ -182,13 +182,13 @@ export default function AbonnementPage() {
                         <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
                             <details className="group">
                                 <summary className="flex justify-between items-center p-6 cursor-pointer list-none">
-                                    <span className="font-bold text-gray-900">Y a-t-il une période d&apos;essai ?</span>
+                                    <span className="font-bold text-gray-900">L&apos;accès est-il immédiat ?</span>
                                     <span className="transition group-open:rotate-180">
                                         <svg fill="none" height="24" shapeRendering="geometricPrecision" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" viewBox="0 0 24 24" width="24"><path d="M6 9l6 6 6-6"></path></svg>
                                     </span>
                                 </summary>
                                 <div className="text-gray-600 px-6 pb-6 pt-0 leading-relaxed">
-                                    Oui, vous bénéficiez de 14 jours d&apos;essai gratuit pour tester toutes les fonctionnalités sans être débité.
+                                    L&apos;abonnement est actif immédiatement après le paiement. Vous accédez directement à toutes les fonctionnalités sans attendre.
                                 </div>
                             </details>
                         </div>
