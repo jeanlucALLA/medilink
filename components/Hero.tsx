@@ -32,7 +32,7 @@ export default function Hero() {
                             Débuter
                         </Link>
                     </div>
-                    <p className="text-sm text-gray-400 mt-3">14 jours d&apos;essai gratuit • Sans carte bancaire</p>
+                    <p className="text-sm text-gray-400 mt-3">Développez votre cabinet médical</p>
                 </div>
 
                 {/* Scrolling Professions Ticker (Below CTA) */}
