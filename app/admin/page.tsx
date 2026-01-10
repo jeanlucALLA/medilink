@@ -658,7 +658,7 @@ export default function AdminDashboard() {
 
                                 {/* Sujet */}
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Sujet de l'email</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Sujet de l&apos;email</label>
                                     <input
                                         type="text"
                                         value={notifSubject}
