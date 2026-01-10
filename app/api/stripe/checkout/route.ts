@@ -40,7 +40,7 @@ export async function POST(req: Request) {
                 userId: userId,
                 tier: tier,
             },
-            success_url: `${origin}/dashboard?payment=success&tier=${tier}`,
+            success_url: `${origin}/abonnement/success?session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${origin}/abonnement?payment=cancelled`,
             subscription_data: {
                 metadata: {

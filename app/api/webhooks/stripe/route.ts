@@ -11,6 +11,8 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
 
+import { sendWelcomeEmail } from '@/lib/email-utils' // Nouvelle fonction d'envoi
+
 export async function POST(req: Request) {
     try {
         const body = await req.text()
@@ -43,7 +45,7 @@ export async function POST(req: Request) {
                     .from('profiles')
                     .update({
                         subscription_tier: tier,
-                        stripe_customer_id: session.customer, // On sauvegarde aussi l'ID client si pas déjà fait
+                        stripe_customer_id: session.customer,
                         updated_at: new Date().toISOString()
                     })
                     .eq('id', userId)
@@ -51,6 +53,25 @@ export async function POST(req: Request) {
                 if (error) {
                     console.error('❌ Erreur update supabase:', error)
                     return new NextResponse('Database Error', { status: 500 })
+                }
+
+                // --- ENVOI EMAIL DE BIENVENUE ---
+                try {
+                    // Récupérer l'email et le nom du praticien en une seule requête optimisée
+                    const { data: profile } = await supabase
+                        .from('profiles')
+                        .select('email, nom_complet')
+                        .eq('id', userId)
+                        .single()
+
+                    if (profile?.email) {
+                        const name = profile.nom_complet || 'Docteur'
+                        console.log(`📧 Envoi email de bienvenue à ${profile.email}...`)
+                        await sendWelcomeEmail(profile.email, name)
+                    }
+                } catch (emailErr) {
+                    console.error('⚠️ Avertissement: Echec envoi email bienvenue:', emailErr)
+                    // On ne bloque pas le retour 200 à Stripe car le paiement est valide
                 }
             }
         }
