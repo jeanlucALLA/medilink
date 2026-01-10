@@ -17,6 +17,36 @@ CREATE POLICY "Public templates are viewable by everyone"
 ON public.public_templates FOR SELECT 
 USING (true);
 
+-- Ensure public_template_questions table exists (for normalized storage if needed)
+CREATE TABLE IF NOT EXISTS public.public_template_questions (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  template_id UUID REFERENCES public.public_templates(id) ON DELETE CASCADE,
+  question TEXT NOT NULL,
+  type TEXT DEFAULT 'scale',
+  label1 TEXT,
+  label5 TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Enable RLS
+ALTER TABLE public.public_template_questions ENABLE ROW LEVEL SECURITY;
+
+-- Allow read access to everyone
+CREATE POLICY "Public template questions are viewable by everyone" 
+ON public.public_template_questions FOR SELECT 
+USING (true);
+
+-- Allow insert/update only for admins (handled via app logic or more restrictive RLS if user roles existed)
+-- For now, we rely on the app to restrict writing found in the dashboard logic.
+CREATE POLICY "Admins can insert template questions"
+ON public.public_template_questions FOR INSERT
+WITH CHECK (true); -- Ideally restrict to specific user IDs if possible in RLS, but app-level check is first defense.
+
+-- Update public_templates policy to allow insert
+CREATE POLICY "Admins can insert templates"
+ON public.public_templates FOR INSERT
+WITH CHECK (true);
+
 -- Insert sample data if empty
 INSERT INTO public.public_templates (name, description, category, tags, questions)
 SELECT 

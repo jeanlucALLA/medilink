@@ -150,14 +150,24 @@ export default function LibraryPage() {
             <Toaster position="bottom-right" />
 
             <div className="max-w-6xl mx-auto space-y-8">
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-                        <Library className="w-8 h-8 text-primary" />
-                        Bibliothèque de Modèles
-                    </h1>
-                    <p className="text-gray-600 mt-2 text-lg">
-                        Explorez nos questionnaires validés et importez-les en un clic.
-                    </p>
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+                            <Library className="w-8 h-8 text-primary" />
+                            Bibliothèque de Modèles
+                        </h1>
+                        <p className="text-gray-600 mt-2 text-lg">
+                            Explorez nos questionnaires validés et importez-les en un clic.
+                        </p>
+                    </div>
+
+                    {/* Admin Access Link - Hidden in production ideally, or protected by middleware */}
+                    <button
+                        onClick={() => router.push('/dashboard/library/create')}
+                        className="text-sm font-medium text-gray-500 hover:text-primary transition-colors flex items-center gap-1"
+                    >
+                        + Contribuer
+                    </button>
                 </div>
 
                 {/* Search Bar */}
