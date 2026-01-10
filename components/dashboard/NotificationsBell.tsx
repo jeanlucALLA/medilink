@@ -86,6 +86,10 @@ export default function NotificationsBell({ variant = 'header' }: NotificationsB
         return
       }
 
+      // Charger le timestamp de dernière vue
+      const lastViewedStr = localStorage.getItem('notifications_last_viewed')
+      const lastViewed = lastViewedStr ? new Date(lastViewedStr).getTime() : 0
+
       // Charger les résolutions depuis localStorage
       const savedResolutions = localStorage.getItem('alert_resolutions')
       let resolutionsMap = new Map<string, any>()
@@ -99,27 +103,21 @@ export default function NotificationsBell({ variant = 'header' }: NotificationsB
         }
       }
 
-      // Compter les notifications
+      // Filtrer les réponses pour ne garder que les non-vues
       const responses = responsesData || []
+      const unseenResponses = responses.filter(r => new Date(r.submitted_at).getTime() > lastViewed)
 
-      // Compter les réponses critiques (score ≤ 2)
-      const criticalCount = responses.filter((r: any) => r.score_total <= 2).length
+      // Compter les réponses critiques (score ≤ 2) PARMI les non-vues
+      const criticalCount = unseenResponses.filter((r: any) => r.score_total <= 2).length
 
-      // Compter les réponses avec statut 'nouveau' (pas de résolution ou statut 'new')
-      const newCount = responses.filter((r: any) => {
+      // Compter les les nouvelles (logique simplifiée car on filtre déjà par date de vue)
+      // On garde quand même la vérification de résolution au cas où
+      const newCount = unseenResponses.filter((r: any) => {
         const resolution = resolutionsMap.get(r.id)
-        // Pas de résolution OU statut explicitement 'new'
         return !resolution || resolution.status === 'new' || !resolution.status
       }).length
 
-      // Le total est le nombre de réponses qui sont nouvelles OU critiques
-      // (une réponse peut être à la fois nouvelle et critique)
-      const totalCount = responses.filter((r: any) => {
-        const resolution = resolutionsMap.get(r.id)
-        const isNew = !resolution || resolution.status === 'new' || !resolution.status
-        const isCritical = r.score_total <= 2
-        return isNew || isCritical
-      }).length
+      const totalCount = unseenResponses.length
 
       if (isMountedRef.current) {
         setNotificationCount({
@@ -170,8 +168,8 @@ export default function NotificationsBell({ variant = 'header' }: NotificationsB
       <button
         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
         className={`relative p-2 rounded-lg transition-colors ${isSidebar
-            ? 'text-white/80 hover:text-white hover:bg-white/10'
-            : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'
+          ? 'text-white/80 hover:text-white hover:bg-white/10'
+          : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'
           }`}
         aria-label="Notifications"
       >
@@ -230,6 +228,8 @@ export default function NotificationsBell({ variant = 'header' }: NotificationsB
 
                 <button
                   onClick={() => {
+                    localStorage.setItem('notifications_last_viewed', new Date().toISOString())
+                    setNotificationCount({ total: 0, critical: 0, new: 0 }) // Instant feedback
                     setIsDropdownOpen(false)
                     router.push('/dashboard/resolution')
                   }}
