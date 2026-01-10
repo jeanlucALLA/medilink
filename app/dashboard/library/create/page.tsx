@@ -7,7 +7,7 @@ import { ArrowLeft, Plus, Save, Trash2, Tag, Loader2, Lock } from 'lucide-react'
 import { Toaster, toast } from 'react-hot-toast'
 
 // REMPLACEZ PAR VOTRE EMAIL - C'est une sécurité simple côté client/serveur
-const ADMIN_EMAILS = ['admin@medilink.fr', 'jeanluc@podologue-alla.fr', 'test@test.fr'] // Ajoutez votre email ici
+const ADMIN_EMAILS = ['admin@medilink.fr', 'jeanluc@podologue-alla.fr', 'jeanlucallaa@yahoo.fr'] // Emails autorisés
 
 export default function CreateTemplatePage() {
     const router = useRouter()
