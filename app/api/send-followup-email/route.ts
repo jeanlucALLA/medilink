@@ -164,8 +164,21 @@ export async function POST(request: Request) {
       scheduledAt = date.toISOString()
     }
 
+    const envFrom = process.env.RESEND_FROM_EMAIL
+    let fromEmail = 'onboarding@resend.dev'
+
+    if (envFrom) {
+      // Tente d'extraire l'email si le format est "Nom <email>"
+      const match = envFrom.match(/<(.+)>/)
+      if (match && match[1]) {
+        fromEmail = match[1]
+      } else {
+        fromEmail = envFrom.trim()
+      }
+    }
+
     const data = await resend.emails.send({
-      from: `Dr. ${practitionerName} via Medi.Link <onboarding@resend.dev>`,
+      from: `Dr. ${practitionerName} via Medi.Link <${fromEmail}>`,
       to: [patientEmail],
       reply_to: practitionerEmail,
       subject: `Suivi médical - ${cabinetName}`,
