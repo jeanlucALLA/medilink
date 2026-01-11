@@ -65,6 +65,52 @@ export default function AdminDashboard() {
     }, [])
 
     useEffect(() => {
+        if (!isAdmin) return
+
+        let channel: any
+
+        const setupRealtime = async () => {
+            const { supabase } = await import('@/lib/supabase') as any
+
+            channel = supabase
+                .channel('admin-dashboard-users')
+                .on(
+                    'postgres_changes',
+                    {
+                        event: '*',
+                        schema: 'public',
+                        table: 'profiles'
+                    },
+                    (payload: any) => {
+                        console.log('Realtime change:', payload)
+
+                        if (payload.eventType === 'INSERT') {
+                            const newProfile = payload.new
+                            // On ajoute le nouveau profil en haut de la liste
+                            setUsers(prev => [newProfile, ...prev])
+                            toast.success(`🎉 Nouveau praticien : ${newProfile.nom_complet || 'Inconnu'}`)
+                        }
+                        else if (payload.eventType === 'UPDATE') {
+                            const updatedProfile = payload.new
+                            setUsers(prev => prev.map(u => u.id === updatedProfile.id ? { ...u, ...updatedProfile } : u))
+                        }
+                    }
+                )
+                .subscribe()
+        }
+
+        setupRealtime()
+
+        return () => {
+            if (channel) {
+                import('@/lib/supabase').then(({ supabase }: any) => {
+                    supabase.removeChannel(channel)
+                })
+            }
+        }
+    }, [isAdmin])
+
+    useEffect(() => {
         const checkAdmin = async () => {
             try {
                 const { supabase } = await import('@/lib/supabase') as any
