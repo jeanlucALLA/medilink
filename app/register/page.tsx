@@ -110,7 +110,6 @@ export default function RegisterPage() {
               zip_code: formData.zip_code,
               email: formData.email,
               subscription_tier: 'discovery', // Default tier
-              role: 'praticien', // Explicit role for admin filtering
               updated_at: new Date().toISOString(),
             },
           ])
