@@ -109,6 +109,8 @@ export default function RegisterPage() {
               adresse_cabinet: formData.adresseCabinet,
               zip_code: formData.zip_code,
               email: formData.email,
+              subscription_tier: 'discovery', // Default tier
+              role: 'praticien', // Explicit role for admin filtering
               updated_at: new Date().toISOString(),
             },
           ])
