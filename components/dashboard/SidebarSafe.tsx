@@ -16,7 +16,8 @@ import {
   TestTube,
   X,
   Library,
-  Shield
+  Shield,
+  MessageSquare
 } from 'lucide-react'
 import NotificationsBell from './NotificationsBell'
 
@@ -89,6 +90,7 @@ export default function SidebarSafe({ onLogout, sidebarOpen = true, onToggleSide
     { href: '/dashboard/questionnaire', label: 'Questionnaire', icon: FileText },
     { href: '/dashboard/parrainage', label: 'Parrainage', icon: Gift },
     { href: '/dashboard/library', label: 'Bibliothèque', icon: Library },
+    { href: '/dashboard/contact', label: 'Contact / Support', icon: MessageSquare },
     { href: '/dashboard/settings', label: 'Paramètres', icon: Settings },
     ...(isAdmin ? [{ href: '/admin', label: 'Administration', icon: Shield }] : [])
   ]
