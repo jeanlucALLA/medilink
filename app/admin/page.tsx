@@ -103,12 +103,14 @@ export default function AdminDashboard() {
 
                 if (response.ok) {
                     const { users: realUsers } = await response.json()
-                    if (realUsers && realUsers.length > 0) {
+                    // Si on a des utilisateurs, on met à jour.
+                    // Même si c'est vide, on met à jour pour effacer les anciens potentiels.
+                    if (realUsers) {
                         setUsers(realUsers)
                     }
                 } else {
-                    console.error('Erreur chargement users API')
-                    // Fallback ? Non, car pour l'emailing, l'API est critique.
+                    console.error('Erreur chargement users API:', response.statusText)
+                    toast.error(`Erreur chargement: ${response.statusText} (${response.status})`)
                 }
 
                 setLoading(false)
