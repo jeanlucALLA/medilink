@@ -565,12 +565,12 @@ export default function AdminDashboard() {
                                             <td className="px-8 py-5">
                                                 <div className="flex items-center gap-3">
                                                     <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 font-bold text-sm">
-                                                        {user.nom_complet?.charAt(0) || 'U'}
+                                                        {(user.full_name || user.nom_complet || user.displayName || 'U').charAt(0).toUpperCase()}
                                                     </div>
-                                                    <span className="font-bold text-gray-900">{user.nom_complet}</span>
+                                                    <span className="font-bold text-gray-900">{user.full_name || user.nom_complet || user.displayName || 'Utilisateur'}</span>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-5 text-gray-600 font-medium">{user.specialty || user.specialite || '—'}</td>
+                                            <td className="px-6 py-5 text-gray-600 font-medium">{user.speciality || user.specialite || user.specialty || '—'}</td>
                                             <td className="px-6 py-5 text-gray-500">{user.city || user.ville || '—'}</td>
                                             <td className="px-6 py-5">
                                                 <div className="relative inline-block">

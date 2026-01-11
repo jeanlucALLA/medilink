@@ -96,27 +96,20 @@ export default function RegisterPage() {
       }
 
       if (authData.user) {
-        // Enregistrer les détails du profil dans la table profiles
+        // ACTION 1 : Mise à jour immédiate du profil créé par le Trigger
         const { error: profileError } = await supabase
           .from('profiles')
-          .upsert([
-            {
-              id: authData.user.id,
-              nom_complet: formData.nomComplet,
-              specialite: formData.specialite || null,
-              rpps: formData.rpps || null,
-              cabinet: formData.cabinet,
-              adresse_cabinet: formData.adresseCabinet,
-              zip_code: formData.zip_code,
-              email: formData.email,
-              subscription_tier: 'discovery', // Default tier
-              updated_at: new Date().toISOString(),
-            },
-          ])
+          .update({
+            full_name: formData.nomComplet,
+            speciality: formData.specialite || null,
+            subscription_tier: 'discovery',
+            // On garde les anciens champs au cas où (rétrocompatibilité) ou si le trigger n'a pas tout géré
+            // city: formData.zip_code, // On met le CP en attendant mieux pour la ville
+          })
+          .eq('id', authData.user.id)
 
         if (profileError) {
-          console.error('Erreur lors de la création du profil:', profileError)
-          // On continue quand même car l'utilisateur est créé
+          console.error('Erreur lors de la mise à jour du profil:', profileError)
         }
 
         // Gérer le parrainage si un code de référence existe
