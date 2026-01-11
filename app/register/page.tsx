@@ -36,11 +36,13 @@ export default function RegisterPage() {
         // Stocker le code dans localStorage pour ne pas le perdre
         localStorage.setItem('medi_link_referral_code', refParam)
         setReferralCode(refParam)
+        setFormData(prev => ({ ...prev, referralCode: refParam }))
       } else {
         // Vérifier si un code existe déjà dans localStorage
         const storedCode = localStorage.getItem('medi_link_referral_code')
         if (storedCode) {
           setReferralCode(storedCode)
+          setFormData(prev => ({ ...prev, referralCode: storedCode }))
         }
       }
     }
