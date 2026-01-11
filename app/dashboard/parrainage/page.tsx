@@ -34,82 +34,44 @@ export default function ParrainagePage() {
 
         setUserId(user.id)
 
-        // Récupérer le referral_code depuis la table profiles
+        // Récupérer le referral_code et le compteur depuis la table profiles
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select('referral_code')
+          .select('referral_code, referrals_count')
           .eq('id', user.id)
           .single()
 
         if (profileError) {
           console.error('[Parrainage] Erreur récupération profil:', profileError)
-          // Si pas de referral_code, utiliser l'ID utilisateur comme fallback
-          const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://medi.link'
-          setReferralLink(`${baseUrl}/register?ref=${user.id}`)
         } else {
-          // Utiliser le referral_code s'il existe, sinon l'ID utilisateur
-          const code = profile?.referral_code || user.id
-          setReferralCode(code)
-
-          // Générer le lien complet avec le referral_code
-          const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://medi.link'
-          const link = `${baseUrl}/register?ref=${code}`
-          setReferralLink(link)
-        }
-
-        // Récupérer la session pour utiliser session.user.id
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-
-        if (sessionError || !session) {
-          console.error('[Parrainage] Erreur récupération session:', sessionError)
-          setLoading(false)
-          return
-        }
-
-        // Appeler la fonction RPC get_referral_count avec user_id
-        const { data: referralCountData, error: rpcError } = await supabase
-          .rpc('get_referral_count', { user_id: session.user.id })
-
-        if (rpcError) {
-          console.error('[Parrainage] Erreur RPC get_referral_count:', rpcError)
-          // Si la fonction RPC n'existe pas encore, compter manuellement
-          const { count, error: countError } = await supabase
-            .from('referrals')
-            .select('*', { count: 'exact', head: true })
-            .eq('referrer_id', session.user.id)
-
-          if (!countError && count !== null) {
-            const countValue = count
-            setReferralsCount(countValue)
-            setStats(prev => ({ ...prev, referredCount: countValue }))
-
-            // Déclencher l'animation de confettis si le score est de 3
-            if (countValue === 3 && !confettiTriggered.current) {
-              confettiTriggered.current = true
-              setShowConfetti(true)
-              setTimeout(() => setShowConfetti(false), 5000) // Disparaît après 5 secondes
-            }
+          // Gestion du code de parrainage
+          if (profile?.referral_code) {
+            setReferralCode(profile.referral_code)
+            const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://medi.link'
+            setReferralLink(`${baseUrl}/register?ref=${profile.referral_code}`)
+          } else {
+            setReferralCode(null)
+            setReferralLink("Génération en cours...")
           }
-        } else {
-          // La fonction RPC retourne le nombre de parrainages
-          const count = referralCountData || 0
+
+          // Gestion du compteur (mis à jour par Trigger SQL)
+          const count = profile?.referrals_count || 0
           setReferralsCount(count)
           setStats(prev => ({ ...prev, referredCount: count }))
 
-          // Déclencher l'animation de confettis si le score est de 3
-          if (count === 3 && !confettiTriggered.current) {
+          // Déclencher l'animation de confettis si le seuil est atteint
+          if (count >= 5 && !confettiTriggered.current) {
             confettiTriggered.current = true
             setShowConfetti(true)
-            setTimeout(() => setShowConfetti(false), 5000) // Disparaît après 5 secondes
+            setTimeout(() => setShowConfetti(false), 5000)
           }
         }
 
-        // Charger les autres statistiques (bonus en attente, total gagné)
-        // TODO: Implémenter selon votre logique métier
+        // Simuler les autres statistiques pour l'instant
         setStats(prev => ({
           ...prev,
-          pendingBonus: 0, // À calculer selon votre logique
-          totalEarned: 0 // À calculer selon votre logique
+          pendingBonus: 0,
+          totalEarned: (profile?.referrals_count || 0) * 9.99 // Exemple de calcul
         }))
 
       } catch (err: any) {

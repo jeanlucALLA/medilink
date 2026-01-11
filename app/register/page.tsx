@@ -81,6 +81,10 @@ export default function RegisterPage() {
           password: formData.password,
           options: {
             emailRedirectTo: `${origin}/auth/callback`,
+            data: {
+              full_name: formData.nomComplet,
+              referral_code: formData.referralCode || undefined // Passer le code au Trigger SQL
+            }
           }
         })
         authData = result.data
