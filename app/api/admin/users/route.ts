@@ -89,16 +89,29 @@ export async function GET(req: Request) {
 
         console.log(`[Admin Users] Auth Users fetched: ${authUsers?.length ?? 0}`)
 
-        // C. Merge
-        const mergedUsers = profiles.map(p => {
-            const u = authUsers.find(a => a.id === p.id)
+        // C. Merge (Auth-First Strategy to reveal users without confirmed profiles)
+        const mergedUsers = authUsers.map(u => {
+            const p = profiles?.find(prof => prof.id === u.id)
+
+            // Si pas de profil, on en crée un temporaire pour l'affichage
             return {
-                ...p,
-                email: u?.email || 'Email introuvable',
+                id: u.id,
+                email: u.email,
+                created_at: u.created_at, // Use Auth creation date by default
+                nom_complet: p?.nom_complet || u.email?.split('@')[0] || 'Utilisateur',
+                cabinet: p?.cabinet || 'Non renseigné',
+                ville: p?.city || p?.ville || '',
+                specialite: p?.specialty || p?.specialite || 'Inconnu',
+                subscription_tier: p?.subscription_tier || 'discovery', // Default to discovery if missing
+                satisfaction_score: p?.satisfaction_score || 0,
+                is_profile_missing: !p // Flag for UI if needed
             }
         })
 
-        console.log(`[Admin Users] Merged count: ${mergedUsers.length}`)
+        // Sort by most recent signup
+        mergedUsers.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+
+        console.log(`[Admin Users] Final Merged Count (Auth-based): ${mergedUsers.length}`)
 
         return NextResponse.json({ users: mergedUsers })
 
