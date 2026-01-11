@@ -567,7 +567,10 @@ export default function AdminDashboard() {
                                                     <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 font-bold text-sm">
                                                         {(user.full_name || user.nom_complet || user.displayName || 'U').charAt(0).toUpperCase()}
                                                     </div>
-                                                    <span className="font-bold text-gray-900">{user.full_name || user.nom_complet || user.displayName || 'Utilisateur'}</span>
+                                                    <div className="flex flex-col">
+                                                        <span className="font-bold text-gray-900">{user.full_name || user.nom_complet || user.displayName || 'Utilisateur'}</span>
+                                                        <span className="text-xs text-gray-400 font-normal">{user.email}</span>
+                                                    </div>
                                                 </div>
                                             </td>
                                             <td className="px-6 py-5 text-gray-600 font-medium">{user.speciality || user.specialite || user.specialty || '—'}</td>
@@ -622,10 +625,23 @@ export default function AdminDashboard() {
                                                 {new Date(user.created_at).toLocaleDateString('fr-FR')}
                                             </td>
                                             <td className="px-6 py-5 text-right">
-                                                <button className="text-gray-400 hover:text-primary transition-colors flex items-center justify-end gap-1 ml-auto font-medium text-sm group-hover:visible">
-                                                    <span>Détails</span>
-                                                    <MoreHorizontal className="w-4 h-4" />
-                                                </button>
+                                                <div className="flex items-center justify-end gap-3 opacity-90 group-hover:opacity-100 transition-opacity">
+                                                    <button
+                                                        onClick={() => {
+                                                            setEmailTarget(user.email || '')
+                                                            setEmailSubject(`Message du support Medi.Link pour Dr. ${user.full_name || user.nom_complet || ''}`)
+                                                            setShowEmailModal(true)
+                                                        }}
+                                                        className="text-gray-400 hover:text-primary transition-colors p-1 hover:bg-blue-50 rounded-full"
+                                                        title="Envoyer un email"
+                                                    >
+                                                        <Mail className="w-4 h-4" />
+                                                    </button>
+                                                    <button className="text-gray-400 hover:text-primary transition-colors flex items-center gap-1 font-medium text-sm">
+                                                        <span>Détails</span>
+                                                        <MoreHorizontal className="w-4 h-4" />
+                                                    </button>
+                                                </div>
                                                 <div className="text-xs text-gray-400 mt-1">
                                                     Score: <span className="text-gray-900 font-bold">{user.satisfaction_score}</span>/5
                                                 </div>
