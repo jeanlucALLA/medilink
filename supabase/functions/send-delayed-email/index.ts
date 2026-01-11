@@ -126,7 +126,18 @@ serve(async (req) => {
           .single()
 
         const practitionerName = profile?.nom_complet || 'Votre praticien'
-        const practitionerEmail = profile?.email || 'jeanlucallaa@yahoo.fr'
+        const practitionerEmail = profile?.email
+
+        if (!practitionerEmail) {
+          console.error(`Email du praticien introuvable pour le profil ${questionnaire.user_id}`)
+          results.push({
+            questionnaire_id: questionnaire.id,
+            status: 'error',
+            error: 'Practitioner email not found',
+          })
+          continue
+        }
+
 
         // Construire le lien du questionnaire
         const questionnaireLink = `${APP_URL}/survey/${questionnaire.id}`
@@ -209,7 +220,7 @@ Vos données sont traitées de manière sécurisée et confidentielle.
             'Authorization': `Bearer ${RESEND_API_KEY}`,
           },
           body: JSON.stringify({
-            from: 'Medi.Link <onboarding@resend.dev>', // Utiliser le domaine de test Resend par défaut
+            from: Deno.env.get('RESEND_FROM_EMAIL') || 'Medi.Link <onboarding@resend.dev>',
             to: questionnaire.patient_email,
             subject: emailSubject,
             html: emailHtml,

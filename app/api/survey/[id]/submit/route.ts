@@ -29,13 +29,13 @@ async function sendPractitionerNotification(questionnaireId: string, userId: str
     // Récupérer l'email du praticien depuis la table profiles
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    
+
     let practitionerEmail: string | null = null
-    
+
     if (supabaseUrl && supabaseKey) {
       try {
         const supabase = createClient(supabaseUrl, supabaseKey)
-        
+
         const { data: profile } = await supabase
           .from('profiles')
           .select('email')
@@ -58,7 +58,7 @@ async function sendPractitionerNotification(questionnaireId: string, userId: str
 
     // Envoyer l'email de notification
     await resend.emails.send({
-      from: process.env.EMAIL_FROM || 'Medi.Link <noreply@medilink.fr>',
+      from: process.env.RESEND_FROM_EMAIL || 'Medi.Link <onboarding@resend.dev>',
       to: practitionerEmail,
       subject: `Nouvelle réponse reçue : ${pathologie}`,
       html: `
@@ -129,13 +129,13 @@ async function sendAlertEmail(alertData: AlertData) {
     // Récupérer l'email du praticien depuis la table profiles
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    
-    let practitionerEmail = 'jeanlucallaa@yahoo.fr' // Email par défaut
-    
+
+    let practitionerEmail: string | null = null
+
     if (supabaseUrl && supabaseKey) {
       try {
         const supabase = createClient(supabaseUrl, supabaseKey)
-        
+
         const { data: profile } = await supabase
           .from('profiles')
           .select('email')
@@ -147,13 +147,18 @@ async function sendAlertEmail(alertData: AlertData) {
         }
       } catch (profileError) {
         console.error('Erreur lors de la récupération du profil:', profileError)
-        // On utilise l'email par défaut
+        return // Stop execution if we can't get the email
       }
+    }
+
+    if (!practitionerEmail) {
+      console.error('[Alert] Email du praticien introuvable, alerte non envoyée.')
+      return
     }
 
     // Envoyer l'email d'alerte
     const emailResult = await resend.emails.send({
-      from: process.env.EMAIL_FROM || 'Medi.Link <noreply@medilink.fr>',
+      from: process.env.RESEND_FROM_EMAIL || 'Medi.Link <onboarding@resend.dev>',
       to: practitionerEmail,
       subject: '⚠️ ALERTE CRITIQUE : Score bas détecté pour un patient',
       html: `
@@ -226,7 +231,7 @@ Système d'alerte pour scores bas (≤ 2/5)
     if (supabaseUrl && supabaseKey && emailResult.data?.id) {
       try {
         const supabase = createClient(supabaseUrl, supabaseKey)
-        
+
         await supabase
           .from('alerts_log')
           .insert({
@@ -248,15 +253,15 @@ Système d'alerte pour scores bas (≤ 2/5)
     console.log(`[Alert] Email d'alerte envoyé pour le score ${alertData.scoreTotal}/5 (Pathologie: ${alertData.pathologie})`)
   } catch (error: any) {
     console.error('[Alert] Erreur lors de l\'envoi de l\'email d\'alerte:', error)
-    
+
     // Enregistrer le log même en cas d'erreur
     try {
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
       const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-      
+
       if (supabaseUrl && supabaseKey) {
         const supabase = createClient(supabaseUrl, supabaseKey)
-        
+
         await supabase
           .from('alerts_log')
           .insert({
@@ -273,7 +278,7 @@ Système d'alerte pour scores bas (≤ 2/5)
     } catch (logError) {
       console.error('Erreur lors de l\'enregistrement du log d\'alerte (erreur):', logError)
     }
-    
+
     throw error
   }
 }
@@ -338,10 +343,10 @@ export async function POST(
     try {
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
       const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-      
+
       if (supabaseUrl && supabaseKey) {
         const supabase = createClient(supabaseUrl, supabaseKey)
-        
+
         // Récupérer le questionnaire pour obtenir la pathologie, user_id et patient_email
         const { data: questionnaireData } = await supabase
           .from('questionnaires')

@@ -3,6 +3,9 @@ import { createClient } from '@supabase/supabase-js' // Use direct supabase-js f
 import { createServerClient } from '@supabase/ssr' // For auth check
 import { cookies } from 'next/headers'
 
+export const dynamic = 'force-dynamic'
+
+
 // Admin Client to access auth.users
 const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
