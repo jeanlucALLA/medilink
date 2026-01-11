@@ -5,6 +5,7 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'https://medilink-sante.com'),
   title: 'Medi.Link | Questionnaires Médicaux & Suivi Patient Automatisé',
   description: 'Digitalisez votre cabinet : questionnaires de santé sur-mesure, suivi post-consultation automatisé et boostez vos avis Google. Essai gratuit.',
   keywords: ['questionnaire médical', 'suivi patient', 'logiciel cabinet médical', 'e-réputation médecin', 'avis google santé'],
