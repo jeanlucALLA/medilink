@@ -663,15 +663,7 @@ export default function SettingsPage() {
               </button>
             </div>
 
-            {/* Note sur la configuration */}
-            <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-xs text-blue-800 mb-2">
-                <strong>Note :</strong> Pour l&apos;envoi d&apos;emails, le système utilise désormais <strong>Resend</strong>. <a href="https://resend.com" target="_blank" rel="noopener noreferrer" className="underline">Voir le dashboard</a>.
-              </p>
-              <p className="text-xs text-blue-700">
-                Variable requise : <code className="bg-blue-100 px-1 rounded">RESEND_API_KEY</code> dans <code className="bg-blue-100 px-1 rounded">.env.local</code>
-              </p>
-            </div>
+
           </div>
         </div>
 
