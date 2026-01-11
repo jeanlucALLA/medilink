@@ -306,7 +306,7 @@ export default function DashboardPage() {
   }
 
   useEffect(() => {
-    let timeoutId: ReturnType<typeof setTimeout> | null = null
+
     let authStateSubscription: { data: { subscription: { unsubscribe: () => void } } } | null = null
 
     const checkAuthAndLoadProfile = async () => {
@@ -421,26 +421,11 @@ export default function DashboardPage() {
     setupAuthListener()
     checkAuthAndLoadProfile()
 
-    timeoutId = setTimeout(async () => {
-      if (isMountedRef.current && loading) {
-        try {
-          const { data: { session } } = await supabase.auth.getSession()
 
-          if (!session && isMountedRef.current) {
-            console.error('[Dashboard] Timeout: Aucune session après 20s')
-            router.push('/login')
-          }
-        } catch (err) {
-          console.error('[Dashboard] Erreur timeout check:', err)
-        }
-      }
-    }, 20000)
 
     return () => {
       isMountedRef.current = false
-      if (timeoutId) {
-        clearTimeout(timeoutId)
-      }
+
       if (authStateSubscription?.data?.subscription) {
         try {
           authStateSubscription.data.subscription.unsubscribe()
@@ -450,6 +435,28 @@ export default function DashboardPage() {
       }
     }
   }, [router])
+
+  useEffect(() => {
+    let timeoutId: ReturnType<typeof setTimeout>
+
+    if (loading) {
+      timeoutId = setTimeout(async () => {
+        try {
+          const { data: { session } } = await supabase.auth.getSession()
+          if (!session) {
+            console.error('[Dashboard] Timeout: Session introuvable')
+            router.push('/login')
+          }
+        } catch (err) {
+          console.error('[Dashboard] Erreur timeout check:', err)
+        }
+      }, 20000)
+    }
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId)
+    }
+  }, [loading, router])
 
   useEffect(() => {
     if (!loading && profile) {
