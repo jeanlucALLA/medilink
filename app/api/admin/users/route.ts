@@ -97,14 +97,18 @@ export async function GET(req: Request) {
             return {
                 id: u.id,
                 email: u.email,
-                created_at: u.created_at, // Use Auth creation date by default
-                nom_complet: p?.nom_complet || u.email?.split('@')[0] || 'Utilisateur',
+                created_at: u.created_at,
+                // Mappage des nouvelles colonnes SQL (full_name, speciality) vers le format attendu
+                nom_complet: p?.full_name || p?.nom_complet || u.email?.split('@')[0] || 'Utilisateur',
+                full_name: p?.full_name || p?.nom_complet, // Ajout explicite
                 cabinet: p?.cabinet || 'Non renseigné',
+                city: p?.city || p?.ville || '',
                 ville: p?.city || p?.ville || '',
-                specialite: p?.specialty || p?.specialite || 'Inconnu',
-                subscription_tier: p?.subscription_tier || 'discovery', // Default to discovery if missing
+                specialite: p?.speciality || p?.specialite || 'Inconnu',
+                speciality: p?.speciality || p?.specialite, // Ajout explicite
+                subscription_tier: p?.subscription_tier || 'discovery',
                 satisfaction_score: p?.satisfaction_score || 0,
-                is_profile_missing: !p // Flag for UI if needed
+                is_profile_missing: !p
             }
         })
 
