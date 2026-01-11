@@ -62,32 +62,43 @@ export async function GET(req: Request) {
         }
 
         // 3. Fetch Data (Server-Side Join basically)
+        console.log('[Admin Users] Starting fetch...')
+
         // A. Get Profiles
         const { data: profiles, error: dbError } = await supabaseAdmin
             .from('profiles')
             .select('*')
             .order('created_at', { ascending: false })
 
-        if (dbError) throw dbError
+        if (dbError) {
+            console.error('[Admin Users] DB Error:', dbError)
+            throw dbError
+        }
 
-        // B. Get Users (Auth) - List Users (Requires Service Role)
-        // Limitation: listUsers pages. Default 50. We need all.
-        // For now, let's fetch first 1000? page 1, 1000 per page?
-        // Note: listUsers is deprecated somewhat in favor of managing users via DB if possible, but for admin lists we need it.
+        console.log(`[Admin Users] Profiles fetched: ${profiles?.length ?? 0}`)
+
+        // B. Get Users (Auth)
         const { data: { users: authUsers }, error: authError } = await supabaseAdmin.auth.admin.listUsers({
             perPage: 1000
         })
 
-        if (authError) throw authError
+        if (authError) {
+            console.error('[Admin Users] Auth Error:', authError)
+            throw authError
+        }
+
+        console.log(`[Admin Users] Auth Users fetched: ${authUsers?.length ?? 0}`)
 
         // C. Merge
         const mergedUsers = profiles.map(p => {
             const u = authUsers.find(a => a.id === p.id)
             return {
                 ...p,
-                email: u?.email || null, // Inject Email
+                email: u?.email || 'Email introuvable',
             }
         })
+
+        console.log(`[Admin Users] Merged count: ${mergedUsers.length}`)
 
         return NextResponse.json({ users: mergedUsers })
 
