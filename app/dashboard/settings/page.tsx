@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { User, Building2, CreditCard, Save, Loader2, CheckCircle, Shield, Lock, Mail, Send, MapPin, Map } from 'lucide-react'
+import { User, Building2, CreditCard, Save, Loader2, CheckCircle, Shield, Lock, Mail, Send, MapPin, Map, AlertTriangle } from 'lucide-react'
 import { geocodePostalCode, extractDepartmentCode } from '@/lib/geocoding'
 
 // Fonction pour extraire les initiales du nom complet (réutilisée depuis SidebarSafe)
@@ -55,6 +55,7 @@ export default function SettingsPage() {
   const [sendingTestEmail, setSendingTestEmail] = useState(false)
   const [testEmailSuccess, setTestEmailSuccess] = useState(false)
   const [testEmailError, setTestEmailError] = useState<string | null>(null)
+  const [showUnsubscribeModal, setShowUnsubscribeModal] = useState(false)
 
   // Charger les données du profil
   useEffect(() => {
@@ -740,62 +741,102 @@ export default function SettingsPage() {
           </div>
 
           <div className="space-y-4">
-            {subscriptionStatus !== 'Gratuit' && (
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
-                <div>
-                  <p className="text-sm font-medium text-gray-700 mb-1">Statut actuel</p>
-                  <p className={`text-lg font-semibold ${subscriptionStatus === 'Premium' ? 'text-primary' : 'text-gray-900'
-                    }`}>
-                    {subscriptionStatus}
-                  </p>
-                </div>
-                {subscriptionStatus === 'Premium' && (
-                  <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium">
+            {subscriptionStatus === 'Premium' ? (
+              <>
+                <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg border border-green-200">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-green-100 rounded-full">
+                      <CheckCircle className="w-5 h-5 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-green-900">Abonnement Actif</p>
+                      <p className="text-xs text-green-700">Premium</p>
+                    </div>
+                  </div>
+                  <span className="px-3 py-1 bg-white text-green-700 rounded-full text-xs font-bold border border-green-200 shadow-sm">
                     Actif
                   </span>
-                )}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+                  <button
+                    onClick={handleManageSubscription}
+                    disabled={managingSubscription}
+                    className="flex items-center justify-center space-x-2 px-4 py-2 border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 rounded-lg transition-colors font-medium disabled:opacity-50"
+                  >
+                    {managingSubscription ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <CreditCard className="w-4 h-4" />
+                    )}
+                    <span>Gérer</span>
+                  </button>
+
+                  <button
+                    onClick={() => setShowUnsubscribeModal(true)}
+                    disabled={managingSubscription}
+                    className="flex items-center justify-center space-x-2 px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-lg transition-colors font-medium disabled:opacity-50"
+                  >
+                    <span>Se désabonner</span>
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="text-center space-y-4 py-2">
+                <div className="p-4 bg-blue-50 text-blue-900 rounded-lg border border-blue-100 text-sm">
+                  <p>Vous utilisez actuellement la version gratuite.</p>
+                  <p className="mt-1">Passez à Premium pour débloquer les fonctionnalités illimitées.</p>
+                </div>
+                <button
+                  onClick={() => window.location.href = '/abonnement'}
+                  className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-primary hover:bg-primary-dark text-white rounded-lg transition-colors font-semibold shadow-sm hover:shadow"
+                >
+                  <CreditCard className="w-5 h-5" />
+                  <span>S&apos;abonner maintenant</span>
+                </button>
               </div>
             )}
-
-            {subscriptionStatus !== 'Gratuit' && (
-              <>
-                <button
-                  onClick={handleManageSubscription}
-                  disabled={managingSubscription}
-                  className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {managingSubscription ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Redirection...</span>
-                    </>
-                  ) : (
-                    <>
-                      <CreditCard className="w-4 h-4" />
-                      <span>Gérer mon abonnement</span>
-                    </>
-                  )}
-                </button>
-
-                <button
-                  onClick={handleManageSubscription}
-                  disabled={managingSubscription}
-                  className="w-full text-center text-sm text-red-600 hover:text-red-700 font-medium transition-colors"
-                >
-                  Se désabonner
-                </button>
-              </>
-            )}
-
-            <p className="text-xs text-gray-500 text-center">
-              {subscriptionStatus === 'Gratuit'
-                ? 'Passez à Premium pour débloquer toutes les fonctionnalités avancées'
-                : 'Gérez votre abonnement et vos méthodes de paiement'
-              }
-            </p>
           </div>
         </div>
       </div>
+
+      {/* Modal de confirmation de désabonnement */}
+      {showUnsubscribeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 space-y-6 animate-in zoom-in-95 duration-200">
+            <div className="text-center space-y-2">
+              <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                <AlertTriangle className="w-6 h-6 text-red-600" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900">Arrêter l&apos;abonnement ?</h3>
+              <p className="text-sm text-gray-500 leading-relaxed">
+                Voulez-vous vraiment rediriger vers le portail pour annuler votre abonnement ?
+                <br />
+                <span className="font-medium text-gray-700">Votre accès restera actif jusqu&apos;à la fin de la période en cours.</span>
+              </p>
+            </div>
+
+            <div className="flex flex-col space-y-3 sm:flex-row sm:space-y-0 sm:space-x-3">
+              <button
+                onClick={() => setShowUnsubscribeModal(false)}
+                className="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={() => {
+                  setShowUnsubscribeModal(false)
+                  handleManageSubscription()
+                }}
+                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-bold shadow-md transition-all hover:scale-[1.02]"
+              >
+                Confirmer l&apos;arrêt
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
 
     </div>
   )
