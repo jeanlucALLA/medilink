@@ -99,7 +99,7 @@ export default function RegisterPage() {
         // Enregistrer les détails du profil dans la table profiles
         const { error: profileError } = await supabase
           .from('profiles')
-          .insert([
+          .upsert([
             {
               id: authData.user.id,
               nom_complet: formData.nomComplet,
@@ -109,6 +109,7 @@ export default function RegisterPage() {
               adresse_cabinet: formData.adresseCabinet,
               zip_code: formData.zip_code,
               email: formData.email,
+              updated_at: new Date().toISOString(),
             },
           ])
 
