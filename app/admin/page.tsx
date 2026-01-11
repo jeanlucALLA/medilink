@@ -23,18 +23,9 @@ import {
 import { toast } from 'react-hot-toast'
 import jsPDF from 'jspdf'
 
-// Mock Data pour le design initial (en attendant que la BDD soit peuplée)
-const MOCK_USERS = [
-    { id: '1', nom_complet: 'Dr. Sophie Martin', specialite: 'Généraliste', ville: 'Paris', subscription_tier: 'premium', created_at: '2025-09-15T10:00:00Z', satisfaction_score: 4.8 },
-    { id: '2', nom_complet: 'Dr. Thomas Dubreuil', specialite: 'Dentiste', ville: 'Lyon', subscription_tier: 'cabinet', created_at: '2025-10-02T14:30:00Z', satisfaction_score: 4.9 },
-    { id: '3', nom_complet: 'Mme. Julie Roux', specialite: 'Ostéopathe', ville: 'Bordeaux', subscription_tier: 'discovery', created_at: '2025-11-20T09:15:00Z', satisfaction_score: 4.5 },
-    { id: '4', nom_complet: 'Dr. Marc Levy', specialite: 'Cardiologue', ville: 'Nice', subscription_tier: 'premium', created_at: '2025-12-05T16:45:00Z', satisfaction_score: 4.7 },
-    { id: '5', nom_complet: 'Cabinet des Lilas', specialite: 'Groupe Médical', ville: 'Paris', subscription_tier: 'cabinet', created_at: '2025-12-10T11:20:00Z', satisfaction_score: 4.2 },
-]
-
 export default function AdminDashboard() {
     const [isAdmin, setIsAdmin] = useState<boolean | null>(null)
-    const [users, setUsers] = useState<any[]>(MOCK_USERS)
+    const [users, setUsers] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [filterCity, setFilterCity] = useState('')
     const [filterSpecialty, setFilterSpecialty] = useState('')
