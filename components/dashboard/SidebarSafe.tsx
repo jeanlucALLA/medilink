@@ -93,7 +93,7 @@ export default function SidebarSafe({ onLogout, sidebarOpen = true, onToggleSide
     ...(isAdmin ? [{ href: '/admin', label: 'Administration', icon: Shield }] : [])
   ]
 
-  const testMenuItem = { href: '/dashboard/test-links', label: 'Test Liens', icon: TestTube }
+
 
   const handleLinkClick = (href: string, e: React.MouseEvent) => {
     try {
@@ -168,20 +168,7 @@ export default function SidebarSafe({ onLogout, sidebarOpen = true, onToggleSide
           })}
         </nav>
 
-        {/* Lien de test */}
-        <div className="mt-auto pt-4 border-t border-gray-100">
-          <Link
-            href={testMenuItem.href}
-            onClick={(e) => handleLinkClick(testMenuItem.href, e)}
-            className={`flex items-center space-x-3 px-4 py-3 rounded-2xl transition-all duration-200 ${pathname === testMenuItem.href
-              ? 'bg-primary/5 text-primary font-semibold'
-              : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
-              }`}
-          >
-            <TestTube className="w-5 h-5" />
-            <span className="font-medium">{testMenuItem.label}</span>
-          </Link>
-        </div>
+
 
         <div className="mt-4 pt-4 border-t border-gray-100">
           {praticienNom && (
