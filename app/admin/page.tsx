@@ -18,7 +18,8 @@ import {
     Send,
     X,
     FileText,
-    Mail
+    Mail,
+    Inbox
 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import jsPDF from 'jspdf'
@@ -533,7 +534,14 @@ export default function AdminDashboard() {
                         />
                     </div>
 
-                    <div className="w-full md:w-auto">
+                    <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
+                        <Link
+                            href="/admin/messages"
+                            className="px-6 py-3 bg-white text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-all flex items-center justify-center gap-2 border border-gray-200 shadow-sm"
+                        >
+                            <Inbox className="w-4 h-4" />
+                            Messagerie
+                        </Link>
                         <button
                             onClick={() => setShowNotificationModal(true)}
                             className="w-full md:w-auto px-6 py-3 bg-gray-900 text-white font-bold rounded-xl hover:bg-gray-800 transition-all flex items-center justify-center gap-2 shadow-lg shadow-gray-900/10"
