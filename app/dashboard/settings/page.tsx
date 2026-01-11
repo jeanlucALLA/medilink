@@ -784,8 +784,8 @@ export default function SettingsPage() {
             ) : (
               <div className="text-center space-y-4 py-2">
                 <div className="p-4 bg-blue-50 text-blue-900 rounded-lg border border-blue-100 text-sm">
-                  <p>Vous utilisez actuellement le Compte Découverte.</p>
-                  <p className="mt-1">Abonnez-vous pour accéder à toutes les fonctionnalités.</p>
+                  <p className="font-semibold">Abonnement Inactif</p>
+                  <p className="mt-1">Activez votre abonnement pour accéder au service.</p>
                 </div>
                 <button
                   onClick={() => window.location.href = '/abonnement'}
