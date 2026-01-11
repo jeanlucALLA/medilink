@@ -72,7 +72,7 @@ export default function SettingsPage() {
 
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select('*')
+          .select('*, subscription_tier')
           .eq('id', user.id)
           .single()
 
@@ -87,22 +87,19 @@ export default function SettingsPage() {
           setNomComplet(profile.nom_complet || '')
           setCabinet(profile.cabinet || '')
           setAdresseCabinet(profile.adresse_cabinet || '')
-          // Utiliser zip_code si disponible, sinon code_postal (rétrocompatibilité)
           const postalCode = profile.zip_code || profile.code_postal || ''
           setCodePostal(postalCode)
           setCity(profile.city || '')
           setDepartmentCode(profile.department_code || '')
           setGoogleReviewUrl(profile.google_review_url || '')
-          // Pré-remplir l'email de test avec l'email de l'utilisateur si disponible
           if (user.email) {
             setTestEmail(user.email)
           }
-        }
 
-        // Vérifier le statut d'abonnement (à adapter selon votre logique Stripe)
-        // Pour l'instant, on utilise une valeur par défaut
-        // TODO: Récupérer le statut réel depuis Stripe ou votre table d'abonnements
-        setSubscriptionStatus('Gratuit')
+          // Mise à jour du statut d'abonnement réel
+          const tier = profile.subscription_tier
+          setSubscriptionStatus(tier === 'premium' ? 'Premium' : 'Gratuit')
+        }
 
         setLoading(false)
       } catch (err: any) {
@@ -114,6 +111,7 @@ export default function SettingsPage() {
 
     loadProfile()
   }, [])
+
 
   // Sauvegarder les modifications
   const handleSave = async () => {
@@ -759,31 +757,35 @@ export default function SettingsPage() {
               </div>
             )}
 
-            <button
-              onClick={handleManageSubscription}
-              disabled={managingSubscription}
-              className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {managingSubscription ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Redirection...</span>
-                </>
-              ) : (
-                <>
-                  <CreditCard className="w-4 h-4" />
-                  <span>Gérer mon abonnement</span>
-                </>
-              )}
-            </button>
+            {subscriptionStatus !== 'Gratuit' && (
+              <>
+                <button
+                  onClick={handleManageSubscription}
+                  disabled={managingSubscription}
+                  className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {managingSubscription ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Redirection...</span>
+                    </>
+                  ) : (
+                    <>
+                      <CreditCard className="w-4 h-4" />
+                      <span>Gérer mon abonnement</span>
+                    </>
+                  )}
+                </button>
 
-            <button
-              onClick={handleManageSubscription}
-              disabled={managingSubscription}
-              className="w-full text-center text-sm text-red-600 hover:text-red-700 font-medium transition-colors"
-            >
-              Se désabonner
-            </button>
+                <button
+                  onClick={handleManageSubscription}
+                  disabled={managingSubscription}
+                  className="w-full text-center text-sm text-red-600 hover:text-red-700 font-medium transition-colors"
+                >
+                  Se désabonner
+                </button>
+              </>
+            )}
 
             <p className="text-xs text-gray-500 text-center">
               {subscriptionStatus === 'Gratuit'
