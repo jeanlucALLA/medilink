@@ -742,20 +742,22 @@ export default function SettingsPage() {
           </div>
 
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
-              <div>
-                <p className="text-sm font-medium text-gray-700 mb-1">Statut actuel</p>
-                <p className={`text-lg font-semibold ${subscriptionStatus === 'Premium' ? 'text-primary' : 'text-gray-900'
-                  }`}>
-                  {subscriptionStatus}
-                </p>
+            {subscriptionStatus !== 'Gratuit' && (
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <div>
+                  <p className="text-sm font-medium text-gray-700 mb-1">Statut actuel</p>
+                  <p className={`text-lg font-semibold ${subscriptionStatus === 'Premium' ? 'text-primary' : 'text-gray-900'
+                    }`}>
+                    {subscriptionStatus}
+                  </p>
+                </div>
+                {subscriptionStatus === 'Premium' && (
+                  <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium">
+                    Actif
+                  </span>
+                )}
               </div>
-              {subscriptionStatus === 'Premium' && (
-                <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium">
-                  Actif
-                </span>
-              )}
-            </div>
+            )}
 
             <button
               onClick={handleManageSubscription}
@@ -773,6 +775,14 @@ export default function SettingsPage() {
                   <span>Gérer mon abonnement</span>
                 </>
               )}
+            </button>
+
+            <button
+              onClick={handleManageSubscription}
+              disabled={managingSubscription}
+              className="w-full text-center text-sm text-red-600 hover:text-red-700 font-medium transition-colors"
+            >
+              Se désabonner
             </button>
 
             <p className="text-xs text-gray-500 text-center">
