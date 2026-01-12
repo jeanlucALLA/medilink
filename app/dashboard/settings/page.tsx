@@ -148,14 +148,13 @@ export default function SettingsPage() {
 
         // Géocoder le code postal si city ou department_code ne sont pas remplis
         if (!finalCity || !finalDepartmentCode) {
-          console.log('[Settings] Géocodage du code postal:', trimmedCodePostal)
+          // Géocodage silencieux
           setGeocoding(true)
 
           try {
             const geocodingResult = await geocodePostalCode(trimmedCodePostal)
 
             if (geocodingResult) {
-              console.log('[Settings] Géocodage réussi:', geocodingResult)
               finalCity = geocodingResult.city || finalCity
               finalDepartmentCode = geocodingResult.departmentCode || finalDepartmentCode
 
@@ -207,13 +206,7 @@ export default function SettingsPage() {
         updated_at: new Date().toISOString(),
       }
 
-      console.log('[Settings] Données à sauvegarder:', {
-        userId: user.id,
-        updateData,
-        codePostal: trimmedCodePostal,
-        city: finalCity,
-        departmentCode: finalDepartmentCode,
-      })
+      // Données préparées pour la sauvegarde
 
       // Vérifier si le profil existe déjà
       const { data: existingProfile, error: checkError } = await supabase
@@ -233,14 +226,12 @@ export default function SettingsPage() {
       let result
       if (existingProfile) {
         // Mise à jour du profil existant
-        console.log('[Settings] Mise à jour du profil existant')
         result = await supabase
           .from('profiles')
           .update(updateData)
           .eq('id', user.id)
       } else {
         // Création d'un nouveau profil
-        console.log('[Settings] Création d\'un nouveau profil')
         result = await supabase
           .from('profiles')
           .insert({
@@ -262,7 +253,7 @@ export default function SettingsPage() {
         return
       }
 
-      console.log('[Settings] Sauvegarde réussie:', result.data)
+      // Sauvegarde réussie
 
       // Afficher le message de succès
       setShowSuccess(true)

@@ -85,6 +85,9 @@ export default function RegisterPage() {
             emailRedirectTo: `${origin}/auth/callback`,
             data: {
               full_name: formData.nomComplet,
+              speciality: formData.specialite || null,
+              city: formData.zip_code || null, // Code postal utilisé comme ville
+              role: 'practitioner',
               referral_code: formData.referralCode || undefined // Passer le code au Trigger SQL
             }
           }
@@ -108,9 +111,8 @@ export default function RegisterPage() {
           .update({
             full_name: formData.nomComplet,
             speciality: formData.specialite || null,
+            city: formData.zip_code || null, // Code postal comme ville
             subscription_tier: 'discovery',
-            // On garde les anciens champs au cas où (rétrocompatibilité) ou si le trigger n'a pas tout géré
-            // city: formData.zip_code, // On met le CP en attendant mieux pour la ville
           })
           .eq('id', authData.user.id)
 
@@ -168,7 +170,7 @@ export default function RegisterPage() {
                   console.error('[Register] Erreur lors de la création du parrainage:', referralError)
                   // On continue quand même, l'inscription est réussie
                 } else {
-                  console.log('[Register] Parrainage créé avec succès')
+                  // Parrainage créé avec succès
                   setSuccess(true) // Déclencher l'affichage du succès
                   alert('Code de parrainage appliqué !') // Feedback explicite demandé
 
@@ -177,8 +179,7 @@ export default function RegisterPage() {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ referrerId: referrerId }),
-                  }).then(() => console.log('Email parrainage envoyé'))
-                    .catch(err => console.error('Erreur envoi email parrainage:', err))
+                  }).catch(err => console.error('Erreur envoi email parrainage:', err))
                 }
                 // Nettoyer le code de localStorage après utilisation (succès ou échec)
                 localStorage.removeItem('medi_link_referral_code')
@@ -198,8 +199,32 @@ export default function RegisterPage() {
         // Afficher le message de succès
         setSuccess(true)
 
+        // ✅ PROFILE POLLING : Attendre que le profil soit créé avant de rediriger
+        const waitForProfile = async (userId: string, maxAttempts = 10): Promise<boolean> => {
+          for (let attempt = 0; attempt < maxAttempts; attempt++) {
+            const { data } = await supabase
+              .from('profiles')
+              .select('id, full_name')
+              .eq('id', userId)
+              .single()
+
+            if (data && data.full_name) {
+              // Profil trouvé
+              return true
+            }
+
+            // Attendre 500ms avant la prochaine tentative
+            await new Promise(resolve => setTimeout(resolve, 500))
+          }
+          console.warn('[Register] Profil non trouvé après le polling, redirection quand même')
+          return false
+        }
+
         // Gérer la redirection vers Stripe ou la confirmation email
         if (authData.session) {
+          // Attendre que le profil soit prêt avant de continuer
+          await waitForProfile(authData.user.id)
+
           // Session active : on redirige vers le paiement Stripe
           try {
             const response = await fetch('/api/stripe/checkout', {
@@ -221,14 +246,12 @@ export default function RegisterPage() {
               window.location.href = url
             } else {
               console.error('Erreur: Pas d\'URL de checkout')
-              const origin = window.location.origin
-              window.location.href = `${origin}/dashboard`
+              router.replace('/dashboard')
             }
           } catch (err) {
             console.error('Erreur appel Stripe:', err)
             // En cas d'erreur, fallback dashboard
-            const origin = window.location.origin
-            window.location.href = `${origin}/dashboard`
+            router.replace('/dashboard')
           }
         } else {
           // Pas de session (Confirmation email requise)

@@ -32,6 +32,8 @@ export default function DashboardLayout({
 
   useEffect(() => {
     let isMounted = true
+    let retryCount = 0
+    const MAX_RETRIES = 5
 
     const getUserAndCheckProfile = async () => {
       try {
@@ -78,7 +80,7 @@ export default function DashboardLayout({
         if (!profileChecked) {
           const { data: profileData, error: profileError } = await supabase
             .from('profiles')
-            .select('nom_complet, specialite')
+            .select('nom_complet, full_name, specialite, speciality, city')
             .eq('id', user.id)
             .single()
 
@@ -87,17 +89,35 @@ export default function DashboardLayout({
             console.warn('Erreur lors de la récupération du profil:', profileError)
           }
 
+          // ✅ RETRY LOGIC : Si profil vide mais utilisateur existe, réessayer
+          if (!profileData && retryCount < MAX_RETRIES) {
+            retryCount++
+            console.log(`[Dashboard] Profil non trouvé, tentative ${retryCount}/${MAX_RETRIES}...`)
+            setTimeout(() => {
+              if (isMounted) getUserAndCheckProfile()
+            }, 800)
+            return
+          }
+
           if (isMounted) {
-            setProfile(profileData)
+            // Normaliser les données du profil (full_name ou nom_complet)
+            const normalizedProfile = profileData ? {
+              nom_complet: profileData.full_name || profileData.nom_complet,
+              specialite: profileData.speciality || profileData.specialite,
+              city: profileData.city
+            } : null
+            setProfile(normalizedProfile)
             setProfileChecked(true)
           }
 
           // Logique de redirection onboarding
+          const displayName = profileData?.full_name || profileData?.nom_complet
+          const displaySpeciality = profileData?.speciality || profileData?.specialite
           const isProfileComplete = profileData &&
-            profileData.nom_complet &&
-            profileData.specialite &&
-            profileData.nom_complet.trim() !== '' &&
-            profileData.specialite.trim() !== ''
+            displayName &&
+            displaySpeciality &&
+            displayName.trim() !== '' &&
+            displaySpeciality.trim() !== ''
 
           // Si profil incomplet, rediriger vers welcome
           if (!isProfileComplete) {
