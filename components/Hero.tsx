@@ -32,7 +32,7 @@ export default function Hero() {
                             Débuter
                         </Link>
                     </div>
-                    <p className="text-sm text-gray-400 mt-3">Développez votre cabinet médical</p>
+                    <p className="text-sm text-gray-500 mt-3">Développez votre cabinet médical</p>
                 </div>
 
                 {/* Scrolling Professions Ticker (Below CTA) */}
@@ -43,7 +43,7 @@ export default function Hero() {
                                 <div key={i} className="flex gap-4 items-center">
                                     {['Médecins', 'Dentistes', 'Kinésithérapeutes', 'Ostéopathes', 'Psychologues', 'Infirmiers', 'Chirurgiens', 'Dermatologues', 'Ophtalmologues'].map((job, index) => (
                                         <div key={index} className="flex items-center gap-4">
-                                            <span className="text-lg font-medium text-gray-400">
+                                            <span className="text-lg font-medium text-gray-500">
                                                 {job}
                                             </span>
                                             <span className="text-gray-300">•</span>
@@ -57,7 +57,7 @@ export default function Hero() {
 
                 {/* Trust Signals */}
                 <div className="mt-16 grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-500">
-                    <p className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-6">
+                    <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-6">
                         Ils nous font confiance
                     </p>
                     <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16">
@@ -65,7 +65,7 @@ export default function Hero() {
                         {['MedTech', 'HealthCare', 'DoctoPro', 'KineFrance'].map((name) => (
                             <div key={name} className="flex items-center space-x-2">
                                 <div className="w-8 h-8 bg-gray-200 rounded-full"></div>
-                                <span className="text-lg font-bold text-gray-400">{name}</span>
+                                <span className="text-lg font-bold text-gray-500">{name}</span>
                             </div>
                         ))}
                     </div>

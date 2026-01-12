@@ -94,7 +94,7 @@ export default function FeatureSection() {
                                 <Trash2 className="w-6 h-6 text-white" />
                             </div>
                             <h3 className="text-xl font-bold mb-3">Zéro Persistance</h3>
-                            <p className="text-gray-400 text-sm leading-relaxed mb-4">
+                            <p className="text-gray-500 text-sm leading-relaxed mb-4">
                                 Conformité RGPD absolue : les données médicales sont <span className="text-white font-semibold">effacées physiquement</span> de nos serveurs dès lecture.
                             </p>
                         </div>
