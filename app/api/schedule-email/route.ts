@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
 
     // TODO: Implémenter le délai via une queue Upstash ou une Cron Vercel car Resend SDK ne le supporte pas ici.
     const result = await resend.emails.send({
-      from: process.env.EMAIL_FROM || 'noreply@medilink.app',
+      from: process.env.EMAIL_FROM || 'TopLinkSante <noreply@medilink.app>',
       to: email,
       subject: 'Questionnaire médical - TopLinkSante',
       html: `

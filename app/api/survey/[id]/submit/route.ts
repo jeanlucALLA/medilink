@@ -58,7 +58,7 @@ async function sendPractitionerNotification(questionnaireId: string, userId: str
 
     // Envoyer l'email de notification
     await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL || 'Medi.Link <onboarding@resend.dev>',
+      from: process.env.RESEND_FROM_EMAIL || 'TopLinkSante <onboarding@resend.dev>',
       to: practitionerEmail,
       subject: `Nouvelle réponse reçue : ${pathologie}`,
       html: `
@@ -158,7 +158,7 @@ async function sendAlertEmail(alertData: AlertData) {
 
     // Envoyer l'email d'alerte
     const emailResult = await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL || 'Medi.Link <onboarding@resend.dev>',
+      from: process.env.RESEND_FROM_EMAIL || 'TopLinkSante <onboarding@resend.dev>',
       to: practitionerEmail,
       subject: '⚠️ ALERTE CRITIQUE : Score bas détecté pour un patient',
       html: `

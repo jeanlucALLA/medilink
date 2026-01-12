@@ -72,14 +72,14 @@ serve(async (req) => {
     // Filtrer les questionnaires dont la date d'envoi est arrivée
     const questionnairesToSend = questionnaires.filter((q) => {
       if (!q.created_at || !q.send_after_days) return false
-      
+
       const createdDate = new Date(q.created_at)
       const sendDate = new Date(createdDate)
       sendDate.setDate(sendDate.getDate() + q.send_after_days)
-      
+
       // Comparer uniquement les dates (sans l'heure)
       const sendDateOnly = new Date(sendDate.getFullYear(), sendDate.getMonth(), sendDate.getDate())
-      
+
       return sendDateOnly <= today
     })
 
@@ -102,7 +102,7 @@ serve(async (req) => {
       try {
         // Lien vers la page publique du questionnaire
         const questionnaireLink = `${APP_URL}/questionnaire/${questionnaire.id}`
-        
+
         console.log(`[Send Scheduled] Envoi email pour questionnaire ${questionnaire.id} à ${questionnaire.patient_email}`)
 
         // Envoyer l'email via Resend
@@ -113,7 +113,7 @@ serve(async (req) => {
             'Authorization': `Bearer ${RESEND_API_KEY}`,
           },
           body: JSON.stringify({
-            from: 'Medi.Link <noreply@medilink.fr>',
+            from: 'TopLinkSante <noreply@medilink.fr>',
             to: questionnaire.patient_email,
             subject: 'Votre praticien vous invite à compléter votre questionnaire de suivi',
             html: `
@@ -126,7 +126,7 @@ serve(async (req) => {
                 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 0; background-color: #f3f4f6;">
                   <!-- Header -->
                   <div style="background-color: #ffffff; padding: 30px 20px; text-align: center; border-bottom: 3px solid #3b82f6;">
-                    <h1 style="color: #3b82f6; margin: 0; font-size: 28px; font-weight: 700;">Medi.Link</h1>
+                    <h1 style="color: #3b82f6; margin: 0; font-size: 28px; font-weight: 700;">TopLinkSante</h1>
                   </div>
                   
                   <!-- Main Content -->
@@ -154,7 +154,7 @@ serve(async (req) => {
                   <!-- Footer -->
                   <div style="background-color: #f9fafb; padding: 25px 30px; text-align: center; border-top: 1px solid #e5e7eb;">
                     <p style="color: #9ca3af; font-size: 12px; margin: 0; line-height: 1.5;">
-                      Ceci est un message automatique envoyé par Medi.Link pour votre praticien.
+                      Ceci est un message automatique envoyé par TopLinkSante pour votre praticien.
                     </p>
                     <p style="color: #9ca3af; font-size: 12px; margin: 8px 0 0 0;">
                       Si vous n'avez pas demandé ce suivi, vous pouvez ignorer cet email.
@@ -163,7 +163,7 @@ serve(async (req) => {
                 </body>
               </html>
             `,
-            text: `Bonjour,\n\nVotre professionnel de santé vous invite à prendre quelques instants pour remplir votre suivi de ${questionnaire.pathologie || 'votre suivi'}. Vos réponses l'aideront à mieux vous accompagner.\n\nRépondre au questionnaire : ${questionnaireLink}\n\nCe lien est personnel et confidentiel. Ne le partagez pas.\n\n---\nCeci est un message automatique envoyé par Medi.Link pour votre praticien.`,
+            text: `Bonjour,\n\nVotre professionnel de santé vous invite à prendre quelques instants pour remplir votre suivi de ${questionnaire.pathologie || 'votre suivi'}. Vos réponses l'aideront à mieux vous accompagner.\n\nRépondre au questionnaire : ${questionnaireLink}\n\nCe lien est personnel et confidentiel. Ne le partagez pas.\n\n---\nCeci est un message automatique envoyé par TopLinkSante pour votre praticien.`,
           }),
         })
 

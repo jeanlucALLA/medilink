@@ -108,7 +108,7 @@ export async function POST(req: Request) {
         } else {
             // Single Send
             await resend.emails.send({
-                from: process.env.RESEND_FROM_EMAIL || 'Medi.Link <onboarding@resend.dev>',
+                from: process.env.RESEND_FROM_EMAIL || 'TopLinkSante <onboarding@resend.dev>',
 
                 to: email,
                 subject: subject,

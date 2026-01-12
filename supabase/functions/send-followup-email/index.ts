@@ -69,7 +69,7 @@ serve(async (req) => {
       try {
         // Lien du questionnaire : https://medi-link.fr/q/[id]
         const questionnaireLink = `${APP_URL}/q/${questionnaire.id}`
-        
+
         // Envoyer l'email via Resend
         const emailResponse = await fetch('https://api.resend.com/emails', {
           method: 'POST',
@@ -78,7 +78,7 @@ serve(async (req) => {
             'Authorization': `Bearer ${RESEND_API_KEY}`,
           },
           body: JSON.stringify({
-            from: 'Medi.Link <noreply@medilink.fr>',
+            from: 'TopLinkSante <noreply@medilink.fr>',
             to: questionnaire.patient_email,
             subject: 'Votre professionnel de santé vous invite à compléter votre suivi',
             html: `
@@ -90,7 +90,7 @@ serve(async (req) => {
                 </head>
                 <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
                   <div style="background-color: #f8f9fa; padding: 30px; border-radius: 8px; text-align: center;">
-                    <h1 style="color: #3b82f6; margin-bottom: 20px;">Medi.Link</h1>
+                    <h1 style="color: #3b82f6; margin-bottom: 20px;">TopLinkSante</h1>
                     <h2 style="color: #1f2937; margin-bottom: 20px;">Votre professionnel de santé vous invite à compléter votre suivi</h2>
                     <p style="color: #4b5563; margin-bottom: 30px;">
                       Votre professionnel de santé vous invite à compléter votre suivi sur Medi.Link.

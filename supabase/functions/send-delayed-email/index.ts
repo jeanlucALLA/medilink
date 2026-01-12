@@ -184,7 +184,7 @@ serve(async (req) => {
     <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
     
     <p style="font-size: 12px; color: #9ca3af; text-align: center; margin: 0;">
-      Cet email a été envoyé automatiquement par Medi.Link<br>
+      Cet email a été envoyé automatiquement par TopLinkSante<br>
       Vos données sont traitées de manière sécurisée et confidentielle.
     </p>
   </div>
@@ -208,7 +208,7 @@ Important : Ce lien est personnel et confidentiel. Ne le partagez pas avec d'aut
 Si vous avez des questions, n'hésitez pas à contacter votre praticien.
 
 ---
-Cet email a été envoyé automatiquement par Medi.Link
+Cet email a été envoyé automatiquement par TopLinkSante
 Vos données sont traitées de manière sécurisée et confidentielle.
         `.trim()
 
@@ -220,7 +220,7 @@ Vos données sont traitées de manière sécurisée et confidentielle.
             'Authorization': `Bearer ${RESEND_API_KEY}`,
           },
           body: JSON.stringify({
-            from: Deno.env.get('RESEND_FROM_EMAIL') || 'Medi.Link <onboarding@resend.dev>',
+            from: Deno.env.get('RESEND_FROM_EMAIL') || 'TopLinkSante <onboarding@resend.dev>',
             to: questionnaire.patient_email,
             subject: emailSubject,
             html: emailHtml,
