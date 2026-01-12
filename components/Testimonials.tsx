@@ -8,7 +8,7 @@ const testimonials = [
     {
         name: "Dr. Marc Leroy",
         specialty: "Chirurgien Orthopédique",
-        quote: "Le suivi post-opératoire est crucial. Medi.Link me permet de détecter une complication avant même que le patient ne m'appelle. C'est un filet de sécurité indispensable.",
+        quote: "Le suivi post-opératoire est crucial. TopLinkSante me permet de détecter une complication avant même que le patient ne m'appelle. C'est un filet de sécurité indispensable.",
         stars: 5,
         avatar: "https://i.pravatar.cc/150?u=a042581f4e29026024d"
     },
@@ -50,7 +50,7 @@ export default function Testimonials() {
         <section className="py-24 bg-secondary overflow-hidden border-t border-gray-100">
             {/* Titre */}
             <div className="max-w-7xl mx-auto px-6 text-center mb-12">
-                <h2 className="text-3xl font-bold text-gray-900 mb-4">Ils ont choisi Medi.Link</h2>
+                <h2 className="text-3xl font-bold text-gray-900 mb-4">Ils ont choisi TopLinkSante</h2>
                 <p className="text-gray-500">Une communauté de praticiens exigeants qui transforme le suivi patient.</p>
             </div>
 

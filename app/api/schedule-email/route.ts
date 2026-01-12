@@ -59,12 +59,12 @@ export async function POST(request: NextRequest) {
     // Resend stocke l'email et l'envoie à la date programmée
     // Notre serveur ne conserve AUCUNE donnée patient
     const resend = new Resend(resendApiKey)
-    
+
     // TODO: Implémenter le délai via une queue Upstash ou une Cron Vercel car Resend SDK ne le supporte pas ici.
     const result = await resend.emails.send({
       from: process.env.EMAIL_FROM || 'noreply@medilink.app',
       to: email,
-      subject: 'Questionnaire médical - Medi.Link',
+      subject: 'Questionnaire médical - TopLinkSante',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #3b82f6;">Questionnaire médical</h2>

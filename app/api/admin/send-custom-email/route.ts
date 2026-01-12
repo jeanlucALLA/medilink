@@ -66,7 +66,7 @@ export async function POST(req: Request) {
         // 4. Préparation HTML
         const htmlContent = `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #2563eb; margin-bottom: 24px;">Message de l'équipe Medi.Link</h2>
+          <h2 style="color: #2563eb; margin-bottom: 24px;">Message de l'équipe TopLinkSante</h2>
           
           <div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; color: #374151; font-size: 16px; line-height: 1.6; white-space: pre-wrap;">
             ${message.replace(/\n/g, '<br/>')}
@@ -75,7 +75,7 @@ export async function POST(req: Request) {
           <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
           
           <p style="font-size: 12px; color: #9ca3af; text-align: center;">
-            Cet email a été envoyé par un administrateur de Medi.Link.
+            Cet email a été envoyé par un administrateur de TopLinkSante.
           </p>
         </div>
       `
@@ -95,7 +95,7 @@ export async function POST(req: Request) {
             for (let i = 0; i < recipients.length; i += chunkSize) {
                 const chunk = recipients.slice(i, i + chunkSize);
                 const batch = chunk.map((r: string) => ({
-                    from: process.env.RESEND_FROM_EMAIL || 'Medi.Link <onboarding@resend.dev>',
+                    from: process.env.RESEND_FROM_EMAIL || 'TopLinkSante <onboarding@resend.dev>',
                     to: r,
                     subject: subject,
                     html: htmlContent

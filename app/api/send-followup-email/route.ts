@@ -149,7 +149,7 @@ export async function POST(request: Request) {
           <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
           
           <p style="font-size: 12px; color: #999;">
-            Cet email a été envoyé via Medi.Link pour le compte de ${practitionerName}.
+            Cet email a été envoyé via TopLinkSante pour le compte de ${practitionerName}.
           </p>
         </div>
       </body>
@@ -178,7 +178,7 @@ export async function POST(request: Request) {
     }
 
     const data = await resend.emails.send({
-      from: `Dr. ${practitionerName} via Medi.Link <${fromEmail}>`,
+      from: `Dr. ${practitionerName} via TopLinkSante <${fromEmail}>`,
       to: [patientEmail],
       reply_to: practitionerEmail,
       subject: `Suivi médical - ${cabinetName}`,

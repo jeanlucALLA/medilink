@@ -36,7 +36,7 @@ const FAQs: Record<CategoryContext, FAQItem[]> = {
         },
         {
             question: "Le service fonctionne-t-il pour les patients à l'étranger ?",
-            answer: "Oui, Medi.Link est accessible partout dans le monde via notre plateforme web. Vos patients résidant en Belgique, Suisse ou ailleurs peuvent répondre à vos questionnaires sans aucune restriction géographique."
+            answer: "Oui, TopLinkSante est accessible partout dans le monde via notre plateforme web. Vos patients résidant en Belgique, Suisse ou ailleurs peuvent répondre à vos questionnaires sans aucune restriction géographique."
         }
     ]
 }
@@ -59,7 +59,7 @@ export default function FAQ() {
                         Questions Fréquentes
                     </h2>
                     <p className="text-lg text-gray-500 max-w-2xl mx-auto">
-                        Tout ce que vous devez savoir pour utiliser Medi.Link en toute sérénité.
+                        Tout ce que vous devez savoir pour utiliser TopLinkSante en toute sérénité.
                     </p>
                 </div>
 

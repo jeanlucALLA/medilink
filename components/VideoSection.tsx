@@ -16,7 +16,7 @@ export default function VideoSection() {
                             frameBorder="0"
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                             allowFullScreen
-                            title="Présentation Medi.Link"
+                            title="Présentation TopLinkSante"
                         ></iframe>
                     </div>
                 </div>
@@ -24,7 +24,7 @@ export default function VideoSection() {
                 {/* Titre optionnel en dessous pour rappeler la section, peut être retiré si le user veut juste la vidéo */}
                 <div className="text-center mt-8">
                     <h3 className="text-2xl font-bold text-gray-900 tracking-tight">
-                        Découvrez Medi.Link en action
+                        Découvrez TopLinkSante en action
                     </h3>
                 </div>
             </div>

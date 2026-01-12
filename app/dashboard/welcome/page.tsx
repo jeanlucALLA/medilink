@@ -32,7 +32,7 @@ export default function WelcomePage() {
         setLoading(true)
         const { supabase } = await import('@/lib/supabase') as any
         const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
-        
+
         if (authError || !authUser) {
           router.push('/login')
           return
@@ -89,7 +89,7 @@ export default function WelcomePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!user) return
 
     // Validation
@@ -181,7 +181,7 @@ export default function WelcomePage() {
               <Sparkles className="w-10 h-10 text-primary" />
             </div>
             <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
-              Bienvenue sur Medi.Link !
+              Bienvenue sur TopLinkSante !
             </h1>
             <p className="text-lg text-gray-600">
               Configurons votre espace professionnel pour commencer.

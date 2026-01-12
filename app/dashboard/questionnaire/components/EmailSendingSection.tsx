@@ -43,7 +43,7 @@ export function EmailSendingSection({
 
             <p className="text-xs text-gray-500 mb-4 bg-blue-50 p-2 rounded flex items-start">
                 <Info className="w-4 h-4 mr-2 text-blue-500 flex-shrink-0" />
-                L&apos;envoi sera effectué depuis &quot;Dr. {practitionerName || 'Praticien'}&quot; via Medi.Link.
+                L&apos;envoi sera effectué depuis &quot;Dr. {practitionerName || 'Praticien'}&quot; via TopLinkSante.
             </p>
 
             <div className="space-y-4">
@@ -77,8 +77,8 @@ export function EmailSendingSection({
                                     type="button"
                                     onClick={() => setSendDelayDays(days)}
                                     className={`px-3 py-1 text-xs font-medium rounded-full border transition-all ${sendDelayDays === days
-                                            ? 'bg-primary text-white border-primary shadow-sm'
-                                            : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                                        ? 'bg-primary text-white border-primary shadow-sm'
+                                        : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                                         }`}
                                 >
                                     {days}j

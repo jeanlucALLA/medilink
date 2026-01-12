@@ -90,7 +90,7 @@ export default function AbonnementPage() {
                         Une offre unique pour les professionnels.
                     </h1>
                     <p className="text-xl text-gray-600">
-                        Accédez à l&apos;intégralité des fonctionnalités Medi.Link.
+                        Accédez à l&apos;intégralité des fonctionnalités TopLinkSante.
                         <span className="block text-primary font-medium mt-2">Sans engagement. Annulable à tout moment.</span>
                     </p>
                 </div>
@@ -218,7 +218,7 @@ export default function AbonnementPage() {
                                     </span>
                                 </summary>
                                 <div className="text-gray-600 px-6 pb-6 pt-0 leading-relaxed">
-                                    Medi.Link est conçu pour fonctionner en parallèle de tout logiciel. Il ne nécessite pas d&apos;intégration complexe.
+                                    TopLinkSante est conçu pour fonctionner en parallèle de tout logiciel. Il ne nécessite pas d&apos;intégration complexe.
                                 </div>
                             </details>
                         </div>

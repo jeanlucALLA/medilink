@@ -59,7 +59,7 @@ export function FollowUpEmail({
             <td style="padding: 40px 40px 30px 40px; text-align: center; border-bottom: 1px solid #e5e7eb;">
               <div style="margin-bottom: 20px;">
                 <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #3b82f6; letter-spacing: -0.5px;">
-                  Medi.Link
+                  TopLinkSante
                 </h1>
               </div>
               <p style="margin: 0; font-size: 14px; color: #6b7280; font-weight: 500;">

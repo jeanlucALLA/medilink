@@ -15,7 +15,7 @@ export default function RegisterSuccessPage() {
                                 <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
                             </svg>
                         </div>
-                        <span className="text-2xl font-bold text-gray-900 tracking-tight">Medi.Link</span>
+                        <span className="text-2xl font-bold text-gray-900 tracking-tight">TopLinkSante</span>
                     </Link>
                 </div>
 
@@ -28,7 +28,7 @@ export default function RegisterSuccessPage() {
                             <Check className="h-8 w-8 text-green-600" />
                         </div>
                         <h2 className="text-3xl font-bold text-gray-900 tracking-tight mb-4">
-                            Bienvenue sur Medi.Link <br />
+                            Bienvenue sur TopLinkSante <br />
                             <span className="text-primary">Votre suivi patient est activé 🚀</span>
                         </h2>
                         <p className="text-gray-600 text-lg leading-relaxed">
@@ -44,7 +44,7 @@ export default function RegisterSuccessPage() {
                             </div>
                             <div>
                                 <h3 className="font-bold text-gray-900">Activation réussie</h3>
-                                <p className="text-sm text-gray-600 mt-1">Medi.Link est désormais connecté. Vos questionnaires partiront automatiquement.</p>
+                                <p className="text-sm text-gray-600 mt-1">TopLinkSante est désormais connecté. Vos questionnaires partiront automatiquement.</p>
                             </div>
                         </div>
 

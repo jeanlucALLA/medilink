@@ -256,7 +256,7 @@ export default function RegisterPage() {
             <UserPlus className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900">Inscription Professionnel</h1>
-          <p className="text-gray-600 mt-2">Créez votre compte Medi.Link</p>
+          <p className="text-gray-600 mt-2">Créez votre compte TopLinkSante</p>
           {referralCode && (
             <div className="mt-4 inline-flex items-center space-x-2 px-4 py-2 bg-green-50 border border-green-200 rounded-lg">
               <Gift className="w-5 h-5 text-green-600" />

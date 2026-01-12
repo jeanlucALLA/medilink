@@ -43,7 +43,7 @@ export default function LoginPage() {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-full mb-4">
             <LogIn className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">Medi.Link</h1>
+          <h1 className="text-3xl font-bold text-gray-900">TopLinkSante</h1>
           <p className="text-gray-600 mt-2">Connexion professionnelle</p>
         </div>
 

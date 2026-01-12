@@ -22,7 +22,7 @@ export default function MerciPage() {
             className="inline-flex items-center space-x-2 text-primary hover:text-primary-dark font-medium"
           >
             <Heart className="w-4 h-4" />
-            <span>Retour à Medi.Link</span>
+            <span>Retour à TopLinkSante</span>
           </Link>
         </div>
       </div>

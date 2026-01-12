@@ -141,7 +141,7 @@ export async function POST(
                 'Authorization': `Bearer ${resendApiKey}`,
               },
               body: JSON.stringify({
-                from: 'Medi.Link <noreply@medilink.fr>',
+                from: 'TopLinkSante <noreply@medilink.fr>',
                 to: profile.email,
                 subject: `✅ Nouvelle réponse patient : ${pathologie}`,
                 html: `
@@ -154,7 +154,7 @@ export async function POST(
                     <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 0; background-color: #f3f4f6;">
                       <!-- Header -->
                       <div style="background-color: #ffffff; padding: 30px 20px; text-align: center; border-bottom: 3px solid #3b82f6;">
-                        <h1 style="color: #3b82f6; margin: 0; font-size: 28px; font-weight: 700;">Medi.Link</h1>
+                        <h1 style="color: #3b82f6; margin: 0; font-size: 28px; font-weight: 700;">TopLinkSante</h1>
                       </div>
                       
                       <!-- Main Content -->
@@ -191,13 +191,13 @@ export async function POST(
                           Bien cordialement,
                         </p>
                         <p style="color: #3b82f6; font-size: 14px; font-weight: 600; margin: 8px 0 0 0;">
-                          L'équipe Medi.Link
+                          L'équipe TopLinkSante
                         </p>
                       </div>
                     </body>
                   </html>
                 `,
-                text: `Bonjour ${praticienNom},\n\nUn patient vient de compléter son questionnaire de suivi pour la pathologie : ${pathologie}.\n\nVous pouvez dès maintenant consulter le détail de ses réponses et son score de récupération sur votre espace sécurisé.\n\nConsulter la réponse : ${historyLink}\n\nNote : Conformément à votre politique de confidentialité, l'email du patient a été purgé de nos systèmes après l'envoi du questionnaire.\n\nBien cordialement,\nL'équipe Medi.Link`,
+                text: `Bonjour ${praticienNom},\n\nUn patient vient de compléter son questionnaire de suivi pour la pathologie : ${pathologie}.\n\nVous pouvez dès maintenant consulter le détail de ses réponses et son score de récupération sur votre espace sécurisé.\n\nConsulter la réponse : ${historyLink}\n\nNote : Conformément à votre politique de confidentialité, l'email du patient a été purgé de nos systèmes après l'envoi du questionnaire.\n\nBien cordialement,\nL'équipe TopLinkSante`,
               }),
             })
 

@@ -20,7 +20,7 @@ export default function FeatureSection() {
                             </div>
                             <h3 className="text-2xl font-bold text-gray-900 mb-4">Suivi Patient Automatisé</h3>
                             <p className="text-gray-500 text-lg max-w-lg leading-relaxed">
-                                Après chaque consultation, Medi.Link envoie automatiquement un questionnaire personnalisé par email à vos patients.
+                                Après chaque consultation, TopLinkSante envoie automatiquement un questionnaire personnalisé par email à vos patients.
                             </p>
                             <p className="text-primary font-medium mt-2">Zéro intervention manuelle.</p>
                         </div>

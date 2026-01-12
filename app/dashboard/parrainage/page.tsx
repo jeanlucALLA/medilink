@@ -98,14 +98,14 @@ export default function ParrainagePage() {
 
   // Partager via WhatsApp
   const handleShareWhatsApp = () => {
-    const message = `Découvrez Medi.Link, la plateforme de suivi patient éphémère ! Inscrivez-vous avec mon lien et bénéficiez d'un mois offert : ${referralLink}`
+    const message = `Découvrez TopLinkSante, la plateforme de suivi patient éphémère ! Inscrivez-vous avec mon lien et bénéficiez d'un mois offert : ${referralLink}`
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank')
   }
 
   // Partager via Email
   const handleShareEmail = () => {
-    const subject = 'Rejoins-moi sur Medi.Link'
-    const body = `Bonjour,\n\nJe vous invite à découvrir Medi.Link, une plateforme innovante pour le suivi patient avec confidentialité absolue.\n\nInscrivez-vous avec mon lien de parrainage et bénéficiez d'un mois offert :\n${referralLink}\n\nCordialement`
+    const subject = 'Rejoins-moi sur TopLinkSante'
+    const body = `Bonjour,\n\nJe vous invite à découvrir TopLinkSante, une plateforme innovante pour le suivi patient avec confidentialité absolue.\n\nInscrivez-vous avec mon lien de parrainage et bénéficiez d'un mois offert :\n${referralLink}\n\nCordialement`
     window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
   }
 
@@ -176,7 +176,7 @@ export default function ParrainagePage() {
             <Gift className="w-8 h-8" />
           </div>
           <div className="flex-1">
-            <h1 className="text-3xl font-bold mb-2">Partagez Medi.Link et gagnez des bonus</h1>
+            <h1 className="text-3xl font-bold mb-2">Partagez TopLinkSante et gagnez des bonus</h1>
             <p className="text-blue-100 text-lg mb-4">
               Parrainez vos collègues professionnels de santé et bénéficiez d&apos;avantages exclusifs !
             </p>
@@ -186,7 +186,7 @@ export default function ParrainagePage() {
                 <span className="font-semibold">Offre spéciale :</span>
               </div>
               <p className="text-blue-50">
-                Pour chaque nouvel utilisateur inscrit avec votre lien, <strong>vous et votre filleul recevez 1 mois d&apos;abonnement offert</strong> sur Medi.Link.
+                Pour chaque nouvel utilisateur inscrit avec votre lien, <strong>vous et votre filleul recevez 1 mois d&apos;abonnement offert</strong> sur TopLinkSante.
               </p>
             </div>
           </div>
@@ -454,7 +454,7 @@ export default function ParrainagePage() {
               </li>
               <li className="flex items-center space-x-2">
                 <div className="w-1.5 h-1.5 bg-primary rounded-full" />
-                <span>Merci de faire grandir la communauté Medi.Link !</span>
+                <span>Merci de faire grandir la communauté TopLinkSante !</span>
               </li>
             </ul>
           </div>

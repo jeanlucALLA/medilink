@@ -52,7 +52,7 @@ export async function POST(req: Request) {
     const remaining = Math.max(0, goal - referralCount)
 
     // 4. Envoyer l'email via Resend
-    let subject = 'Bonne nouvelle ! Un confrère a rejoint Medi.Link grâce à vous 🎁'
+    let subject = 'Bonne nouvelle ! Un confrère a rejoint TopLinkSante grâce à vous 🎁'
     let progressMessage = ''
 
     if (referralCount >= goal) {
@@ -76,14 +76,14 @@ export async function POST(req: Request) {
     }
 
     const { data, error } = await resend.emails.send({
-      from: 'Medi.Link <onboarding@resend.dev>', // Modifiez si vous avez un domaine vérifié
+      from: 'TopLinkSante <onboarding@resend.dev>', // Modifiez si vous avez un domaine vérifié
       to: referrer.email,
       subject: subject,
       html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
           <h1 style="color: #2563eb;">Bravo ${referrer.nom_complet} !</h1>
           <p style="font-size: 16px; color: #374151;">
-            Un nouveau professionnel de santé vient de s'inscrire sur Medi.Link en utilisant votre code parrain.
+            Un nouveau professionnel de santé vient de s'inscrire sur TopLinkSante en utilisant votre code parrain.
           </p>
           
           ${progressMessage}
@@ -91,8 +91,8 @@ export async function POST(req: Request) {
           <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
 
           <p style="font-size: 14px; color: #6b7280;">
-            Merci de faire grandir la communauté Medi.Link.<br/>
-            L'équipe Medi.Link
+            Merci de faire grandir la communauté TopLinkSante.<br/>
+            L'équipe TopLinkSante
           </p>
         </div>
       `,
