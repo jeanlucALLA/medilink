@@ -19,6 +19,9 @@ export default function CreateTemplatePage() {
     const [name, setName] = useState('')
     const [description, setDescription] = useState('')
     const [category, setCategory] = useState('')
+    const [customCategory, setCustomCategory] = useState('')
+    const [showCustomCategory, setShowCustomCategory] = useState(false)
+    const [existingCategories, setExistingCategories] = useState<string[]>([])
     const [tagsInput, setTagsInput] = useState('')
     const [questions, setQuestions] = useState<any[]>([
         { question: '', type: 'scale', label1: 'Pas du tout', label5: 'Énormément' }
@@ -26,21 +29,28 @@ export default function CreateTemplatePage() {
 
     useEffect(() => {
         checkAdmin()
+        loadExistingCategories()
     }, [])
+
+    const loadExistingCategories = async () => {
+        try {
+            const { data, error } = await supabase
+                .from('public_templates')
+                .select('category')
+
+            if (!error && data) {
+                // Extract unique categories
+                const categories = [...new Set(data.map(t => t.category).filter(Boolean))] as string[]
+                setExistingCategories(categories.sort())
+            }
+        } catch (err) {
+            console.error('Error loading categories:', err)
+        }
+    }
 
     const checkAdmin = async () => {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user || !user.email || !ADMIN_EMAILS.includes(user.email)) {
-            // Uncomment to enforce security strictly
-            // router.push('/dashboard/library')
-            // For now, allow but warn
-            // toast.error("Accès réservé aux administrateurs")
-            // setAuthorized(false)
-
-            // Allow for development if needed, but strictly:
-            // setAuthorized(false)
-            // setLoading(false)
-
             // Let's assume user is admin for demo or check against list
             if (user && (user.email === 'admin@medilink.fr' || true)) { // TRUE FOR DEV - REMOVE IN PROD
                 setAuthorized(true)
@@ -170,15 +180,38 @@ export default function CreateTemplatePage() {
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">Catégorie</label>
                             <select
-                                value={category} onChange={e => setCategory(e.target.value)}
+                                value={showCustomCategory ? '__custom__' : category}
+                                onChange={e => {
+                                    if (e.target.value === '__custom__') {
+                                        setShowCustomCategory(true)
+                                        setCategory('')
+                                    } else {
+                                        setShowCustomCategory(false)
+                                        setCategory(e.target.value)
+                                        setCustomCategory('')
+                                    }
+                                }}
                                 className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                             >
                                 <option value="">Sélectionner...</option>
-                                <option value="Podologie">Podologie</option>
-                                <option value="Kinésithérapie">Kinésithérapie</option>
-                                <option value="Ostéopathie">Ostéopathie</option>
-                                <option value="Autre">Autre</option>
+                                {existingCategories.map(cat => (
+                                    <option key={cat} value={cat}>{cat}</option>
+                                ))}
+                                <option value="__custom__">➕ Autre (personnalisé)</option>
                             </select>
+                            {showCustomCategory && (
+                                <input
+                                    value={customCategory}
+                                    onChange={e => {
+                                        setCustomCategory(e.target.value)
+                                        setCategory(e.target.value) // Sync to category for saving
+                                    }}
+                                    type="text"
+                                    placeholder="Entrez le nom de la nouvelle catégorie..."
+                                    className="w-full mt-2 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                                    autoFocus
+                                />
+                            )}
                         </div>
 
                         <div>
