@@ -88,7 +88,7 @@ export default function RegisterPage() {
               speciality: formData.specialite || null,
               city: formData.zip_code || null, // Code postal utilisé comme ville
               role: 'practitioner',
-              referral_code: formData.referralCode || undefined // Passer le code au Trigger SQL
+              referral_code: formData.referralCode || null // Passer le code au Trigger SQL (null si vide)
             }
           }
         })
@@ -121,7 +121,8 @@ export default function RegisterPage() {
         }
 
         // Gérer le parrainage si un code de référence existe
-        const codeToUse = formData.referralCode || referralCode || localStorage.getItem('medi_link_referral_code')
+        const codeToUse = formData.referralCode?.trim() || referralCode?.trim() || localStorage.getItem('medi_link_referral_code')?.trim()
+        console.log('[Register] Code de parrainage à utiliser:', codeToUse)
         if (codeToUse) {
           try {
             // Récupérer l'ID du parrain depuis le code de référence
@@ -137,6 +138,7 @@ export default function RegisterPage() {
 
             if (!errorById && referrerById) {
               referrerId = referrerById.id
+              console.log('[Register] Parrain trouvé par ID:', referrerId)
             } else {
               // Si pas trouvé par ID, essayer par referral_code
               const { data: referrerByCode, error: errorByCode } = await supabase
@@ -147,6 +149,9 @@ export default function RegisterPage() {
 
               if (!errorByCode && referrerByCode) {
                 referrerId = referrerByCode.id
+                console.log('[Register] Parrain trouvé par referral_code:', referrerId)
+              } else {
+                console.log('[Register] Aucun parrain trouvé pour le code:', codeToUse)
               }
             }
 
