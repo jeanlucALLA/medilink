@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { Play } from 'lucide-react'
 
 export default function VideoSection() {
@@ -19,11 +20,13 @@ export default function VideoSection() {
                                 className="absolute top-0 left-0 w-full h-full bg-gray-900 flex items-center justify-center group cursor-pointer"
                                 aria-label="Lire la vidéo de présentation"
                             >
-                                {/* YouTube Thumbnail - uses webp for performance */}
-                                <img
+                                {/* YouTube Thumbnail - Next.js Image for optimized loading */}
+                                <Image
                                     src={`https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`}
                                     alt="Présentation TopLinkSante"
-                                    className="absolute top-0 left-0 w-full h-full object-cover rounded-[28px]"
+                                    fill
+                                    sizes="(max-width: 768px) 100vw, 896px"
+                                    className="object-cover rounded-[28px]"
                                     loading="lazy"
                                 />
                                 {/* Play Button Overlay */}
