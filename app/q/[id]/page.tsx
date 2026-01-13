@@ -214,7 +214,7 @@ export default function QuestionnairePage() {
         <div className="max-w-4xl mx-auto">
           <Link href="/" className="inline-flex items-center space-x-2">
             <Heart className="w-6 h-6 text-primary" />
-            <span className="text-xl font-bold text-primary">Medi.Link</span>
+            <span className="text-xl font-bold text-primary">TopLinkSante</span>
           </Link>
         </div>
       </div>

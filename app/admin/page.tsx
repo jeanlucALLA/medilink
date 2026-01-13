@@ -451,7 +451,7 @@ export default function AdminDashboard() {
         doc.setTextColor(150, 150, 150)
         doc.text('Généré automatiquement par Medi.Link Admin', 20, 280)
 
-        doc.save(`MediLink_Rapport_${month}_${year}.pdf`)
+        doc.save(`TopLinkSante_Rapport_${month}_${year}.pdf`)
     }
 
     if (!isAdmin) return null // Précaution supplémentaire
