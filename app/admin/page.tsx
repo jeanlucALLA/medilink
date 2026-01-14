@@ -506,6 +506,41 @@ export default function AdminDashboard() {
                     </div>
                 </div>
 
+                {/* Bandeau orange - Praticiens sans lien Google */}
+                {(() => {
+                    const usersWithoutGoogle = users.filter(u => !u.google_review_url)
+                    if (usersWithoutGoogle.length === 0) return null
+                    return (
+                        <div className="bg-orange-50 border-l-4 border-orange-500 rounded-lg p-4 mb-6">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-3">
+                                    <AlertCircle className="w-6 h-6 text-orange-500 flex-shrink-0" />
+                                    <div>
+                                        <p className="text-sm font-bold text-orange-800">
+                                            Terminer votre enregistrement
+                                        </p>
+                                        <p className="text-sm text-orange-700">
+                                            <span className="font-bold">{usersWithoutGoogle.length}</span> praticien(s) n&apos;ont pas configuré leur lien Google Avis
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="flex flex-wrap gap-2 max-w-md">
+                                    {usersWithoutGoogle.slice(0, 5).map(u => (
+                                        <span key={u.id} className="px-2 py-1 bg-orange-100 text-orange-800 text-xs font-medium rounded-full truncate max-w-[120px]" title={u.nom_complet || u.email}>
+                                            {u.nom_complet?.split(' ')[0] || u.email?.split('@')[0] || 'N/A'}
+                                        </span>
+                                    ))}
+                                    {usersWithoutGoogle.length > 5 && (
+                                        <span className="px-2 py-1 bg-orange-200 text-orange-800 text-xs font-bold rounded-full">
+                                            +{usersWithoutGoogle.length - 5}
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )
+                })()}
+
                 {/* Filters & Actions */}
                 <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 mb-8 flex flex-col md:flex-row gap-4 items-center">
                     <div className="flex items-center gap-2 text-gray-400">
