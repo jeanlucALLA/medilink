@@ -52,6 +52,18 @@ export async function POST(
       )
     }
 
+    // Récupérer le google_review_url du praticien
+    let googleReviewUrl: string | null = null
+    if (questionnaire.user_id) {
+      const { data: praticienProfile } = await supabase
+        .from('profiles')
+        .select('google_review_url')
+        .eq('id', questionnaire.user_id)
+        .single()
+
+      googleReviewUrl = praticienProfile?.google_review_url || null
+    }
+
     // Vérifier si déjà complété
     if (questionnaire.status === 'Complété') {
       return NextResponse.json(
@@ -219,9 +231,35 @@ export async function POST(
       console.error('[Notification] Erreur lors de l\'envoi de la notification email:', emailError)
     }
 
+    // Smart Review: Notifier le praticien si bonne note mais URL manquante (fire-and-forget)
+    if (averageScore >= 4 && !googleReviewUrl && questionnaire.user_id) {
+      // Insertion asynchrone sans bloquer le patient
+      supabase
+        .from('notifications')
+        .insert({
+          practitioner_id: questionnaire.user_id,
+          message: "Occasion d'avis manquée ! Un patient a laissé une excellente note, mais n'a pas pu être redirigé vers Google car votre lien n'est pas configuré. Ajoutez-le vite dans vos paramètres !",
+          type: 'warning',
+          metadata: {
+            questionnaire_id: id,
+            score: averageScore,
+            pathologie: questionnaire.pathologie
+          }
+        })
+        .then(({ error }) => {
+          if (error) {
+            console.error('[Smart Review] Erreur création notification URL manquante:', error)
+          } else {
+            console.log(`[Smart Review] Notification créée pour praticien ${questionnaire.user_id} - URL manquante`)
+          }
+        })
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Réponses enregistrées avec succès',
+      google_review_url: googleReviewUrl,
+      average_score: averageScore
     })
   } catch (error) {
     console.error('Erreur lors de la soumission:', error)
