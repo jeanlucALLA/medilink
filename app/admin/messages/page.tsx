@@ -71,7 +71,7 @@ export default function AdminMessagesPage() {
         setLoading(true)
         try {
             const { data, error } = await supabase
-                .from('support_tickets')
+                .from('support_messages')
                 .select(`
                     *,
                     profiles:user_id (
@@ -102,7 +102,7 @@ export default function AdminMessagesPage() {
 
             // 1. Mettre à jour le ticket
             const { error: updateError } = await supabase
-                .from('support_tickets')
+                .from('support_messages')
                 .update({
                     admin_response: responseText,
                     status: 'closed',

@@ -26,13 +26,13 @@ export default function ContactPage() {
             }
 
             const { error } = await supabase
-                .from('support_tickets')
+                .from('support_messages')
                 .insert([
                     {
                         user_id: user.id,
                         subject: subject,
                         message: message,
-                        status: 'open' // Default status
+                        status: 'open'
                     }
                 ])
 
