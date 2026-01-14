@@ -28,6 +28,8 @@ export default function QuestionnairePage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [showReviewModal, setShowReviewModal] = useState(false)
+  const [reviewDeclined, setReviewDeclined] = useState(false)
 
   useEffect(() => {
     const loadQuestionnaire = async () => {
@@ -130,19 +132,23 @@ export default function QuestionnairePage() {
       // Calculer la moyenne des réponses
       const averageScore = answers.reduce((a, b) => a + b, 0) / answers.length
       const isPerfectScore = averageScore === 5
+      const isHighScore = averageScore >= 4 && averageScore < 5
 
-      // Redirection conditionnelle
+      // Redirection conditionnelle Smart Review
       if (isPerfectScore && questionnaire?.google_review_url) {
+        // 5/5 : Redirection automatique vers Google Reviews
         console.log('🌟 Score parfait (5/5) ! Redirection vers Google Reviews...')
         setTimeout(() => {
           window.location.href = questionnaire.google_review_url!
         }, 2000)
-      } else {
-        // Redirection standard vers la page de remerciement
+      } else if (isHighScore && questionnaire?.google_review_url) {
+        // 4/5 : Afficher la modale de demande d'avis
+        console.log('⭐ Bon score (4/5) ! Affichage de la modale...')
         setTimeout(() => {
-          router.push('/questionnaire/merci')
-        }, 2000)
+          setShowReviewModal(true)
+        }, 1500)
       }
+      // ≤3/5 : Pas de redirection, juste le message de succès
 
     } catch (err: any) {
       console.error('Erreur lors de la soumission:', err)
@@ -187,16 +193,67 @@ export default function QuestionnairePage() {
     )
   }
 
+  // Handler pour accepter la demande d'avis
+  const handleAcceptReview = () => {
+    if (questionnaire?.google_review_url) {
+      window.location.href = questionnaire.google_review_url
+    }
+  }
+
+  // Handler pour décliner la demande d'avis
+  const handleDeclineReview = () => {
+    setShowReviewModal(false)
+    setReviewDeclined(true)
+  }
+
   if (success) {
+    const averageScore = answers.reduce((a, b) => a + b, 0) / answers.length
+    const isPerfectScore = averageScore === 5
+
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-white p-4">
+        {/* Modal Smart Review (4/5) */}
+        {showReviewModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 text-center animate-in fade-in slide-in-from-bottom-4 duration-300">
+              <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-3">Merci pour votre confiance !</h2>
+              <p className="text-gray-600 mb-6">
+                Nous sommes ravis que le soin vous ait plu. Accepteriez-vous de partager votre expérience sur Google pour nous aider ?
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={handleDeclineReview}
+                  className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Non merci
+                </button>
+                <button
+                  onClick={handleAcceptReview}
+                  className="flex-1 px-6 py-3 bg-primary text-white font-semibold rounded-lg hover:bg-primary-dark transition-colors shadow-sm"
+                >
+                  Oui, avec plaisir !
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="max-w-md w-full bg-white rounded-xl shadow-lg border border-gray-200 p-8 text-center">
           <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Merci !</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            {reviewDeclined ? 'Merci, à bientôt !' : 'Merci !'}
+          </h1>
           <p className="text-gray-600">
-            {questionnaire?.google_review_url && (answers.reduce((a, b) => a + b, 0) / answers.length) === 5
+            {isPerfectScore && questionnaire?.google_review_url
               ? "Redirection vers Google Reviews..."
-              : "Vos réponses ont été enregistrées avec succès."}
+              : reviewDeclined
+                ? "Vos réponses ont été enregistrées. Prenez soin de vous !"
+                : "Vos réponses ont été enregistrées avec succès."}
           </p>
         </div>
       </div>
