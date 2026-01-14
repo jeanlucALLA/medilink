@@ -70,21 +70,45 @@ export default function AdminMessagesPage() {
     const loadTickets = async (supabase: any) => {
         setLoading(true)
         try {
-            const { data, error } = await supabase
+            // Fetch messages without join (to avoid PostgREST relationship error)
+            const { data: messages, error: messagesError } = await supabase
                 .from('support_messages')
-                .select(`
-                    *,
-                    profiles:user_id (
-                        full_name,
-                        email,
-                        nom_complet
-                    )
-                `)
+                .select('*')
                 .order('created_at', { ascending: false })
 
-            if (error) throw error
+            if (messagesError) throw messagesError
 
-            setTickets(data || [])
+            if (!messages || messages.length === 0) {
+                setTickets([])
+                return
+            }
+
+            // Get unique user IDs
+            const userIds = [...new Set(messages.map((m: any) => m.user_id))]
+
+            // Fetch profiles for these users
+            const { data: profiles, error: profilesError } = await supabase
+                .from('profiles')
+                .select('id, email, nom_complet, full_name')
+                .in('id', userIds)
+
+            if (profilesError) {
+                console.warn('Erreur chargement profiles:', profilesError)
+            }
+
+            // Create a map for quick lookup
+            const profilesMap = new Map()
+            if (profiles) {
+                profiles.forEach((p: any) => profilesMap.set(p.id, p))
+            }
+
+            // Merge messages with profiles
+            const ticketsWithProfiles = messages.map((m: any) => ({
+                ...m,
+                profiles: profilesMap.get(m.user_id) || null
+            }))
+
+            setTickets(ticketsWithProfiles)
         } catch (err) {
             console.error('Erreur chargement tickets:', err)
             toast.error('Impossible de charger les messages')
