@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Loader2, CheckCircle, AlertCircle, Heart, Check, Smile } from 'lucide-react'
+import { Loader2, CheckCircle, AlertCircle, Heart, Check, Smile, ExternalLink } from 'lucide-react'
+import { Toaster, toast } from 'react-hot-toast'
 import Link from 'next/link'
 
 interface Questionnaire {
@@ -136,11 +137,12 @@ export default function QuestionnairePage() {
 
       // Redirection conditionnelle Smart Review
       if (isPerfectScore && questionnaire?.google_review_url) {
-        // 5/5 : Redirection automatique vers Google Reviews
+        // 5/5 : Redirection automatique vers Google Reviews (nouvel onglet)
         console.log('🌟 Score parfait (5/5) ! Redirection vers Google Reviews...')
+        toast.success('Redirection vers Google Avis...', { icon: '⭐', duration: 3000 })
         setTimeout(() => {
-          window.location.href = questionnaire.google_review_url!
-        }, 2000)
+          window.open(questionnaire.google_review_url!, '_blank')
+        }, 1500)
       } else if (isHighScore && questionnaire?.google_review_url) {
         // 4/5 : Afficher la modale de demande d'avis
         console.log('⭐ Bon score (4/5) ! Affichage de la modale...')
@@ -250,12 +252,15 @@ export default function QuestionnairePage() {
           </h1>
           <p className="text-gray-600">
             {isPerfectScore && questionnaire?.google_review_url
-              ? "Redirection vers Google Reviews..."
+              ? "Un nouvel onglet a été ouvert vers Google Avis. Votre retour compte énormément !"
               : reviewDeclined
                 ? "Vos réponses ont été enregistrées. Prenez soin de vous !"
-                : "Vos réponses ont été enregistrées avec succès."}
+                : averageScore <= 3
+                  ? "Merci, votre retour a bien été pris en compte pour améliorer nos services."
+                  : "Vos réponses ont été enregistrées avec succès."}
           </p>
         </div>
+        <Toaster position="top-center" />
       </div>
     )
   }
