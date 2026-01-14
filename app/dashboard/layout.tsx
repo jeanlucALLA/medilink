@@ -16,6 +16,7 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [isCollapsed, setIsCollapsed] = useState(false)
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -221,12 +222,14 @@ export default function DashboardLayout({
           <SidebarSafe
             onLogout={handleLogout}
             sidebarOpen={sidebarOpen}
+            isCollapsed={isCollapsed}
             onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+            onToggleCollapse={() => setIsCollapsed(!isCollapsed)}
           />
         )}
 
         {/* Main content */}
-        <main className={`flex-1 ${!isWelcomePage && sidebarOpen ? 'lg:ml-64' : 'ml-0'} transition-all duration-300`}>
+        <main className={`flex-1 ${!isWelcomePage && sidebarOpen ? (isCollapsed ? 'lg:ml-20' : 'lg:ml-64') : 'ml-0'} transition-all duration-300 ease-in-out`}>
           <div className={isWelcomePage ? 'p-0' : 'p-6'}>
             {!isWelcomePage && (
               <div className="mb-6 flex items-center justify-between">
