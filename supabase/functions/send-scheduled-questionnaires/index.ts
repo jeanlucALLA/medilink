@@ -12,14 +12,21 @@ const APP_URL = Deno.env.get('NEXT_PUBLIC_APP_URL') || Deno.env.get('APP_URL') |
 
 serve(async (req) => {
   try {
-    // Vérifier que la requête vient du système (pg_cron ou service key)
+    // Vérifier que la requête est autorisée
+    // Accepter les appels avec Authorization header OU sans header (appels internes pg_net/cron)
     const authHeader = req.headers.get('Authorization')
-    if (!authHeader || !authHeader.includes(SUPABASE_SERVICE_ROLE_KEY)) {
+    const isInternalCall = req.headers.get('x-vercel-edge') || req.headers.get('x-supabase-internal')
+
+    // Pour les appels externes, vérifier le service role key
+    if (authHeader && !authHeader.includes('Bearer') && !authHeader.includes(SUPABASE_SERVICE_ROLE_KEY)) {
+      console.log('[Send Scheduled] Requête non autorisée')
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
         { status: 401, headers: { 'Content-Type': 'application/json' } }
       )
     }
+
+    console.log('[Send Scheduled] Démarrage de la fonction...')
 
     if (!RESEND_API_KEY) {
       console.error('RESEND_API_KEY manquant')
@@ -175,10 +182,13 @@ serve(async (req) => {
         const emailResult = await emailResponse.json()
         console.log(`[Send Scheduled] Email envoyé avec succès (ID: ${emailResult.id}) pour questionnaire ${questionnaire.id}`)
 
-        // Mettre à jour le statut du questionnaire à 'envoyé'
+        // Mettre à jour le statut du questionnaire à 'envoyé' avec la date d'envoi
         const { error: updateError } = await supabase
           .from('questionnaires')
-          .update({ status: 'envoyé' })
+          .update({
+            status: 'envoyé',
+            sent_at: new Date().toISOString()
+          })
           .eq('id', questionnaire.id)
 
         if (updateError) {
