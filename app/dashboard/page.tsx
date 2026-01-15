@@ -138,9 +138,10 @@ export default function DashboardPage() {
 
       const { data: alertsData, error: alertsError } = await supabase
         .from('responses')
-        .select('id, questionnaire_id, pathologie, score_total, submitted_at, patient_email')
+        .select('id, questionnaire_id, pathologie, score_total, submitted_at, patient_email, status')
         .eq('user_id', user.id)
         .lte('score_total', 2)
+        .neq('status', 'resolved')
         .order('submitted_at', { ascending: false })
         .limit(50)
 
