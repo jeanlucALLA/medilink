@@ -657,13 +657,13 @@ export default function DashboardPage() {
             </p>
           </div>
           <div className="hidden md:flex items-center space-x-3">
-            <button
-              onClick={() => setIsAddActModalOpen(true)}
+            <Link
+              href="/dashboard/questionnaire"
               className="flex items-center space-x-2 px-5 py-2.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white font-semibold rounded-xl transition-all duration-200 border border-white/20"
             >
               <Plus className="w-5 h-5" />
-              <span>Ajouter un acte</span>
-            </button>
+              <span>Créer un questionnaire</span>
+            </Link>
             <button
               onClick={handleLogout}
               className="flex items-center space-x-2 px-4 py-2.5 bg-white/10 hover:bg-red-500/30 backdrop-blur-sm text-white/90 hover:text-white font-medium rounded-xl transition-all duration-200 border border-white/10 hover:border-red-400/30"
@@ -712,53 +712,41 @@ export default function DashboardPage() {
 
       {/* Statistiques - Design Moderne 4 colonnes */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Actes ce mois */}
-        <div className="stat-card group relative overflow-hidden">
+        {/* Total Questionnaires */}
+        <Link href="/dashboard/history" className="stat-card group relative overflow-hidden cursor-pointer">
+          <div className="absolute -right-4 -top-4 w-24 h-24 bg-blue-100 rounded-full opacity-50 group-hover:opacity-70 transition-opacity" />
+          <div className="relative">
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                <FileText className="w-5 h-5 text-primary" />
+              </div>
+            </div>
+            <p className="text-3xl font-bold text-gray-900 mb-1">
+              {loadingQuestionnaires ? (
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              ) : (
+                questionnaires.length
+              )}
+            </p>
+            <p className="text-sm text-gray-500">Questionnaires</p>
+          </div>
+        </Link>
+
+        {/* Envois en attente */}
+        <Link href="/dashboard/resolution" className="stat-card group relative overflow-hidden cursor-pointer">
           <div className="absolute -right-4 -top-4 w-24 h-24 bg-orange-100 rounded-full opacity-50 group-hover:opacity-70 transition-opacity" />
           <div className="relative">
             <div className="flex items-center justify-between mb-3">
               <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
-                <Calendar className="w-5 h-5 text-orange-600" />
+                <Clock className="w-5 h-5 text-orange-600" />
               </div>
-              <span className="trend-up flex items-center space-x-1">
-                <TrendingUp className="w-3 h-3" />
-                <span>+8%</span>
-              </span>
             </div>
             <p className="text-3xl font-bold text-gray-900 mb-1">
-              {loadingMedicalActs ? (
-                <Loader2 className="w-6 h-6 animate-spin text-orange-600" />
-              ) : (
-                statsData.actsThisMonth
-              )}
+              {questionnaires.filter(q => q.status === 'programmé' && q.patient_email).length}
             </p>
-            <p className="text-sm text-gray-500">Actes ce mois</p>
+            <p className="text-sm text-gray-500">En attente</p>
           </div>
-        </div>
-
-        {/* Actes cette semaine */}
-        <div className="stat-card group relative overflow-hidden">
-          <div className="absolute -right-4 -top-4 w-24 h-24 bg-emerald-100 rounded-full opacity-50 group-hover:opacity-70 transition-opacity" />
-          <div className="relative">
-            <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center">
-                <TrendingUp className="w-5 h-5 text-emerald-600" />
-              </div>
-              <span className="trend-up flex items-center space-x-1">
-                <TrendingUp className="w-3 h-3" />
-                <span>+12%</span>
-              </span>
-            </div>
-            <p className="text-3xl font-bold text-gray-900 mb-1">
-              {loadingMedicalActs ? (
-                <Loader2 className="w-6 h-6 animate-spin text-emerald-600" />
-              ) : (
-                statsData.actsThisWeek
-              )}
-            </p>
-            <p className="text-sm text-gray-500">Cette semaine</p>
-          </div>
-        </div>
+        </Link>
 
         {/* Patients suivis */}
         <Link href="/dashboard/history" className="stat-card group relative overflow-hidden cursor-pointer">
@@ -808,117 +796,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Activité Récente - Design Moderne */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
-                <Activity className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900">Activité Récente</h2>
-                <p className="text-sm text-gray-500">Vos derniers actes enregistrés</p>
-              </div>
-            </div>
-            <button
-              onClick={() => setIsAddActModalOpen(true)}
-              className="flex items-center space-x-2 px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-xl transition-all duration-200 text-sm shadow-sm hover:shadow-md"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Nouvel acte</span>
-            </button>
-          </div>
-        </div>
 
-        {loadingMedicalActs ? (
-          <div className="p-8 text-center">
-            <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-2" />
-            <p className="text-gray-600">Chargement des actes...</p>
-          </div>
-        ) : medicalActs.length === 0 ? (
-          <div className="p-12 text-center">
-            <Activity className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Aucun acte enregistré
-            </h3>
-            <p className="text-gray-600 mb-6">
-              Commencez par enregistrer votre premier acte médical.
-            </p>
-            <button
-              onClick={() => setIsAddActModalOpen(true)}
-              className="inline-flex items-center space-x-2 px-6 py-3 bg-primary hover:bg-primary-dark text-white rounded-lg transition-colors"
-            >
-              <Plus className="w-5 h-5" />
-              <span>Ajouter un acte</span>
-            </button>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Nom de l&apos;acte
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Patient
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Date de l&apos;acte
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Date d&apos;enregistrement
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {medicalActs.slice(0, 10).map((act) => (
-                  <tr key={act.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{act.act_name}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-500">
-                        {act.patient_name || (
-                          <span className="text-gray-400 italic">Non renseigné</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-500">
-                        {act.act_date ? new Date(act.act_date).toLocaleDateString('fr-FR', {
-                          day: '2-digit',
-                          month: '2-digit',
-                          year: 'numeric',
-                        }) : (
-                          <span className="text-gray-400 italic">Non renseigné</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {act.created_at ? new Date(act.created_at).toLocaleString('fr-FR', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      }) : '--'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {medicalActs.length > 10 && (
-              <div className="p-4 text-center border-t border-gray-200">
-                <p className="text-sm text-gray-500">
-                  Affichage des 10 derniers actes sur {medicalActs.length} au total
-                </p>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
 
       {/* Carte d'alerte critique */}
       {criticalAlerts.length > 0 && (
