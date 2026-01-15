@@ -498,7 +498,7 @@ export default function ResolutionPage() {
                               return (
                                 <div className="flex items-center space-x-2 text-orange-600 bg-orange-50 px-3 py-2 rounded-lg w-fit animate-pulse">
                                   <Bell className="w-4 h-4" />
-                                  <span className="text-sm font-medium">⏰ Relance prévue aujourd'hui</span>
+                                  <span className="text-sm font-medium">⏰ Relance prévue aujourd&apos;hui</span>
                                 </div>
                               )
                             }
