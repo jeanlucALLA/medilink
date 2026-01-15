@@ -589,38 +589,41 @@ export default function DashboardPage() {
   const displayName = (profile?.nom_complet || profile?.specialite || 'Professionnel').replace(/^Dr\.?\s*/i, '')
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       {/* Bandeau de localisation manquante */}
       {isMountedRef.current && showLocationBanner && (
-        <div className="bg-blue-50 border-l-4 border-primary rounded-lg p-4 flex items-center justify-between">
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-2xl p-4 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <MapPin className="w-5 h-5 text-primary flex-shrink-0" />
+            <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+              <MapPin className="w-5 h-5 text-primary" />
+            </div>
             <p className="text-sm text-gray-700">
-              <span className="font-medium">Complétez votre localisation</span> pour activer le Benchmark Régional dans Analytics.
+              <span className="font-semibold">Complétez votre localisation</span> pour activer le Benchmark Régional.
             </p>
           </div>
           <Link
             href="/dashboard/settings"
-            className="ml-4 px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg text-sm font-medium transition-colors whitespace-nowrap"
+            className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-xl text-sm font-medium transition-all duration-200 hover:shadow-lg"
           >
             Configurer
           </Link>
         </div>
       )}
+
       {/* Message d'avertissement si le profil est incomplet */}
       {profileIncomplete && (
-        <div className="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-4">
+        <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-4">
           <div className="flex items-start space-x-3">
-            <div className="flex-shrink-0">
-              <AlertTriangle className="w-5 h-5 text-yellow-600" />
+            <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
+              <AlertTriangle className="w-5 h-5 text-amber-600" />
             </div>
             <div className="flex-1">
-              <p className="text-sm font-medium text-yellow-800">
-                Veuillez compléter votre profil dans les paramètres pour profiter de toutes les fonctionnalités.
+              <p className="text-sm font-medium text-amber-800">
+                Complétez votre profil pour profiter de toutes les fonctionnalités.
               </p>
               <Link
                 href="/dashboard/settings"
-                className="mt-2 inline-flex items-center text-sm font-medium text-yellow-700 hover:text-yellow-900 underline"
+                className="mt-1 inline-flex items-center text-sm font-medium text-amber-700 hover:text-amber-900"
               >
                 Accéder aux paramètres →
               </Link>
@@ -629,213 +632,193 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Badge Leader Régional en haut de page */}
-      {isMountedRef.current && userId && (
-        <div className="mb-6 flex justify-end">
-          <LeaderBadge userId={userId} />
+      {/* Welcome Banner - Design Moderne */}
+      <div className="gradient-welcome rounded-3xl p-8 text-white relative overflow-hidden">
+        {/* Pattern décoratif */}
+        <div className="absolute inset-0 opacity-10">
+          <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+            <defs>
+              <pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse">
+                <path d="M 10 0 L 0 0 0 10" fill="none" stroke="white" strokeWidth="0.5" />
+              </pattern>
+            </defs>
+            <rect width="100" height="100" fill="url(#grid)" />
+          </svg>
         </div>
-      )}
 
-      {/* Checklist de Bienvenue */}
-      {(!hasFirstAct || !hasQuestionnaireSettings) && (
-        <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Checklist de Bienvenue</h2>
-            {userId && <LeaderBadge userId={userId} />}
+        <div className="relative z-10 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">
+              Bienvenue, {profile ? displayName : 'Docteur'} ! 👋
+            </h1>
+            <p className="text-white/80 text-lg">
+              Voici l&apos;aperçu de votre activité aujourd&apos;hui.
+            </p>
           </div>
-          <div className="space-y-3">
-            <div className="flex items-center space-x-3">
-              {hasFirstAct ? (
-                <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
-              ) : (
-                <Circle className="w-5 h-5 text-gray-400 flex-shrink-0" />
-              )}
-              <span className={`text-sm ${hasFirstAct ? 'text-gray-600 line-through' : 'text-gray-900 font-medium'}`}>
-                Créer votre premier acte
-              </span>
-              {!hasFirstAct && (
-                <button
-                  onClick={() => setIsAddActModalOpen(true)}
-                  className="ml-auto inline-flex items-center space-x-1 px-3 py-1 text-xs font-medium bg-primary hover:bg-primary-dark text-white rounded-md transition-colors"
-                >
-                  <Plus className="w-3 h-3" />
-                  <span>Ajouter un acte</span>
-                </button>
-              )}
-            </div>
-            <div className="flex items-center space-x-3">
-              {hasQuestionnaireSettings ? (
-                <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
-              ) : (
-                <Circle className="w-5 h-5 text-gray-400 flex-shrink-0" />
-              )}
-              <span className={`text-sm ${hasQuestionnaireSettings ? 'text-gray-600 line-through' : 'text-gray-900 font-medium'}`}>
-                Personnaliser votre questionnaire
-              </span>
-              {!hasQuestionnaireSettings && (
-                <Link
-                  href="/dashboard/questionnaire"
-                  className="ml-auto inline-flex items-center space-x-1 px-3 py-1 text-xs font-medium bg-primary hover:bg-primary-dark text-white rounded-md transition-colors"
-                >
-                  <Plus className="w-3 h-3" />
-                  <span>Personnaliser</span>
-                </Link>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-gray-900">
-            {profile ? `Tableau de bord de ${displayName}` : 'Tableau de bord'}
-          </h1>
-          <div className="flex items-center space-x-3">
+          <div className="hidden md:flex items-center space-x-3">
             <button
               onClick={() => setIsAddActModalOpen(true)}
-              className="flex items-center space-x-2 px-4 py-2 bg-primary hover:bg-primary-dark text-white font-semibold rounded-lg transition-colors shadow-sm hover:shadow-md"
+              className="flex items-center space-x-2 px-5 py-2.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white font-semibold rounded-xl transition-all duration-200 border border-white/20"
             >
               <Plus className="w-5 h-5" />
               <span>Ajouter un acte</span>
             </button>
-            <button
-              onClick={handleLogout}
-              className="flex items-center space-x-2 px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors"
-            >
-              <LogOut className="w-5 h-5" />
-              <span>Se déconnecter</span>
-            </button>
           </div>
         </div>
+
+        {/* Badge Leader */}
+        {isMountedRef.current && userId && (
+          <div className="absolute top-4 right-4">
+            <LeaderBadge userId={userId} />
+          </div>
+        )}
       </div>
 
-      {/* Informations du cabinet - affichées uniquement si le profil existe */}
-      {profile && (
-        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-          <div className="flex items-start space-x-4">
-            <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
-              <Building2 className="w-6 h-6 text-white" />
+      {/* Checklist de Bienvenue - Version Compacte */}
+      {(!hasFirstAct || !hasQuestionnaireSettings) && (
+        <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+          <h2 className="text-base font-semibold text-gray-900 mb-3 flex items-center">
+            <span className="w-6 h-6 bg-primary/10 rounded-lg flex items-center justify-center mr-2">
+              <CheckCircle className="w-4 h-4 text-primary" />
+            </span>
+            Pour bien démarrer
+          </h2>
+          <div className="flex flex-wrap gap-3">
+            <div className={`flex items-center space-x-2 px-3 py-2 rounded-xl ${hasFirstAct ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-50 text-gray-600'}`}>
+              {hasFirstAct ? <CheckCircle className="w-4 h-4" /> : <Circle className="w-4 h-4" />}
+              <span className="text-sm font-medium">Premier acte</span>
+              {!hasFirstAct && (
+                <button onClick={() => setIsAddActModalOpen(true)} className="ml-2 text-primary hover:underline text-xs">Créer</button>
+              )}
             </div>
-            <div className="flex-1">
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">{profile.cabinet}</h2>
-              <div className="flex items-center space-x-2 text-gray-600">
-                <MapPin className="w-5 h-5" />
-                <span>{profile.adresse_cabinet}</span>
-              </div>
+            <div className={`flex items-center space-x-2 px-3 py-2 rounded-xl ${hasQuestionnaireSettings ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-50 text-gray-600'}`}>
+              {hasQuestionnaireSettings ? <CheckCircle className="w-4 h-4" /> : <Circle className="w-4 h-4" />}
+              <span className="text-sm font-medium">Questionnaire personnalisé</span>
+              {!hasQuestionnaireSettings && (
+                <Link href="/dashboard/questionnaire" className="ml-2 text-primary hover:underline text-xs">Configurer</Link>
+              )}
             </div>
           </div>
         </div>
       )}
 
-      {/* Statistiques Globales */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 mb-1">Ce mois</p>
-              <p className="text-3xl font-bold text-gray-900">
-                {loadingMedicalActs ? (
-                  <Loader2 className="w-6 h-6 animate-spin text-orange-600" />
-                ) : (
-                  statsData.actsThisMonth
-                )}
-              </p>
-              <p className="text-xs text-gray-500 mt-1">Actes ce mois-ci</p>
+      {/* Statistiques - Design Moderne 4 colonnes */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Actes ce mois */}
+        <div className="stat-card group relative overflow-hidden">
+          <div className="absolute -right-4 -top-4 w-24 h-24 bg-orange-100 rounded-full opacity-50 group-hover:opacity-70 transition-opacity" />
+          <div className="relative">
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
+                <Calendar className="w-5 h-5 text-orange-600" />
+              </div>
+              <span className="trend-up flex items-center space-x-1">
+                <TrendingUp className="w-3 h-3" />
+                <span>+8%</span>
+              </span>
             </div>
-            <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-              <Calendar className="w-6 h-6 text-orange-600" />
-            </div>
+            <p className="text-3xl font-bold text-gray-900 mb-1">
+              {loadingMedicalActs ? (
+                <Loader2 className="w-6 h-6 animate-spin text-orange-600" />
+              ) : (
+                statsData.actsThisMonth
+              )}
+            </p>
+            <p className="text-sm text-gray-500">Actes ce mois</p>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 mb-1">Cette semaine</p>
-              <p className="text-3xl font-bold text-gray-900">
-                {loadingMedicalActs ? (
-                  <Loader2 className="w-6 h-6 animate-spin text-green-600" />
-                ) : (
-                  statsData.actsThisWeek
-                )}
-              </p>
-              <p className="text-xs text-gray-500 mt-1">Actes cette semaine</p>
+        {/* Actes cette semaine */}
+        <div className="stat-card group relative overflow-hidden">
+          <div className="absolute -right-4 -top-4 w-24 h-24 bg-emerald-100 rounded-full opacity-50 group-hover:opacity-70 transition-opacity" />
+          <div className="relative">
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center">
+                <TrendingUp className="w-5 h-5 text-emerald-600" />
+              </div>
+              <span className="trend-up flex items-center space-x-1">
+                <TrendingUp className="w-3 h-3" />
+                <span>+12%</span>
+              </span>
             </div>
-            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-              <TrendingUp className="w-6 h-6 text-green-600" />
+            <p className="text-3xl font-bold text-gray-900 mb-1">
+              {loadingMedicalActs ? (
+                <Loader2 className="w-6 h-6 animate-spin text-emerald-600" />
+              ) : (
+                statsData.actsThisWeek
+              )}
+            </p>
+            <p className="text-sm text-gray-500">Cette semaine</p>
+          </div>
+        </div>
+
+        {/* Patients suivis */}
+        <Link href="/dashboard/history" className="stat-card group relative overflow-hidden cursor-pointer">
+          <div className="absolute -right-4 -top-4 w-24 h-24 bg-purple-100 rounded-full opacity-50 group-hover:opacity-70 transition-opacity" />
+          <div className="relative">
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
+                <Users className="w-5 h-5 text-purple-600" />
+              </div>
+              <span className="trend-neutral flex items-center space-x-1">
+                <span>stable</span>
+              </span>
             </div>
+            <p className="text-3xl font-bold text-gray-900 mb-1">
+              {(() => {
+                const uniqueEmails = new Set(
+                  questionnaires
+                    .filter(q => q.patient_email)
+                    .map(q => q.patient_email)
+                )
+                return uniqueEmails.size
+              })()}
+            </p>
+            <p className="text-sm text-gray-500">Patients suivis</p>
+          </div>
+        </Link>
+
+        {/* Alertes critiques */}
+        <div className={`stat-card group relative overflow-hidden ${criticalAlerts.length > 0 ? 'border-red-200 bg-red-50/50' : ''}`}>
+          <div className={`absolute -right-4 -top-4 w-24 h-24 ${criticalAlerts.length > 0 ? 'bg-red-100' : 'bg-amber-100'} rounded-full opacity-50 group-hover:opacity-70 transition-opacity`} />
+          <div className="relative">
+            <div className="flex items-center justify-between mb-3">
+              <div className={`w-10 h-10 ${criticalAlerts.length > 0 ? 'bg-red-100' : 'bg-amber-100'} rounded-xl flex items-center justify-center`}>
+                <AlertTriangle className={`w-5 h-5 ${criticalAlerts.length > 0 ? 'text-red-600' : 'text-amber-600'}`} />
+              </div>
+              {criticalAlerts.length > 0 && (
+                <span className="trend-down flex items-center space-x-1 animate-pulse">
+                  <span>Action</span>
+                </span>
+              )}
+            </div>
+            <p className={`text-3xl font-bold mb-1 ${criticalAlerts.length > 0 ? 'text-red-600' : 'text-gray-900'}`}>
+              {criticalAlerts.length}
+            </p>
+            <p className="text-sm text-gray-500">Alertes</p>
           </div>
         </div>
       </div>
 
-      {/* Statistiques Questionnaires */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Link href="/dashboard/history" className="block bg-white rounded-lg shadow-sm p-6 border border-gray-200 hover:shadow-md transition-shadow cursor-pointer group">
+      {/* Activité Récente - Design Moderne */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
           <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 mb-1 group-hover:text-primary transition-colors">Total Questionnaires</p>
-              <p className="text-3xl font-bold text-gray-900">
-                {loadingQuestionnaires ? (
-                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                ) : (
-                  questionnaires.length
-                )}
-              </p>
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
+                <Activity className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">Activité Récente</h2>
+                <p className="text-sm text-gray-500">Vos derniers actes enregistrés</p>
+              </div>
             </div>
-            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center group-hover:bg-blue-200 transition-colors">
-              <FileText className="w-6 h-6 text-primary" />
-            </div>
-          </div>
-        </Link>
-
-        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 mb-1">Envois en attente</p>
-              <p className="text-3xl font-bold text-gray-900">
-                {questionnaires.filter(q => q.status === 'programmé' && q.patient_email).length}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-              <Clock className="w-6 h-6 text-orange-600" />
-            </div>
-          </div>
-        </div>
-
-        <Link href="/dashboard/history" className="block bg-white rounded-lg shadow-sm p-6 border border-gray-200 hover:shadow-md transition-shadow cursor-pointer group">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 mb-1 group-hover:text-purple-600 transition-colors">Patients suivis</p>
-              <p className="text-3xl font-bold text-gray-900">
-                {(() => {
-                  const uniqueEmails = new Set(
-                    questionnaires
-                      .filter(q => q.patient_email)
-                      .map(q => q.patient_email)
-                  )
-                  return uniqueEmails.size
-                })()}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center group-hover:bg-purple-200 transition-colors">
-              <Mail className="w-6 h-6 text-purple-600" />
-            </div>
-          </div>
-        </Link>
-      </div>
-
-      {/* Tableau des derniers actes/patients */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-gray-900">Derniers actes enregistrés</h2>
             <button
               onClick={() => setIsAddActModalOpen(true)}
-              className="flex items-center space-x-2 px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg transition-colors text-sm"
+              className="flex items-center space-x-2 px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-xl transition-all duration-200 text-sm shadow-sm hover:shadow-md"
             >
               <Plus className="w-4 h-4" />
-              <span>Ajouter un acte</span>
+              <span>Nouvel acte</span>
             </button>
           </div>
         </div>

@@ -127,7 +127,7 @@ export default function SidebarSafe({
 
   return (
     <aside
-      className={`${sidebarWidth} fixed h-screen bg-white/80 backdrop-blur-xl border-r border-gray-100 transition-all duration-300 ease-in-out overflow-hidden z-40 shadow-sm`}
+      className={`${sidebarWidth} fixed h-screen gradient-sidebar transition-all duration-300 ease-in-out overflow-hidden z-40 shadow-xl`}
     >
       <div className={`${isCollapsed ? 'p-3' : 'p-6'} flex flex-col h-full transition-all duration-300`}>
         {/* Header with Logo and Toggle */}
@@ -135,10 +135,10 @@ export default function SidebarSafe({
           {/* Logo */}
           <Link
             href="/dashboard"
-            className={`flex items-center gap-2 text-2xl font-bold text-gray-900 tracking-tight hover:opacity-80 transition-opacity no-underline ${isCollapsed ? 'justify-center' : ''}`}
+            className={`flex items-center gap-2 text-2xl font-bold text-white tracking-tight hover:opacity-90 transition-opacity no-underline ${isCollapsed ? 'justify-center' : ''}`}
           >
             {/* Simple Logo Icon */}
-            <div className="w-8 h-8 bg-primary rounded-xl flex items-center justify-center flex-shrink-0">
+            <div className="w-9 h-9 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center flex-shrink-0 border border-white/10">
               <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
               </svg>
@@ -158,7 +158,7 @@ export default function SidebarSafe({
               {onToggleSidebar && (
                 <button
                   onClick={onToggleSidebar}
-                  className="lg:hidden text-gray-500 hover:text-gray-900"
+                  className="lg:hidden text-slate-400 hover:text-white transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -171,7 +171,7 @@ export default function SidebarSafe({
         {onToggleCollapse && (
           <button
             onClick={onToggleCollapse}
-            className={`hidden lg:flex items-center ${isCollapsed ? 'justify-center' : 'justify-end'} mb-4 text-gray-400 hover:text-primary transition-colors`}
+            className={`hidden lg:flex items-center ${isCollapsed ? 'justify-center' : 'justify-end'} mb-4 text-slate-400 hover:text-white transition-colors`}
             title={isCollapsed ? 'Ouvrir le menu' : 'Réduire le menu'}
           >
             {isCollapsed ? (
@@ -186,7 +186,7 @@ export default function SidebarSafe({
         )}
 
         {/* Navigation */}
-        <nav className="space-y-1.5 flex-grow">
+        <nav className="space-y-1 flex-grow">
           {menuItems.map((item) => {
             const Icon = item.icon
             const isActive = pathname === item.href || (item.href === '/dashboard' && pathname === '/dashboard')
@@ -197,18 +197,18 @@ export default function SidebarSafe({
                 href={item.href}
                 onClick={(e) => handleLinkClick(item.href, e)}
                 title={isCollapsed ? item.label : undefined}
-                className={`group flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'} px-4 py-3 rounded-2xl transition-all duration-200 ${isActive
-                  ? 'bg-primary/5 text-primary font-semibold shadow-sm'
-                  : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+                className={`group flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'} px-4 py-3 rounded-xl transition-all duration-200 ${isActive
+                  ? 'bg-white/15 text-white font-semibold shadow-lg backdrop-blur-sm'
+                  : 'text-slate-400 hover:bg-white/10 hover:text-white'
                   }`}
               >
-                <Icon className={`w-5 h-5 flex-shrink-0 transition-colors ${isActive ? 'text-primary' : 'text-gray-400 group-hover:text-gray-600'}`} />
+                <Icon className={`w-5 h-5 flex-shrink-0 transition-colors ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-white'}`} />
                 {/* Label - hidden when collapsed */}
                 <span className={`transition-all duration-300 ${isCollapsed ? 'hidden' : 'block'}`}>
                   {item.label}
                 </span>
                 {isActive && !isCollapsed && (
-                  <div className="ml-auto w-1.5 h-1.5 rounded-full bg-primary" />
+                  <div className="ml-auto w-1.5 h-1.5 rounded-full bg-white shadow-lg shadow-white/50" />
                 )}
               </Link>
             )
@@ -218,18 +218,18 @@ export default function SidebarSafe({
 
 
         {/* Footer */}
-        <div className={`mt-4 pt-4 border-t border-gray-100 ${isCollapsed ? 'px-1' : ''}`}>
+        <div className={`mt-4 pt-4 border-t border-white/10 ${isCollapsed ? 'px-1' : ''}`}>
           {/* User Profile - only when not collapsed */}
           {praticienNom && !isCollapsed && (
-            <div className="flex items-center space-x-3 px-2 py-3 mb-2 rounded-2xl bg-gray-50 border border-gray-100">
-              <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center flex-shrink-0 shadow-sm border border-gray-100 text-primary font-bold">
+            <div className="flex items-center space-x-3 px-3 py-3 mb-2 rounded-xl bg-white/10 backdrop-blur-sm border border-white/10">
+              <div className="w-10 h-10 bg-gradient-to-br from-primary to-blue-400 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg text-white font-bold text-sm">
                 {getInitials(praticienNom)}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-gray-900 font-semibold text-sm truncate mr-2">
+                <p className="text-white font-semibold text-sm truncate mr-2">
                   {praticienNom}
                 </p>
-                <p className="text-xs text-gray-400 truncate">Praticien</p>
+                <p className="text-xs text-slate-400 truncate">Praticien</p>
               </div>
             </div>
           )}
@@ -237,7 +237,7 @@ export default function SidebarSafe({
           {/* Collapsed user avatar */}
           {praticienNom && isCollapsed && (
             <div className="flex justify-center mb-2">
-              <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm border border-gray-100 text-primary font-bold text-sm">
+              <div className="w-10 h-10 bg-gradient-to-br from-primary to-blue-400 rounded-full flex items-center justify-center shadow-lg text-white font-bold text-sm">
                 {getInitials(praticienNom)}
               </div>
             </div>
@@ -247,9 +247,9 @@ export default function SidebarSafe({
           <button
             onClick={onLogout}
             title={isCollapsed ? 'Déconnexion' : undefined}
-            className={`flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'} px-4 py-3 text-gray-500 hover:bg-red-50 hover:text-red-600 rounded-2xl w-full transition-colors group`}
+            className={`flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'} px-4 py-3 text-slate-400 hover:bg-red-500/20 hover:text-red-400 rounded-xl w-full transition-all duration-200 group`}
           >
-            <LogOut className="w-5 h-5 group-hover:text-red-600 transition-colors flex-shrink-0" />
+            <LogOut className="w-5 h-5 group-hover:text-red-400 transition-colors flex-shrink-0" />
             <span className={`font-medium transition-all duration-300 ${isCollapsed ? 'hidden' : 'block'}`}>
               Déconnexion
             </span>

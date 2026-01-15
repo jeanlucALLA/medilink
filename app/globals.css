@@ -3,10 +3,52 @@
 @tailwind utilities;
 
 body {
-  @apply bg-white text-gray-900;
+  @apply bg-slate-50 text-gray-900;
 }
 
-/* Animation fade-in pour le contenu de la section vidéo */
+/* ============================================
+   GLASSMORPHISM & MODERN CARD EFFECTS
+   ============================================ */
+
+.glass-card {
+  @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-lg;
+}
+
+.glass-card-hover {
+  @apply transition-all duration-300 ease-out;
+}
+
+.glass-card-hover:hover {
+  @apply shadow-xl transform -translate-y-1;
+  box-shadow: 0 20px 40px -12px rgba(0, 82, 255, 0.15);
+}
+
+/* Stat card with subtle glow on hover */
+.stat-card {
+  @apply bg-white rounded-2xl p-6 border border-gray-100 shadow-sm transition-all duration-300;
+}
+
+.stat-card:hover {
+  @apply shadow-lg border-primary/20;
+  box-shadow: 0 10px 30px -10px rgba(0, 82, 255, 0.2);
+}
+
+/* ============================================
+   GRADIENT BACKGROUNDS
+   ============================================ */
+
+.gradient-welcome {
+  background: linear-gradient(135deg, #0052FF 0%, #3b82f6 50%, #14b8a6 100%);
+}
+
+.gradient-sidebar {
+  background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
 @keyframes fade-in {
   from {
     opacity: 0;
@@ -18,8 +60,101 @@ body {
   }
 }
 
-.animate-fade-in {
-  animation: fade-in 1s ease-out;
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
+@keyframes pulse-subtle {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
 
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.6s ease-out;
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.4s ease-out;
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s ease-in-out infinite;
+}
+
+/* Staggered animation delays for cards */
+.animate-delay-100 { animation-delay: 100ms; }
+.animate-delay-200 { animation-delay: 200ms; }
+.animate-delay-300 { animation-delay: 300ms; }
+.animate-delay-400 { animation-delay: 400ms; }
+
+/* ============================================
+   TREND INDICATORS
+   ============================================ */
+
+.trend-up {
+  @apply text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full text-xs font-medium;
+}
+
+.trend-down {
+  @apply text-red-600 bg-red-50 px-2 py-0.5 rounded-full text-xs font-medium;
+}
+
+.trend-neutral {
+  @apply text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full text-xs font-medium;
+}
+
+/* ============================================
+   ACTIVITY LIST STYLES
+   ============================================ */
+
+.activity-item {
+  @apply flex items-center justify-between py-3 px-4 hover:bg-gray-50 rounded-xl transition-colors;
+}
+
+.activity-status-completed {
+  @apply bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-full text-xs font-medium;
+}
+
+.activity-status-pending {
+  @apply bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full text-xs font-medium;
+}
+
+.activity-status-action {
+  @apply bg-red-100 text-red-700 px-2.5 py-1 rounded-full text-xs font-medium;
+}
+
+/* ============================================
+   SIDEBAR DARK THEME OVERRIDES
+   ============================================ */
+
+.sidebar-dark {
+  @apply text-white;
+}
+
+.sidebar-dark .nav-item {
+  @apply text-slate-300 hover:text-white hover:bg-white/10;
+}
+
+.sidebar-dark .nav-item-active {
+  @apply text-white bg-white/15 font-semibold;
+}
