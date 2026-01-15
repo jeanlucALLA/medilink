@@ -10,7 +10,9 @@ import {
   FileText,
   Loader2,
   Mail,
-  Send
+  Send,
+  Search,
+  Bell
 } from 'lucide-react'
 
 // Types
@@ -109,6 +111,7 @@ const getCriticalResponses = (
 export default function ResolutionPage() {
   const [isMounted, setIsMounted] = useState(false)
   const [selectedStatus, setSelectedStatus] = useState<AlertStatus>('all')
+  const [searchQuery, setSearchQuery] = useState('')
   const [selectedAlert, setSelectedAlert] = useState<QuestionnaireResponse | null>(null)
   const [resolutionNote, setResolutionNote] = useState('')
   const [responses, setResponses] = useState<QuestionnaireResponse[]>([])
@@ -292,6 +295,15 @@ export default function ResolutionPage() {
   const filteredResponses = responses.filter((response) => {
     const status = getAlertStatus(response)
 
+    // Filtre de recherche
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase()
+      const matchesName = response.patient_name?.toLowerCase().includes(query)
+      const matchesEmail = response.patient_email?.toLowerCase().includes(query)
+      const matchesPathologie = response.pathologie?.toLowerCase().includes(query)
+      if (!matchesName && !matchesEmail && !matchesPathologie) return false
+    }
+
     if (selectedStatus === 'all') return true
     // Critique seulement si score existe et <= 2
     if (selectedStatus === 'critical') return (response.score_total !== null && response.score_total <= 2)
@@ -361,7 +373,7 @@ export default function ResolutionPage() {
 
       {/* Filtres */}
       <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {statusFilters.map((filter) => (
             <button
               key={filter.id}
@@ -375,6 +387,28 @@ export default function ResolutionPage() {
               </span>
             </button>
           ))}
+
+          {/* Barre de recherche */}
+          <div className="flex-1 min-w-[200px] max-w-md ml-auto">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Rechercher par nom, email ou pathologie..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -436,11 +470,40 @@ export default function ResolutionPage() {
                     {/* Score ou Date d'envoi */}
                     <div className="mb-4">
                       {isSent ? (
-                        <div className="flex items-center space-x-2 text-green-600 bg-green-50 px-3 py-2 rounded-lg w-fit">
-                          <Send className="w-4 h-4" />
-                          <span className="text-sm font-medium">
-                            Envoyé le : {response.sentAt ? new Date(response.sentAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Date inconnue'}
-                          </span>
+                        <div className="space-y-2">
+                          <div className="flex items-center space-x-2 text-green-600 bg-green-50 px-3 py-2 rounded-lg w-fit">
+                            <Send className="w-4 h-4" />
+                            <span className="text-sm font-medium">
+                              Envoyé le : {response.sentAt ? new Date(response.sentAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Date inconnue'}
+                            </span>
+                          </div>
+                          {/* Badge relance prévue */}
+                          {response.sentAt && (() => {
+                            const sentDate = new Date(response.sentAt)
+                            const reminderDate = new Date(sentDate)
+                            reminderDate.setDate(reminderDate.getDate() + 3) // Relance après 3 jours
+                            const now = new Date()
+                            const daysUntilReminder = Math.ceil((reminderDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+
+                            if (daysUntilReminder > 0) {
+                              return (
+                                <div className="flex items-center space-x-2 text-orange-600 bg-orange-50 px-3 py-2 rounded-lg w-fit">
+                                  <Bell className="w-4 h-4" />
+                                  <span className="text-sm font-medium">
+                                    ⏰ Relance automatique dans {daysUntilReminder} jour{daysUntilReminder > 1 ? 's' : ''}
+                                  </span>
+                                </div>
+                              )
+                            } else if (daysUntilReminder === 0) {
+                              return (
+                                <div className="flex items-center space-x-2 text-orange-600 bg-orange-50 px-3 py-2 rounded-lg w-fit animate-pulse">
+                                  <Bell className="w-4 h-4" />
+                                  <span className="text-sm font-medium">⏰ Relance prévue aujourd'hui</span>
+                                </div>
+                              )
+                            }
+                            return null
+                          })()}
                         </div>
                       ) : isPending ? (
                         <div className="flex items-center space-x-2 text-blue-600 bg-blue-50 px-3 py-2 rounded-lg w-fit">
@@ -450,11 +513,36 @@ export default function ResolutionPage() {
                           </span>
                         </div>
                       ) : (
-                        <div className="flex items-center space-x-2">
-                          <span className={`text-sm font-semibold ${isCritical ? 'text-red-600' : 'text-orange-600'}`}>
-                            Score: {response.score_total}/5
+                        <div className="flex items-center space-x-3">
+                          {/* Jauge visuelle du score */}
+                          <div className="flex items-center space-x-1">
+                            {[1, 2, 3, 4, 5].map((level) => (
+                              <div
+                                key={level}
+                                className={`w-3 h-6 rounded-sm transition-all ${response.score_total !== null && level <= response.score_total
+                                  ? response.score_total <= 2
+                                    ? 'bg-red-500'
+                                    : response.score_total === 3
+                                      ? 'bg-orange-400'
+                                      : 'bg-green-500'
+                                  : 'bg-gray-200'
+                                  }`}
+                              />
+                            ))}
+                          </div>
+                          <span className={`text-sm font-bold ${response.score_total !== null && response.score_total <= 2
+                            ? 'text-red-600'
+                            : response.score_total === 3
+                              ? 'text-orange-600'
+                              : 'text-green-600'
+                            }`}>
+                            {response.score_total}/5
                           </span>
-                          {isCritical && <span className="px-2 py-0.5 bg-red-100 text-red-700 text-xs rounded">Critique</span>}
+                          {isCritical && (
+                            <span className="px-2 py-0.5 bg-red-100 text-red-700 text-xs font-medium rounded animate-pulse">
+                              Critique
+                            </span>
+                          )}
                         </div>
                       )}
                     </div>
