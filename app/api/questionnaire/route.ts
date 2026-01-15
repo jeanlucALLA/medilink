@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
                 pathologie: pathologyName || questionnaire.title,
                 questions: questionnaire.questions,
                 patient_email: patientEmail || null,
-                status: isScheduled ? 'pending' : (patientEmail ? 'envoyé' : 'non programmé'),
+                status: isScheduled ? 'programmé' : (patientEmail ? 'envoyé' : 'non programmé'),
                 send_after_days: sendDelayDays || null,
               })
 

@@ -9,12 +9,13 @@ import {
   X,
   FileText,
   Loader2,
-  Mail
+  Mail,
+  Send
 } from 'lucide-react'
 
 // Types
 // Types
-type AlertStatus = 'all' | 'critical' | 'in-progress' | 'resolved'
+type AlertStatus = 'all' | 'critical' | 'in-progress' | 'resolved' | 'sent'
 
 interface QuestionnaireResponse {
   id: string
@@ -29,8 +30,10 @@ interface QuestionnaireResponse {
   questions?: Array<{ text: string;[key: string]: any }> // Libellés des questions
   // Nouveaux champs pour les questionnaires programmés
   isPending?: boolean
-  status?: string // 'programmé', 'en_attente', etc.
+  isSent?: boolean // Pour les questionnaires envoyés
+  status?: string // 'programmé', 'envoyé', etc.
   sendDate?: string | null
+  sentAt?: string | null // Date réelle d'envoi
 }
 
 interface AlertResolution {
@@ -151,12 +154,22 @@ export default function ResolutionPage() {
         // 2. Récupérer les questionnaires EN ATTENTE / PROGRAMMÉS
         const { data: pendingData, error: pendingError } = await supabase
           .from('questionnaires')
-          .select('id, pathologie, patient_email, questions, created_at, send_after_days, statut')
+          .select('id, pathologie, patient_email, questions, created_at, send_after_days, status')
           .eq('user_id', user.id)
-          .in('statut', ['programmé', 'en_attente']) // Seulement ceux à venir
+          .eq('status', 'programmé') // Seulement ceux à venir
           .order('created_at', { ascending: false })
 
         if (pendingError) console.error('[Resolution] Erreur chargement programmés:', pendingError.message)
+
+        // 3. Récupérer les questionnaires ENVOYÉS
+        const { data: sentData, error: sentError } = await supabase
+          .from('questionnaires')
+          .select('id, pathologie, patient_email, questions, created_at, send_after_days, status, sent_at')
+          .eq('user_id', user.id)
+          .eq('status', 'envoyé')
+          .order('sent_at', { ascending: false })
+
+        if (sentError) console.error('[Resolution] Erreur chargement envoyés:', sentError.message)
 
         // --- TRAITEMENT DES RÉPONSES ---
         // Récupérer les infos manquantes (email, questions) pour les réponses
@@ -211,15 +224,38 @@ export default function ResolutionPage() {
             patient_name: extractNameFromEmail(q.patient_email),
             questions: q.questions,
             isPending: true,
-            status: q.statut,
-            sendDate: sendDate.toISOString()
+            isSent: false,
+            status: q.status,
+            sendDate: sendDate.toISOString(),
+            sentAt: null
+          }
+        })
+
+        // --- TRAITEMENT DES ENVOYÉS ---
+        const formattedSent: QuestionnaireResponse[] = (sentData || []).map((q: any) => {
+          return {
+            id: q.id,
+            questionnaire_id: q.id,
+            pathologie: q.pathologie,
+            score_total: null,
+            average_score: null,
+            submitted_at: q.sent_at || q.created_at,
+            answers: [],
+            patient_email: q.patient_email,
+            patient_name: extractNameFromEmail(q.patient_email),
+            questions: q.questions,
+            isPending: false,
+            isSent: true,
+            status: q.status,
+            sendDate: null,
+            sentAt: q.sent_at
           }
         })
 
         if (isMountedRef.current) {
           // Fusionner et trier par date (le plus récent en premier)
-          const merged = [...formattedPending, ...formattedResponses].sort((a, b) => {
-            // Pour le tri, on utilise submitted_at (qui est created_at pour les pending)
+          const merged = [...formattedPending, ...formattedSent, ...formattedResponses].sort((a, b) => {
+            // Pour le tri, on utilise submitted_at (qui est created_at pour les pending, sent_at pour les envoyés)
             return new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime()
           })
 
@@ -261,6 +297,7 @@ export default function ResolutionPage() {
     if (selectedStatus === 'critical') return (response.score_total !== null && response.score_total <= 2)
     if (selectedStatus === 'in-progress') return status === 'in-progress'
     if (selectedStatus === 'resolved') return status === 'resolved'
+    if (selectedStatus === 'sent') return response.isSent === true
     return true
   })
 
@@ -269,6 +306,7 @@ export default function ResolutionPage() {
   // En cours : status 'in-progress' (incluant les pending)
   const countInProgress = responses.filter(r => getAlertStatus(r) === 'in-progress').length
   const countResolved = responses.filter(r => getAlertStatus(r) === 'resolved').length
+  const countSent = responses.filter(r => r.isSent === true).length
 
   const handleTakeAction = (response: QuestionnaireResponse) => {
     const resolution: AlertResolution = {
@@ -307,6 +345,7 @@ export default function ResolutionPage() {
     { id: 'critical', label: 'Critiques', count: countCritical },
     { id: 'in-progress', label: 'En cours', count: countInProgress },
     { id: 'resolved', label: 'Résolues', count: countResolved },
+    { id: 'sent', label: 'Envoyé', count: countSent },
   ]
 
   if (!isMounted) return <div className="flex justify-center p-12"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
@@ -353,6 +392,7 @@ export default function ResolutionPage() {
               const isSelected = selectedAlert?.id === response.id
               const isCritical = response.score_total !== null && response.score_total <= 2
               const isPending = response.isPending
+              const isSent = response.isSent
 
               return (
                 <div
@@ -365,19 +405,19 @@ export default function ResolutionPage() {
                     {/* Header Carte */}
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center space-x-3 flex-1">
-                        <div className={`w-3 h-3 rounded-full flex-shrink-0 ${isPending ? 'bg-blue-400' : (isCritical ? 'bg-red-500' : 'bg-orange-500')
+                        <div className={`w-3 h-3 rounded-full flex-shrink-0 ${isSent ? 'bg-green-500' : (isPending ? 'bg-blue-400' : (isCritical ? 'bg-red-500' : 'bg-orange-500'))
                           }`} />
                         <div className="flex items-center space-x-2">
-                          {isPending ? <Clock className="w-5 h-5 text-gray-600" /> : <FileText className="w-5 h-5 text-gray-600" />}
+                          {isSent ? <Send className="w-5 h-5 text-green-600" /> : (isPending ? <Clock className="w-5 h-5 text-gray-600" /> : <FileText className="w-5 h-5 text-gray-600" />)}
                           <span className="text-sm font-medium text-gray-900">
-                            {isPending ? 'Envoi Programmé' : 'Retour Questionnaire'}
+                            {isSent ? 'Email Envoyé' : (isPending ? 'Envoi Programmé' : 'Retour Questionnaire')}
                           </span>
                         </div>
                       </div>
-                      <div className={`px-3 py-1 rounded-full text-xs font-medium ${status === 'resolved' ? 'bg-green-100 text-green-800' :
-                        status === 'in-progress' ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'
+                      <div className={`px-3 py-1 rounded-full text-xs font-medium ${isSent ? 'bg-green-100 text-green-800' : (status === 'resolved' ? 'bg-green-100 text-green-800' :
+                        status === 'in-progress' ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800')
                         }`}>
-                        {status === 'resolved' ? 'Résolue' : status === 'in-progress' ? 'En cours' : 'Nouvelle'}
+                        {isSent ? 'Envoyé' : (status === 'resolved' ? 'Résolue' : status === 'in-progress' ? 'En cours' : 'Nouvelle')}
                       </div>
                     </div>
 
@@ -395,7 +435,14 @@ export default function ResolutionPage() {
 
                     {/* Score ou Date d'envoi */}
                     <div className="mb-4">
-                      {isPending ? (
+                      {isSent ? (
+                        <div className="flex items-center space-x-2 text-green-600 bg-green-50 px-3 py-2 rounded-lg w-fit">
+                          <Send className="w-4 h-4" />
+                          <span className="text-sm font-medium">
+                            Envoyé le : {response.sentAt ? new Date(response.sentAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Date inconnue'}
+                          </span>
+                        </div>
+                      ) : isPending ? (
                         <div className="flex items-center space-x-2 text-blue-600 bg-blue-50 px-3 py-2 rounded-lg w-fit">
                           <Mail className="w-4 h-4" />
                           <span className="text-sm font-medium">
@@ -429,6 +476,11 @@ export default function ResolutionPage() {
                       {isPending && (
                         <span className="text-xs text-blue-600 font-medium bg-blue-50 px-2 py-1 rounded">
                           Automatique
+                        </span>
+                      )}
+                      {isSent && (
+                        <span className="text-xs text-green-600 font-medium bg-green-50 px-2 py-1 rounded">
+                          ✓ Délivré
                         </span>
                       )}
                     </div>
