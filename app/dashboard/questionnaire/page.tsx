@@ -315,6 +315,7 @@ export default function QuestionnairePage() {
                   sendDelayDays={sendDelayDays}
                   setSendDelayDays={setSendDelayDays}
                   practitionerName={practitionerProfile?.nom_complet || practitionerProfile?.full_name}
+                  pathologie={pathology}
                 />
               </div>
 
