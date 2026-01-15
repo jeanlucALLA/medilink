@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Eye, Calendar, FileText, Loader2, X, CheckCircle, Clock, Mail } from 'lucide-react'
+import { Eye, Calendar, FileText, Loader2, X, CheckCircle, Clock, Mail, Search, User, Send } from 'lucide-react'
 
 interface Questionnaire {
   id: string
@@ -21,6 +21,8 @@ export default function HistoryPage() {
   const [loading, setLoading] = useState(true)
   const [selectedQuestionnaire, setSelectedQuestionnaire] = useState<Questionnaire | null>(null)
   const [showModal, setShowModal] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedFilter, setSelectedFilter] = useState<'all' | 'programmé' | 'envoyé' | 'Complété'>('all')
 
   // Charger les questionnaires depuis Supabase
   useEffect(() => {
@@ -338,6 +340,38 @@ export default function HistoryPage() {
 
   const scheduledEmailsCount = getScheduledEmailsCount()
 
+  // Compteurs pour les stats
+  const countProgramme = questionnaires.filter(q => q.status === 'programmé' || q.status === 'pending' || q.status === 'en_attente').length
+  const countEnvoye = questionnaires.filter(q => q.status === 'envoyé' || q.status === 'sent').length
+  const countComplete = questionnaires.filter(q => q.status === 'Complété').length
+
+  // Filtrer les questionnaires
+  const filteredQuestionnaires = questionnaires.filter(q => {
+    // Filtre de recherche
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase()
+      const matchesPathologie = q.pathologie?.toLowerCase().includes(query)
+      const matchesEmail = q.patient_email?.toLowerCase().includes(query)
+      if (!matchesPathologie && !matchesEmail) return false
+    }
+
+    // Filtre par statut
+    if (selectedFilter === 'programmé') return q.status === 'programmé' || q.status === 'pending' || q.status === 'en_attente'
+    if (selectedFilter === 'envoyé') return q.status === 'envoyé' || q.status === 'sent'
+    if (selectedFilter === 'Complété') return q.status === 'Complété'
+    return true
+  })
+
+  // Extraire le nom depuis l'email
+  const extractName = (email: string | null | undefined): string => {
+    if (!email || email === 'PURGED') return '—'
+    const namePart = email.split('@')[0]
+    return namePart
+      .split(/[._-]/)
+      .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+      .join(' ')
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -350,6 +384,99 @@ export default function HistoryPage() {
           <div className="flex items-center space-x-2 text-sm text-gray-500">
             <FileText className="w-5 h-5" />
             <span>{questionnaires.length} questionnaire(s)</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Cartes de statistiques */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+              <FileText className="w-5 h-5 text-blue-600" />
+            </div>
+          </div>
+          <p className="text-2xl font-bold text-gray-900">{questionnaires.length}</p>
+          <p className="text-sm text-gray-500">Total</p>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+              <Clock className="w-5 h-5 text-orange-600" />
+            </div>
+          </div>
+          <p className="text-2xl font-bold text-gray-900">{countProgramme}</p>
+          <p className="text-sm text-gray-500">Programmés</p>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+              <Send className="w-5 h-5 text-green-600" />
+            </div>
+          </div>
+          <p className="text-2xl font-bold text-gray-900">{countEnvoye}</p>
+          <p className="text-sm text-gray-500">Envoyés</p>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+              <CheckCircle className="w-5 h-5 text-purple-600" />
+            </div>
+          </div>
+          <p className="text-2xl font-bold text-gray-900">{countComplete}</p>
+          <p className="text-sm text-gray-500">Réponses</p>
+        </div>
+      </div>
+
+      {/* Barre de recherche + Filtres */}
+      <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Filtres */}
+          {[
+            { id: 'all', label: 'Tous', count: questionnaires.length },
+            { id: 'programmé', label: 'Programmés', count: countProgramme },
+            { id: 'envoyé', label: 'Envoyés', count: countEnvoye },
+            { id: 'Complété', label: 'Réponses', count: countComplete },
+          ].map((filter) => (
+            <button
+              key={filter.id}
+              onClick={() => setSelectedFilter(filter.id as any)}
+              className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${selectedFilter === filter.id
+                ? 'bg-primary text-white shadow-md'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+            >
+              {filter.label}
+              <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${selectedFilter === filter.id ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-600'
+                }`}>
+                {filter.count}
+              </span>
+            </button>
+          ))}
+
+          {/* Barre de recherche */}
+          <div className="flex-1 min-w-[200px] max-w-md ml-auto">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Rechercher par pathologie ou email..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -377,11 +504,16 @@ export default function HistoryPage() {
       )}
 
       {/* Tableau des questionnaires */}
-      {questionnaires.length === 0 ? (
+      {filteredQuestionnaires.length === 0 ? (
         <div className="bg-white rounded-lg shadow-sm p-12 border border-gray-200 text-center">
           <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Aucun questionnaire</h3>
-          <p className="text-gray-500">Vous n&apos;avez pas encore de questionnaires dans votre historique.</p>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Aucun résultat</h3>
+          <p className="text-gray-500">
+            {searchQuery || selectedFilter !== 'all'
+              ? 'Aucun questionnaire ne correspond à vos critères.'
+              : 'Vous n&apos;avez pas encore de questionnaires dans votre historique.'
+            }
+          </p>
         </div>
       ) : (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
@@ -393,13 +525,13 @@ export default function HistoryPage() {
                     Pathologie
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Patient
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Date de création
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Statut
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Envoi programmé
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Score
@@ -410,17 +542,21 @@ export default function HistoryPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {questionnaires.map((questionnaire) => (
+                {filteredQuestionnaires.map((questionnaire) => (
                   <tr key={questionnaire.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">{questionnaire.pathologie || 'Sans nom'}</div>
-                      {/* Message RGPD pour les emails visibles */}
-                      {isEmailVisible(questionnaire) && (
-                        <p className="text-xs text-orange-600 mt-1 flex items-center">
-                          <span className="mr-1">🔒</span>
-                          L&apos;email sera automatiquement remplacé par &apos;PURGED&apos; dès l&apos;envoi
-                        </p>
-                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center space-x-2">
+                        <User className="w-4 h-4 text-gray-400" />
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">{extractName(questionnaire.patient_email)}</div>
+                          {questionnaire.patient_email && questionnaire.patient_email !== 'PURGED' && (
+                            <div className="text-xs text-gray-500">{questionnaire.patient_email}</div>
+                          )}
+                        </div>
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center text-sm text-gray-500">
@@ -430,9 +566,6 @@ export default function HistoryPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {getStatusBadge(questionnaire.status)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {getScheduleBadge(questionnaire)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {questionnaire.score_resultat ? (
