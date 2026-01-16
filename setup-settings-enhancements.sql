@@ -35,6 +35,12 @@ ON CONFLICT (id) DO UPDATE SET
 
 -- 3. POLITIQUES RLS POUR LE BUCKET AVATARS
 -- =========================================
+-- Suppression des politiques existantes pour éviter les conflits
+
+DROP POLICY IF EXISTS "Users can upload own avatar" ON storage.objects;
+DROP POLICY IF EXISTS "Avatars are publicly viewable" ON storage.objects;
+DROP POLICY IF EXISTS "Users can update own avatar" ON storage.objects;
+DROP POLICY IF EXISTS "Users can delete own avatar" ON storage.objects;
 
 -- Users peuvent upload leur propre avatar
 CREATE POLICY "Users can upload own avatar"

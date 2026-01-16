@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
-import { Menu } from 'lucide-react'
+import Link from 'next/link'
+import { Menu, Shield } from 'lucide-react'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { Toaster } from 'react-hot-toast'
 import Confetti from 'react-confetti'
@@ -250,6 +251,16 @@ export default function DashboardLayout({
                       Médecin
                     </span>
                   </div>
+
+                  {/* Badge Zero-Data */}
+                  <Link
+                    href="/confidentialite"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-700 text-xs font-medium rounded-full hover:bg-green-100 transition-colors border border-green-200"
+                    title="Mode Zero-Data actif - Aucune donnée de santé stockée"
+                  >
+                    <Shield className="w-3.5 h-3.5" />
+                    Zero-Data
+                  </Link>
 
                   <NotificationsBell variant="header" />
                 </div>

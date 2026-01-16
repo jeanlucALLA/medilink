@@ -1,6 +1,7 @@
 'use client'
 
 import dynamic from 'next/dynamic'
+import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import Hero from '@/components/Hero'
 import FeatureSection from '@/components/FeatureSection'
@@ -12,6 +13,11 @@ const VideoSection = dynamic(() => import('@/components/VideoSection'), {
 })
 
 const Testimonials = dynamic(() => import('@/components/Testimonials'), {
+  loading: () => <div className="py-20"><div className="animate-pulse bg-gray-100 h-64 rounded-xl max-w-6xl mx-auto"></div></div>,
+  ssr: false
+})
+
+const SecuritySection = dynamic(() => import('@/components/SecuritySection'), {
   loading: () => <div className="py-20"><div className="animate-pulse bg-gray-100 h-64 rounded-xl max-w-6xl mx-auto"></div></div>,
   ssr: false
 })
@@ -29,6 +35,7 @@ export default function HomePage() {
       <FeatureSection />
       <VideoSection />
       <Testimonials />
+      <SecuritySection />
       <FAQ />
 
       {/* Footer Minimaliste */}
@@ -37,10 +44,11 @@ export default function HomePage() {
           <p className="text-gray-500 text-sm">© 2024 TopLinkSante. Tous droits réservés.</p>
           <div className="flex space-x-6 mt-4 md:mt-0">
             <a href="#" className="text-gray-500 hover:text-primary transition-colors">Mentions légales</a>
-            <a href="#" className="text-gray-500 hover:text-primary transition-colors">Confidentialité</a>
+            <Link href="/confidentialite" className="text-gray-500 hover:text-primary transition-colors">Confidentialité</Link>
           </div>
         </div>
       </footer>
     </div>
   )
 }
+
