@@ -385,7 +385,7 @@ export default function AdminMessagesPage() {
                                         onClick={() => setResponseText("Bonjour,\n\nMerci pour votre message. Pourriez-vous nous fournir plus de détails concernant votre demande afin que nous puissions vous aider au mieux ?\n\nCordialement,\nL'équipe TopLinkSante")}
                                         className="px-3 py-1.5 text-xs font-medium bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors border border-blue-200"
                                     >
-                                        📋 Besoin d'infos
+                                        📋 Besoin d&apos;infos
                                     </button>
                                     <button
                                         type="button"
