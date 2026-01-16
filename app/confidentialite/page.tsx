@@ -40,8 +40,8 @@ export default function ConfidentialitePage() {
                     </div>
                     <p className="text-green-100 text-lg">
                         TopLinkSante a été conçu dès le départ pour ne jamais stocker de données de santé
-                        identifiables. Cette approche vous permet d&apos;utiliser notre service sans les contraintes
-                        d&apos;un hébergement HDS (Hébergeur de Données de Santé).
+                        identifiables. Les informations de vos patients sont protégées : leurs emails sont
+                        supprimés après envoi et leurs réponses sont entièrement anonymisées.
                     </p>
                 </div>
 

@@ -78,8 +78,8 @@ export default function SecuritySection() {
                         <h3 className="text-2xl md:text-3xl font-bold">Architecture Zero-Data Certifiée</h3>
                     </div>
                     <p className="text-green-100 max-w-2xl mx-auto mb-6">
-                        En ne stockant aucune donnée de santé identifiable, TopLinkSante vous permet
-                        d&apos;utiliser notre plateforme en toute sérénité, sans les contraintes d&apos;un hébergement HDS.
+                        Les données de vos patients sont protégées par design : emails supprimés après envoi,
+                        réponses anonymisées, aucune information identifiable conservée.
                     </p>
                     <a
                         href="/confidentialite"
