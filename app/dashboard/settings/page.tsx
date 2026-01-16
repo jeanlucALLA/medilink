@@ -60,6 +60,7 @@ export default function SettingsPage() {
   // États pour l'avatar
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
+  const [showAvatarPreview, setShowAvatarPreview] = useState(false)
   const avatarInputRef = useRef<HTMLInputElement>(null)
 
   // États pour les préférences de notifications
@@ -343,6 +344,32 @@ export default function SettingsPage() {
     }
   }
 
+  // Supprimer l'avatar
+  const handleDeleteAvatar = async () => {
+    if (!avatarUrl) return
+
+    setUploadingAvatar(true)
+    try {
+      const { supabase } = await import('@/lib/supabase') as any
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Non authentifié')
+
+      // Supprimer de la BDD
+      await supabase
+        .from('profiles')
+        .update({ avatar_url: null })
+        .eq('id', user.id)
+
+      setAvatarUrl(null)
+      setShowAvatarPreview(false)
+    } catch (err) {
+      console.error('Erreur suppression avatar:', err)
+      setError('Erreur lors de la suppression de l\'avatar')
+    } finally {
+      setUploadingAvatar(false)
+    }
+  }
+
   // Sauvegarder les préférences de notifications
   const handleSaveNotifications = async () => {
     setSavingNotifs(true)
@@ -499,10 +526,10 @@ export default function SettingsPage() {
             <h2 className="text-xl font-semibold text-gray-900">Profil</h2>
           </div>
 
-          {/* Avatar cliquable */}
+          {/* Avatar avec actions */}
           <div className="mb-6 flex items-center space-x-4">
             <div
-              onClick={() => avatarInputRef.current?.click()}
+              onClick={() => avatarUrl ? setShowAvatarPreview(true) : avatarInputRef.current?.click()}
               className="relative w-20 h-20 rounded-full flex-shrink-0 cursor-pointer group overflow-hidden"
             >
               {avatarUrl ? (
@@ -533,11 +560,36 @@ export default function SettingsPage() {
               onChange={handleAvatarUpload}
               className="hidden"
             />
-            <div>
-              <p className="text-sm text-gray-500 mb-1">Votre avatar</p>
-              <p className="text-sm text-gray-400">
-                {avatarUrl ? 'Cliquez pour modifier' : 'Cliquez pour ajouter une photo'}
-              </p>
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-gray-700">Votre avatar</p>
+              <div className="flex items-center space-x-2">
+                <button
+                  type="button"
+                  onClick={() => avatarInputRef.current?.click()}
+                  className="px-3 py-1 text-xs font-medium bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors"
+                >
+                  {avatarUrl ? 'Modifier' : 'Ajouter'}
+                </button>
+                {avatarUrl && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setShowAvatarPreview(true)}
+                      className="px-3 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                    >
+                      Voir
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleDeleteAvatar}
+                      disabled={uploadingAvatar}
+                      className="px-3 py-1 text-xs font-medium bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50"
+                    >
+                      Supprimer
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
           </div>
 
@@ -1035,6 +1087,46 @@ export default function SettingsPage() {
                 className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-bold shadow-md transition-all hover:scale-[1.02]"
               >
                 Confirmer l&apos;arrêt
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Prévisualisation Avatar */}
+      {showAvatarPreview && avatarUrl && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={() => setShowAvatarPreview(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+            <div className="text-center">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">Votre photo de profil</h3>
+              <img
+                src={avatarUrl}
+                alt="Avatar en grand"
+                className="w-48 h-48 rounded-full object-cover mx-auto shadow-lg"
+              />
+            </div>
+            <div className="flex space-x-3 pt-4">
+              <button
+                onClick={() => {
+                  setShowAvatarPreview(false)
+                  avatarInputRef.current?.click()
+                }}
+                className="flex-1 px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg font-medium transition-colors"
+              >
+                Modifier
+              </button>
+              <button
+                onClick={handleDeleteAvatar}
+                disabled={uploadingAvatar}
+                className="flex-1 px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg font-medium transition-colors disabled:opacity-50"
+              >
+                {uploadingAvatar ? 'Suppression...' : 'Supprimer'}
+              </button>
+              <button
+                onClick={() => setShowAvatarPreview(false)}
+                className="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors"
+              >
+                Fermer
               </button>
             </div>
           </div>
