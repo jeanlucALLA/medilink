@@ -367,6 +367,43 @@ export default function AdminMessagesPage() {
                                 </p>
                             </div>
 
+                            {/* Templates de réponse rapide */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Réponses rapides
+                                </label>
+                                <div className="flex flex-wrap gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setResponseText("Bonjour,\n\nMerci pour votre message. Votre problème a été résolu. N'hésitez pas à nous recontacter si vous avez d'autres questions.\n\nCordialement,\nL'équipe TopLinkSante")}
+                                        className="px-3 py-1.5 text-xs font-medium bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors border border-green-200"
+                                    >
+                                        ✓ Problème résolu
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setResponseText("Bonjour,\n\nMerci pour votre message. Pourriez-vous nous fournir plus de détails concernant votre demande afin que nous puissions vous aider au mieux ?\n\nCordialement,\nL'équipe TopLinkSante")}
+                                        className="px-3 py-1.5 text-xs font-medium bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors border border-blue-200"
+                                    >
+                                        📋 Besoin d'infos
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setResponseText("Bonjour,\n\nNous avons bien reçu votre demande et nous y travaillons activement. Nous reviendrons vers vous dès que possible.\n\nCordialement,\nL'équipe TopLinkSante")}
+                                        className="px-3 py-1.5 text-xs font-medium bg-orange-50 text-orange-700 rounded-lg hover:bg-orange-100 transition-colors border border-orange-200"
+                                    >
+                                        ⏳ En cours de traitement
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setResponseText("Bonjour,\n\nMerci d'utiliser TopLinkSante. Pour cette demande, nous vous invitons à consulter notre FAQ accessible depuis votre tableau de bord, ou à contacter directement notre support via le chat.\n\nCordialement,\nL'équipe TopLinkSante")}
+                                        className="px-3 py-1.5 text-xs font-medium bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 transition-colors border border-purple-200"
+                                    >
+                                        📚 Redirection FAQ
+                                    </button>
+                                </div>
+                            </div>
+
                             {/* Response Area */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">

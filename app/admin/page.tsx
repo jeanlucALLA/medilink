@@ -19,7 +19,11 @@ import {
     X,
     FileText,
     Mail,
-    Inbox
+    Inbox,
+    Download,
+    TrendingUp,
+    CreditCard,
+    BarChart3
 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import jsPDF from 'jspdf'
@@ -454,6 +458,38 @@ export default function AdminDashboard() {
         doc.save(`TopLinkSante_Rapport_${month}_${year}.pdf`)
     }
 
+    // Export CSV
+    const exportCSV = () => {
+        const headers = ['Nom', 'Email', 'Spécialité', 'Ville', 'Abonnement', 'Date inscription']
+        const rows = filteredUsers.map(u => [
+            u.nom_complet || u.full_name || '',
+            u.email || '',
+            u.speciality || u.specialite || '',
+            u.city || u.ville || '',
+            u.subscription_tier || 'discovery',
+            u.created_at ? new Date(u.created_at).toLocaleDateString('fr-FR') : ''
+        ])
+
+        const csvContent = [
+            headers.join(';'),
+            ...rows.map(row => row.map(cell => `"${cell}"`).join(';'))
+        ].join('\n')
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `praticiens_export_${new Date().toISOString().split('T')[0]}.csv`
+        link.click()
+        URL.revokeObjectURL(url)
+        toast.success(`${filteredUsers.length} praticiens exportés`)
+    }
+
+    // Calcul des stats
+    const premiumCount = users.filter(u => u.subscription_tier === 'premium').length
+    const cabinetCount = users.filter(u => u.subscription_tier === 'cabinet').length
+    const mrr = (premiumCount * 9.99) + (cabinetCount * 39.99)
+
     if (!isAdmin) return null // Précaution supplémentaire
 
     const targetCount = notifTarget === 'selection' ? filteredUsers.length : users.length
@@ -494,6 +530,14 @@ export default function AdminDashboard() {
                             Générer Rapport
                         </button>
 
+                        <button
+                            onClick={exportCSV}
+                            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white font-bold rounded-xl hover:bg-green-700 transition-all shadow-sm"
+                        >
+                            <Download className="w-4 h-4" />
+                            Export CSV
+                        </button>
+
                         <div className="flex items-center gap-4 bg-white p-2 rounded-2xl border border-gray-100 shadow-sm">
                             <div className="px-4 py-2 bg-blue-50 text-primary rounded-xl font-bold text-sm">
                                 {users.length} Praticiens
@@ -503,6 +547,52 @@ export default function AdminDashboard() {
                                 Système opérationnel
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                {/* Cartes Statistiques Globales */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                    <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="p-2 bg-blue-50 rounded-xl">
+                                <Users className="w-5 h-5 text-blue-600" />
+                            </div>
+                            <span className="text-sm text-gray-500">Total Praticiens</span>
+                        </div>
+                        <p className="text-3xl font-bold text-gray-900">{users.length}</p>
+                    </div>
+
+                    <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="p-2 bg-green-50 rounded-xl">
+                                <TrendingUp className="w-5 h-5 text-green-600" />
+                            </div>
+                            <span className="text-sm text-gray-500">MRR Estimé</span>
+                        </div>
+                        <p className="text-3xl font-bold text-green-600">{mrr.toFixed(2)} €</p>
+                    </div>
+
+                    <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="p-2 bg-purple-50 rounded-xl">
+                                <CreditCard className="w-5 h-5 text-purple-600" />
+                            </div>
+                            <span className="text-sm text-gray-500">Abonnés Premium</span>
+                        </div>
+                        <p className="text-3xl font-bold text-purple-600">{premiumCount + cabinetCount}</p>
+                        <p className="text-xs text-gray-400 mt-1">{premiumCount} Premium + {cabinetCount} Cabinet</p>
+                    </div>
+
+                    <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="p-2 bg-gray-100 rounded-xl">
+                                <BarChart3 className="w-5 h-5 text-gray-600" />
+                            </div>
+                            <span className="text-sm text-gray-500">Taux Conversion</span>
+                        </div>
+                        <p className="text-3xl font-bold text-gray-900">
+                            {users.length > 0 ? (((premiumCount + cabinetCount) / users.length) * 100).toFixed(1) : 0}%
+                        </p>
                     </div>
                 </div>
 
