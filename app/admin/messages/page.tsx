@@ -123,6 +123,7 @@ export default function AdminMessagesPage() {
         setSending(true)
         try {
             const { supabase } = await import('@/lib/supabase') as any
+            const { data: { session } } = await supabase.auth.getSession()
 
             // 1. Mettre à jour le ticket
             const { error: updateError } = await supabase
@@ -136,11 +137,31 @@ export default function AdminMessagesPage() {
 
             if (updateError) throw updateError
 
-            // 2. (Optionnel) Envoyer un email de notification via API
-            // Pour l'instant on se contente de la mise à jour base de données
-            // car l'utilisateur verra la réponse dans son interface (future feature)
+            // 2. Envoyer un email de notification au praticien
+            const userEmail = selectedTicket.profiles?.email
+            const userName = selectedTicket.profiles?.full_name || selectedTicket.profiles?.nom_complet || 'Praticien'
 
-            toast.success('Réponse envoyée et ticket clôturé !')
+            if (userEmail) {
+                try {
+                    await fetch('/api/admin/send-custom-email', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${session?.access_token}`
+                        },
+                        body: JSON.stringify({
+                            email: userEmail,
+                            subject: `[TopLinkSante] Réponse à votre demande : ${selectedTicket.subject}`,
+                            message: `Bonjour ${userName},\n\nNous avons répondu à votre demande de support concernant "${selectedTicket.subject}".\n\n--- Notre réponse ---\n${responseText}\n\n---\n\nVous pouvez également consulter cette réponse dans votre espace "Contact / Support" > "Mes demandes".\n\nCordialement,\nL'équipe TopLinkSante`
+                        })
+                    })
+                } catch (emailErr) {
+                    console.warn('Email notification failed:', emailErr)
+                    // On continue même si l'email échoue
+                }
+            }
+
+            toast.success('Réponse envoyée et notification email envoyée !')
 
             // Mise à jour locale
             setTickets(prev => prev.map(t =>
