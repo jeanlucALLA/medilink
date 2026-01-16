@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { User, Building2, CreditCard, Save, Loader2, CheckCircle, Shield, Lock, Mail, Send, MapPin, Map, AlertTriangle } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { User, Building2, CreditCard, Save, Loader2, CheckCircle, Shield, Lock, Mail, Send, MapPin, Map, AlertTriangle, Camera, Bell, BellOff } from 'lucide-react'
 import { geocodePostalCode, extractDepartmentCode } from '@/lib/geocoding'
 
 // Fonction pour extraire les initiales du nom complet (réutilisée depuis SidebarSafe)
@@ -57,6 +57,17 @@ export default function SettingsPage() {
   const [testEmailError, setTestEmailError] = useState<string | null>(null)
   const [showUnsubscribeModal, setShowUnsubscribeModal] = useState(false)
 
+  // États pour l'avatar
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
+  const avatarInputRef = useRef<HTMLInputElement>(null)
+
+  // États pour les préférences de notifications
+  const [notifNewResponses, setNotifNewResponses] = useState(true)
+  const [notifReminders, setNotifReminders] = useState(true)
+  const [notifNewsletter, setNotifNewsletter] = useState(false)
+  const [savingNotifs, setSavingNotifs] = useState(false)
+
   // Charger les données du profil
   useEffect(() => {
     const loadProfile = async () => {
@@ -93,6 +104,13 @@ export default function SettingsPage() {
           setCity(profile.city || '')
           setDepartmentCode(profile.department_code || '')
           setGoogleReviewUrl(profile.google_review_url || '')
+          setAvatarUrl(profile.avatar_url || null)
+
+          // Préférences de notifications
+          setNotifNewResponses(profile.notif_new_responses !== false)
+          setNotifReminders(profile.notif_reminders !== false)
+          setNotifNewsletter(profile.notif_newsletter === true)
+
           if (user.email) {
             setTestEmail(user.email)
           }
@@ -275,6 +293,83 @@ export default function SettingsPage() {
     }
   }
 
+  // Upload d'avatar
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (file.size > 2 * 1024 * 1024) {
+      setError('L\'image est trop volumineuse (max 2 Mo)')
+      return
+    }
+
+    setUploadingAvatar(true)
+    setError(null)
+
+    try {
+      const { supabase } = await import('@/lib/supabase') as any
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Non authentifié')
+
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${user.id}/avatar.${fileExt}`
+
+      // Upload to storage
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file, { upsert: true })
+
+      if (uploadError) throw uploadError
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName)
+
+      const newAvatarUrl = urlData?.publicUrl + '?t=' + Date.now()
+
+      // Update profile
+      await supabase
+        .from('profiles')
+        .update({ avatar_url: newAvatarUrl })
+        .eq('id', user.id)
+
+      setAvatarUrl(newAvatarUrl)
+    } catch (err: any) {
+      console.error('Erreur upload avatar:', err)
+      setError('Erreur lors de l\'upload de l\'avatar')
+    } finally {
+      setUploadingAvatar(false)
+    }
+  }
+
+  // Sauvegarder les préférences de notifications
+  const handleSaveNotifications = async () => {
+    setSavingNotifs(true)
+    try {
+      const { supabase } = await import('@/lib/supabase') as any
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Non authentifié')
+
+      await supabase
+        .from('profiles')
+        .update({
+          notif_new_responses: notifNewResponses,
+          notif_reminders: notifReminders,
+          notif_newsletter: notifNewsletter
+        })
+        .eq('id', user.id)
+
+      setShowSuccess(true)
+      setTimeout(() => setShowSuccess(false), 3000)
+    } catch (err) {
+      console.error('Erreur sauvegarde notifications:', err)
+      setError('Erreur lors de la sauvegarde des notifications')
+    } finally {
+      setSavingNotifs(false)
+    }
+  }
+
   // Mettre à jour le mot de passe
   const handleUpdatePassword = async () => {
     try {
@@ -404,16 +499,45 @@ export default function SettingsPage() {
             <h2 className="text-xl font-semibold text-gray-900">Profil</h2>
           </div>
 
-          {/* Avatar avec initiales */}
+          {/* Avatar cliquable */}
           <div className="mb-6 flex items-center space-x-4">
-            <div className="w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
-              <span className="text-white font-bold text-2xl">
-                {getInitials(nomComplet)}
-              </span>
+            <div
+              onClick={() => avatarInputRef.current?.click()}
+              className="relative w-20 h-20 rounded-full flex-shrink-0 cursor-pointer group overflow-hidden"
+            >
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt="Avatar"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-blue-600 flex items-center justify-center">
+                  <span className="text-white font-bold text-2xl">
+                    {getInitials(nomComplet)}
+                  </span>
+                </div>
+              )}
+              <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                {uploadingAvatar ? (
+                  <Loader2 className="w-6 h-6 text-white animate-spin" />
+                ) : (
+                  <Camera className="w-6 h-6 text-white" />
+                )}
+              </div>
             </div>
+            <input
+              ref={avatarInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarUpload}
+              className="hidden"
+            />
             <div>
               <p className="text-sm text-gray-500 mb-1">Votre avatar</p>
-              <p className="text-sm text-gray-400">Basé sur vos initiales</p>
+              <p className="text-sm text-gray-400">
+                {avatarUrl ? 'Cliquez pour modifier' : 'Cliquez pour ajouter une photo'}
+              </p>
             </div>
           </div>
 
@@ -654,6 +778,95 @@ export default function SettingsPage() {
             </div>
 
 
+          </div>
+        </div>
+
+        {/* Card Préférences de Notifications */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center space-x-3 mb-6">
+            <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center">
+              <Bell className="w-5 h-5 text-white" />
+            </div>
+            <h2 className="text-xl font-semibold text-gray-900">Préférences de notifications</h2>
+          </div>
+
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600 mb-4">
+              Choisissez quelles notifications vous souhaitez recevoir par email.
+            </p>
+
+            {/* Toggle Nouvelles réponses */}
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-center space-x-3">
+                <CheckCircle className="w-5 h-5 text-green-600" />
+                <div>
+                  <p className="font-medium text-gray-900">Nouvelles réponses patients</p>
+                  <p className="text-sm text-gray-500">Être notifié quand un patient répond</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setNotifNewResponses(!notifNewResponses)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${notifNewResponses ? 'bg-primary' : 'bg-gray-300'
+                  }`}
+              >
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${notifNewResponses ? 'translate-x-6' : 'translate-x-1'
+                  }`} />
+              </button>
+            </div>
+
+            {/* Toggle Rappels */}
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-center space-x-3">
+                <Mail className="w-5 h-5 text-blue-600" />
+                <div>
+                  <p className="font-medium text-gray-900">Rappels questionnaires</p>
+                  <p className="text-sm text-gray-500">Rappels des envois programmés</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setNotifReminders(!notifReminders)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${notifReminders ? 'bg-primary' : 'bg-gray-300'
+                  }`}
+              >
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${notifReminders ? 'translate-x-6' : 'translate-x-1'
+                  }`} />
+              </button>
+            </div>
+
+            {/* Toggle Newsletter */}
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-center space-x-3">
+                <BellOff className="w-5 h-5 text-gray-500" />
+                <div>
+                  <p className="font-medium text-gray-900">Newsletters et mises à jour</p>
+                  <p className="text-sm text-gray-500">Nouveautés et conseils TopLinkSante</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setNotifNewsletter(!notifNewsletter)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${notifNewsletter ? 'bg-primary' : 'bg-gray-300'
+                  }`}
+              >
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${notifNewsletter ? 'translate-x-6' : 'translate-x-1'
+                  }`} />
+              </button>
+            </div>
+
+            {/* Bouton sauvegarder */}
+            <div className="flex justify-end pt-4">
+              <button
+                onClick={handleSaveNotifications}
+                disabled={savingNotifs}
+                className="flex items-center space-x-2 px-6 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors font-medium disabled:opacity-50"
+              >
+                {savingNotifs ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <Save className="w-5 h-5" />
+                )}
+                <span>Enregistrer les préférences</span>
+              </button>
+            </div>
           </div>
         </div>
 
