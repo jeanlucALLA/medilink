@@ -36,7 +36,7 @@ export default function AbonnementPage() {
             if (!user) {
                 console.warn("🚫 Utilisateur non connecté")
                 toast.error('Veuillez vous connecter ou créer un compte pour vous abonner.')
-                router.push('/register')
+                router.push('/register?plan=pro')
                 return
             }
             console.log("✅ Utilisateur connecté:", user.id)

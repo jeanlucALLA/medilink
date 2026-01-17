@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { UserPlus, Mail, Lock, User, Briefcase, Building2, GraduationCap, ArrowLeft, MapPin, Gift } from 'lucide-react'
 import Link from 'next/link'
+import { STRIPE_PRICE_IDS } from '@/lib/constants'
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -22,14 +23,22 @@ export default function RegisterPage() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const [referralCode, setReferralCode] = useState<string | null>(null)
+  const [isProPlan, setIsProPlan] = useState(false) // Détection si inscription pour Pro direct
   const router = useRouter()
 
-  // Détecter le code de parrainage dans l'URL au chargement
+  // Détecter le code de parrainage et le plan dans l'URL au chargement
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      // Récupérer le paramètre ref de l'URL
+      // Récupérer les paramètres de l'URL
       const urlParams = new URLSearchParams(window.location.search)
       const refParam = urlParams.get('ref')
+      const planParam = urlParams.get('plan')
+
+      // Détecter si c'est une inscription Pro directe
+      if (planParam === 'pro') {
+        setIsProPlan(true)
+        console.log('[Register] Mode Pro détecté - redirection Stripe après inscription')
+      }
 
       if (refParam) {
         // Stocker le code dans localStorage pour ne pas le perdre
@@ -237,10 +246,40 @@ export default function RegisterPage() {
           // Attendre que le profil soit prêt avant de continuer
           await waitForProfile(authData.user.id)
 
-          // ✅ TRIAL SYSTEM: Rediriger directement vers le dashboard
-          // Le trigger SQL a automatiquement défini subscription_tier = 'trial'
-          // L'utilisateur a 5 jours d'accès gratuit
-          router.replace('/dashboard')
+          // Si c'est une inscription Pro, rediriger vers Stripe
+          if (isProPlan) {
+            console.log('[Register] Redirection vers Stripe pour abonnement Pro...')
+            try {
+              const response = await fetch('/api/stripe/checkout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  priceId: STRIPE_PRICE_IDS.pro,
+                  tier: 'pro',
+                  userId: authData.user.id
+                }),
+              })
+
+              if (!response.ok) {
+                throw new Error('Erreur API Stripe')
+              }
+
+              const { url } = await response.json()
+              if (url) {
+                window.location.href = url
+              } else {
+                console.error('Erreur: Pas d\'URL de checkout')
+                router.replace('/dashboard')
+              }
+            } catch (stripeErr) {
+              console.error('Erreur Stripe:', stripeErr)
+              // Fallback vers dashboard en cas d'erreur
+              router.replace('/dashboard')
+            }
+          } else {
+            // ✅ TRIAL SYSTEM: Rediriger vers le dashboard avec essai gratuit
+            router.replace('/dashboard')
+          }
         } else {
           // Pas de session (Confirmation email requise)
           alert("Inscription réussie ! Veuillez consulter vos emails pour confirmer votre compte.")
