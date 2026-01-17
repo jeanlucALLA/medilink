@@ -21,11 +21,25 @@ export default function ContactDemoPage() {
         e.preventDefault()
         setLoading(true)
 
-        // Simuler l'envoi (à connecter à un backend/email)
-        await new Promise(resolve => setTimeout(resolve, 1500))
+        try {
+            const response = await fetch('/api/demo-request', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            })
 
-        setSubmitted(true)
-        setLoading(false)
+            const data = await response.json()
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Erreur lors de l\'envoi')
+            }
+
+            setSubmitted(true)
+        } catch (error: any) {
+            alert(error.message || 'Une erreur est survenue')
+        } finally {
+            setLoading(false)
+        }
     }
 
     if (submitted) {
