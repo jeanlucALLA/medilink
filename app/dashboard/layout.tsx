@@ -233,6 +233,15 @@ export default function DashboardLayout({
           gravity={0.3}
         />
       )}
+
+      {/* Trial Banner - affichée au-dessus de tout pour visibilité maximale */}
+      {profile?.subscription_tier === 'trial' && profile?.trial_ends_at && (
+        <TrialBanner
+          trialEndsAt={profile.trial_ends_at}
+          subscriptionTier={profile.subscription_tier}
+        />
+      )}
+
       <div className="flex">
         {/* Sidebar Safe - masquée sur la page welcome */}
         {!isWelcomePage && isMounted && (
@@ -247,14 +256,6 @@ export default function DashboardLayout({
 
         {/* Main content */}
         <div className="flex-1 flex flex-col">
-          {/* Trial Banner - affichée uniquement pour les trials actifs */}
-          {profile?.subscription_tier === 'trial' && profile?.trial_ends_at && (
-            <TrialBanner
-              trialEndsAt={profile.trial_ends_at}
-              subscriptionTier={profile.subscription_tier}
-            />
-          )}
-
           <main className={`flex-1 ${!isWelcomePage && sidebarOpen ? (isCollapsed ? 'lg:ml-20' : 'lg:ml-64') : 'ml-0'} transition-all duration-300 ease-in-out`}>
             <div className={isWelcomePage ? 'p-0' : 'p-6'}>
               {!isWelcomePage && (
