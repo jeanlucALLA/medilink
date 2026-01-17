@@ -6,6 +6,7 @@ import { Gift, Copy, Check, Mail, MessageCircle, Users, Clock, DollarSign, Share
 export default function ParrainagePage() {
   const [referralLink, setReferralLink] = useState('')
   const [copied, setCopied] = useState(false)
+  const [copiedCode, setCopiedCode] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
   const [referralCode, setReferralCode] = useState<string | null>(null)
   const [referralsCount, setReferralsCount] = useState<number>(0)
@@ -93,6 +94,19 @@ export default function ParrainagePage() {
     } catch (err) {
       console.error('[Parrainage] Erreur copie:', err)
       alert('Impossible de copier le lien')
+    }
+  }
+
+  // Copier uniquement le code de parrainage
+  const handleCopyCode = async () => {
+    if (!referralCode) return
+    try {
+      await navigator.clipboard.writeText(referralCode)
+      setCopiedCode(true)
+      setTimeout(() => setCopiedCode(false), 2000)
+    } catch (err) {
+      console.error('[Parrainage] Erreur copie code:', err)
+      alert('Impossible de copier le code')
     }
   }
 
@@ -252,6 +266,49 @@ export default function ParrainagePage() {
             <div className="bg-green-50 border-l-4 border-green-500 text-green-700 px-4 py-3 rounded-lg text-sm transition-all duration-300 animate-pulse flex items-center space-x-2 shadow-md">
               <Check className="w-5 h-5 text-green-600 flex-shrink-0" />
               <span className="font-medium">Lien copié dans le presse-papiers !</span>
+            </div>
+          )}
+
+          {/* Section Code de parrainage seul */}
+          {referralCode && (
+            <div className="pt-4 border-t border-gray-200">
+              <p className="text-sm font-medium text-gray-700 mb-2">Votre code de parrainage :</p>
+              <div className="flex items-center space-x-3">
+                <div className="flex-1 relative">
+                  <input
+                    type="text"
+                    value={referralCode}
+                    readOnly
+                    className="w-full px-4 py-2 pr-14 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 font-mono text-sm focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                  />
+                  <button
+                    onClick={handleCopyCode}
+                    className={`absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md transition-all duration-200 ${copiedCode
+                      ? 'text-green-600 bg-green-50'
+                      : 'text-gray-500 hover:text-primary hover:bg-gray-100'
+                      }`}
+                    title={copiedCode ? 'Code copié !' : 'Copier le code'}
+                  >
+                    {copiedCode ? (
+                      <Check className="w-4 h-4" />
+                    ) : (
+                      <Copy className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
+                <button
+                  onClick={handleCopyCode}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${copiedCode
+                    ? 'bg-green-100 text-green-700 border border-green-300'
+                    : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300'
+                    }`}
+                >
+                  {copiedCode ? 'Copié !' : 'Copier le code'}
+                </button>
+              </div>
+              {copiedCode && (
+                <p className="text-xs text-green-600 mt-2">✓ Code copié dans le presse-papiers</p>
+              )}
             </div>
           )}
 

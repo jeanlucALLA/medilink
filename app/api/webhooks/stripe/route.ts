@@ -46,6 +46,7 @@ export async function POST(req: Request) {
                     .update({
                         subscription_tier: tier,
                         stripe_customer_id: session.customer,
+                        stripe_subscription_id: session.subscription,
                         updated_at: new Date().toISOString()
                     })
                     .eq('id', userId)
@@ -73,6 +74,51 @@ export async function POST(req: Request) {
                     console.error('⚠️ Avertissement: Echec envoi email bienvenue:', emailErr)
                     // On ne bloque pas le retour 200 à Stripe car le paiement est valide
                 }
+            }
+        }
+
+        // Handle subscription cancellation (via Customer Portal)
+        if (event.type === 'customer.subscription.deleted') {
+            const subscription = event.data.object as any
+            const customerId = subscription.customer
+
+            console.log(`🚫 Abonnement annulé pour customer ${customerId}`)
+
+            // Désactiver l'abonnement dans la base de données
+            const { error } = await supabase
+                .from('profiles')
+                .update({
+                    subscription_tier: 'inactive',
+                    stripe_subscription_id: null,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('stripe_customer_id', customerId)
+
+            if (error) {
+                console.error('❌ Erreur désactivation abonnement:', error)
+                return new NextResponse('Database Error', { status: 500 })
+            }
+
+            console.log(`✅ Abonnement désactivé avec succès pour customer ${customerId}`)
+        }
+
+        // Handle payment failure (monitoring)
+        if (event.type === 'invoice.payment_failed') {
+            const invoice = event.data.object as any
+            const customerId = invoice.customer
+            const attemptCount = invoice.attempt_count
+
+            console.warn(`⚠️ Échec paiement pour customer ${customerId} (tentative ${attemptCount})`)
+
+            // Optionnel: Récupérer l'email pour notification interne
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('email, nom_complet')
+                .eq('stripe_customer_id', customerId)
+                .single()
+
+            if (profile) {
+                console.warn(`⚠️ Utilisateur concerné: ${profile.nom_complet} (${profile.email})`)
             }
         }
 

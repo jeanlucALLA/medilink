@@ -165,7 +165,7 @@ export default function QuestionnairePage() {
             loading: `Envoi ${i + 1}/${validEmails.length} vers ${email}...`,
             success: `Envoyé à ${email}`,
             error: (err) => `Échec ${email}: ${err.message}`
-          })
+          }, { duration: 2000 })
           successCount++
         } catch (e) {
           failCount++

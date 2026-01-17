@@ -82,7 +82,7 @@ export default function DashboardLayout({
         if (!profileChecked) {
           const { data: profileData, error: profileError } = await supabase
             .from('profiles')
-            .select('nom_complet, full_name, specialite, speciality, city')
+            .select('nom_complet, full_name, specialite, speciality, city, subscription_tier')
             .eq('id', user.id)
             .single()
 
@@ -106,10 +106,20 @@ export default function DashboardLayout({
             const normalizedProfile = profileData ? {
               nom_complet: profileData.full_name || profileData.nom_complet,
               specialite: profileData.speciality || profileData.specialite,
-              city: profileData.city
+              city: profileData.city,
+              subscription_tier: profileData.subscription_tier
             } : null
             setProfile(normalizedProfile)
             setProfileChecked(true)
+
+            // ✅ SUBSCRIPTION GUARD: Bloquer les abonnements inactifs
+            const isSubscriptionActive = profileData?.subscription_tier === 'pro' || profileData?.subscription_tier === 'premium'
+            if (!isSubscriptionActive && pathname !== '/dashboard/welcome') {
+              console.log('🚫 Abonnement inactif, redirection vers /abonnement')
+              router.push('/abonnement')
+              setLoading(false)
+              return
+            }
           }
 
           // Logique de redirection onboarding

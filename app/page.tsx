@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import Hero from '@/components/Hero'
 import FeatureSection from '@/components/FeatureSection'
+import Footer from '@/components/Footer'
 
 // Lazy load heavy below-the-fold components for better LCP
 const VideoSection = dynamic(() => import('@/components/VideoSection'), {
@@ -37,17 +38,7 @@ export default function HomePage() {
       <Testimonials />
       <SecuritySection />
       <FAQ />
-
-      {/* Footer Minimaliste */}
-      <footer className="bg-secondary py-12 border-t border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center bg-transparent">
-          <p className="text-gray-500 text-sm">© 2024 TopLinkSante. Tous droits réservés.</p>
-          <div className="flex space-x-6 mt-4 md:mt-0">
-            <a href="#" className="text-gray-500 hover:text-primary transition-colors">Mentions légales</a>
-            <Link href="/confidentialite" className="text-gray-500 hover:text-primary transition-colors">Confidentialité</Link>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   )
 }
