@@ -126,16 +126,65 @@ export default function AbonnementPage() {
                     </p>
                 </div>
 
-                {/* Pricing Card */}
-                <div className="max-w-md mx-auto">
-                    <div className="bg-white rounded-[24px] p-8 shadow-xl border-2 border-primary/10 flex flex-col relative z-10 group transform hover:-translate-y-1 transition-all duration-300">
-                        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wide shadow-lg">
-                            Tout inclus
+                {/* Pricing Cards - Two Options */}
+                <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
+
+                    {/* Free Trial Card */}
+                    <div className="bg-white rounded-[24px] p-8 shadow-lg border-2 border-gray-200 flex flex-col relative z-10 group transform hover:-translate-y-1 transition-all duration-300">
+                        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-green-500 text-white px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wide shadow-lg">
+                            Essai gratuit
                         </div>
 
                         <div className="mb-8 text-center">
-                            <h3 className="text-xl font-bold text-gray-900 mb-2">Abonnement Professionnel Complet</h3>
-                            <p className="text-gray-500 text-sm h-6">Pour les praticiens exigeants.</p>
+                            <h3 className="text-xl font-bold text-gray-900 mb-2">Découvrez TopLinkSante</h3>
+                            <p className="text-gray-500 text-sm h-6">Testez toutes les fonctionnalités</p>
+                            <div className="mt-6 flex items-baseline justify-center">
+                                <span className="text-5xl font-bold text-green-600">0€</span>
+                                <span className="text-gray-500 ml-2">/ 5 jours</span>
+                            </div>
+                        </div>
+
+                        <div className="flex-1 space-y-4 mb-8">
+                            <div className="flex items-start gap-3">
+                                <Check className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
+                                <span className="text-gray-700 text-sm">Accès complet pendant 5 jours</span>
+                            </div>
+                            <div className="flex items-start gap-3">
+                                <Check className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
+                                <span className="text-gray-700 text-sm">Aucune carte bancaire requise</span>
+                            </div>
+                            <div className="flex items-start gap-3">
+                                <Check className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
+                                <span className="text-gray-700 text-sm">Questionnaires illimités</span>
+                            </div>
+                            <div className="flex items-start gap-3">
+                                <Check className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
+                                <span className="text-gray-700 text-sm">Tableau de bord complet</span>
+                            </div>
+                            <div className="flex items-start gap-3">
+                                <Shield className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
+                                <span className="text-gray-700 text-sm">Données sécurisées</span>
+                            </div>
+                        </div>
+
+                        <a
+                            href="/register"
+                            className="w-full py-4 rounded-2xl bg-green-500 text-white font-bold hover:bg-green-600 shadow-lg hover:shadow-green-500/30 active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2 text-center"
+                        >
+                            <Zap className="w-5 h-5" />
+                            Commencer l&apos;essai gratuit
+                        </a>
+                    </div>
+
+                    {/* Pro Subscription Card */}
+                    <div className="bg-white rounded-[24px] p-8 shadow-xl border-2 border-primary/20 flex flex-col relative z-10 group transform hover:-translate-y-1 transition-all duration-300">
+                        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wide shadow-lg">
+                            Recommandé
+                        </div>
+
+                        <div className="mb-8 text-center">
+                            <h3 className="text-xl font-bold text-gray-900 mb-2">Abonnement Pro</h3>
+                            <p className="text-gray-500 text-sm h-6">Accès illimité, sans restriction</p>
                             <div className="mt-6 flex items-baseline justify-center">
                                 <span className="text-5xl font-bold text-gray-900">9,99€</span>
                                 <span className="text-gray-500 ml-2">/ mois</span>
