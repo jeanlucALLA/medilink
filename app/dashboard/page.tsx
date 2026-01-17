@@ -591,22 +591,22 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Bandeau de localisation manquante */}
+      {/* Bandeau de profil incomplet */}
       {isMountedRef.current && showLocationBanner && (
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-2xl p-4 flex items-center justify-between">
+        <div className="bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-200 rounded-2xl p-4 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-              <MapPin className="w-5 h-5 text-primary" />
+            <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center">
+              <AlertTriangle className="w-5 h-5 text-red-600" />
             </div>
             <p className="text-sm text-gray-700">
-              <span className="font-semibold">Complétez votre localisation</span> pour activer le Benchmark Régional.
+              <span className="font-semibold text-red-700">Complétez votre profil</span> pour profiter de toutes les fonctionnalités.
             </p>
           </div>
           <Link
             href="/dashboard/settings"
-            className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-xl text-sm font-medium transition-all duration-200 hover:shadow-lg"
+            className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-xl text-sm font-medium transition-all duration-200 hover:shadow-lg"
           >
-            Configurer
+            Compléter
           </Link>
         </div>
       )}
