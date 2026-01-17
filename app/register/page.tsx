@@ -5,7 +5,6 @@ import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { UserPlus, Mail, Lock, User, Briefcase, Building2, GraduationCap, ArrowLeft, MapPin, Gift } from 'lucide-react'
 import Link from 'next/link'
-import { STRIPE_PRICE_IDS } from '@/lib/constants'
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -225,44 +224,18 @@ export default function RegisterPage() {
           return false
         }
 
-        // Gérer la redirection vers Stripe ou la confirmation email
+        // Gérer la redirection après inscription
         if (authData.session) {
           // Attendre que le profil soit prêt avant de continuer
           await waitForProfile(authData.user.id)
 
-          // Session active : on redirige vers le paiement Stripe
-          try {
-            const response = await fetch('/api/stripe/checkout', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                priceId: STRIPE_PRICE_IDS.pro,
-                tier: 'pro',
-                userId: authData.user.id
-              }),
-            })
-
-            if (!response.ok) {
-              throw new Error('Erreur API Stripe')
-            }
-
-            const { url } = await response.json()
-            if (url) {
-              window.location.href = url
-            } else {
-              console.error('Erreur: Pas d\'URL de checkout')
-              router.replace('/dashboard')
-            }
-          } catch (err) {
-            console.error('Erreur appel Stripe:', err)
-            // En cas d'erreur, fallback dashboard
-            router.replace('/dashboard')
-          }
+          // ✅ TRIAL SYSTEM: Rediriger directement vers le dashboard
+          // Le trigger SQL a automatiquement défini subscription_tier = 'trial'
+          // L'utilisateur a 5 jours d'accès gratuit
+          router.replace('/dashboard')
         } else {
           // Pas de session (Confirmation email requise)
-          // On n'active pas le setSuccess tout de suite pour laisser le message visible ? 
-          // setSuccess est déjà true au dessus.
-          alert("Inscription réussie ! Veuillez consulter vos emails pour confirmer votre compte avant de procéder au paiement.")
+          alert("Inscription réussie ! Veuillez consulter vos emails pour confirmer votre compte.")
         }
       }
     } catch (err: any) {
