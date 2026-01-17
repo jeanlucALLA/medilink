@@ -9,6 +9,7 @@ import { Toaster } from 'react-hot-toast'
 import Confetti from 'react-confetti'
 import SidebarSafe from '@/components/dashboard/SidebarSafe'
 import NotificationsBell from '@/components/dashboard/NotificationsBell'
+import TrialBanner from '@/components/dashboard/TrialBanner'
 import { checkPerformanceNotification } from '@/lib/performance-detection'
 
 export default function DashboardLayout({
@@ -82,7 +83,7 @@ export default function DashboardLayout({
         if (!profileChecked) {
           const { data: profileData, error: profileError } = await supabase
             .from('profiles')
-            .select('nom_complet, full_name, specialite, speciality, city, subscription_tier')
+            .select('nom_complet, full_name, specialite, speciality, city, subscription_tier, trial_ends_at')
             .eq('id', user.id)
             .single()
 
@@ -107,16 +108,21 @@ export default function DashboardLayout({
               nom_complet: profileData.full_name || profileData.nom_complet,
               specialite: profileData.speciality || profileData.specialite,
               city: profileData.city,
-              subscription_tier: profileData.subscription_tier
+              subscription_tier: profileData.subscription_tier,
+              trial_ends_at: profileData.trial_ends_at
             } : null
             setProfile(normalizedProfile)
             setProfileChecked(true)
 
-            // ✅ SUBSCRIPTION GUARD: Bloquer les abonnements inactifs
-            const isSubscriptionActive = profileData?.subscription_tier === 'pro' || profileData?.subscription_tier === 'premium'
-            if (!isSubscriptionActive && pathname !== '/dashboard/welcome') {
-              console.log('🚫 Abonnement inactif, redirection vers /abonnement')
-              router.push('/abonnement')
+            // ✅ SUBSCRIPTION GUARD: Bloquer les abonnements inactifs ou trials expirés
+            const tier = profileData?.subscription_tier
+            const trialEndsAt = profileData?.trial_ends_at
+            const isProOrPremium = tier === 'pro' || tier === 'premium'
+            const isTrialActive = tier === 'trial' && trialEndsAt && new Date(trialEndsAt) > new Date()
+
+            if (!isProOrPremium && !isTrialActive && pathname !== '/dashboard/welcome') {
+              console.log('🚫 Abonnement inactif ou trial expiré, redirection vers /abonnement')
+              router.push('/abonnement?expired=true')
               setLoading(false)
               return
             }
@@ -240,46 +246,56 @@ export default function DashboardLayout({
         )}
 
         {/* Main content */}
-        <main className={`flex-1 ${!isWelcomePage && sidebarOpen ? (isCollapsed ? 'lg:ml-20' : 'lg:ml-64') : 'ml-0'} transition-all duration-300 ease-in-out`}>
-          <div className={isWelcomePage ? 'p-0' : 'p-6'}>
-            {!isWelcomePage && (
-              <div className="mb-6 flex items-center justify-between">
-                <button
-                  onClick={() => setSidebarOpen(!sidebarOpen)}
-                  className="lg:hidden text-gray-500 hover:text-gray-700"
-                >
-                  <Menu className="w-6 h-6" />
-                </button>
-                {/* Header avec notifications */}
-                <div className="hidden lg:flex lg:items-center lg:gap-4">
-                  {/* User Profile Info */}
-                  <div className="flex flex-col items-end mr-2">
-                    <span className="text-sm font-semibold text-gray-900">
-                      {profile?.nom_complet || user?.email?.split('@')[0] || 'Utilisateur'}
-                    </span>
-                    <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">
-                      Médecin
-                    </span>
-                  </div>
+        <div className="flex-1 flex flex-col">
+          {/* Trial Banner - affichée uniquement pour les trials actifs */}
+          {profile?.subscription_tier === 'trial' && profile?.trial_ends_at && (
+            <TrialBanner
+              trialEndsAt={profile.trial_ends_at}
+              subscriptionTier={profile.subscription_tier}
+            />
+          )}
 
-                  {/* Badge Zero-Data */}
-                  <Link
-                    href="/confidentialite"
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-700 text-xs font-medium rounded-full hover:bg-green-100 transition-colors border border-green-200"
-                    title="Mode Zero-Data actif - Aucune donnée de santé stockée"
+          <main className={`flex-1 ${!isWelcomePage && sidebarOpen ? (isCollapsed ? 'lg:ml-20' : 'lg:ml-64') : 'ml-0'} transition-all duration-300 ease-in-out`}>
+            <div className={isWelcomePage ? 'p-0' : 'p-6'}>
+              {!isWelcomePage && (
+                <div className="mb-6 flex items-center justify-between">
+                  <button
+                    onClick={() => setSidebarOpen(!sidebarOpen)}
+                    className="lg:hidden text-gray-500 hover:text-gray-700"
                   >
-                    <Shield className="w-3.5 h-3.5" />
-                    Zero-Data
-                  </Link>
+                    <Menu className="w-6 h-6" />
+                  </button>
+                  {/* Header avec notifications */}
+                  <div className="hidden lg:flex lg:items-center lg:gap-4">
+                    {/* User Profile Info */}
+                    <div className="flex flex-col items-end mr-2">
+                      <span className="text-sm font-semibold text-gray-900">
+                        {profile?.nom_complet || user?.email?.split('@')[0] || 'Utilisateur'}
+                      </span>
+                      <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                        Médecin
+                      </span>
+                    </div>
 
-                  <NotificationsBell variant="header" />
+                    {/* Badge Zero-Data */}
+                    <Link
+                      href="/confidentialite"
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-700 text-xs font-medium rounded-full hover:bg-green-100 transition-colors border border-green-200"
+                      title="Mode Zero-Data actif - Aucune donnée de santé stockée"
+                    >
+                      <Shield className="w-3.5 h-3.5" />
+                      Zero-Data
+                    </Link>
+
+                    <NotificationsBell variant="header" />
+                  </div>
                 </div>
-              </div>
-            )}
-            {/* Le layout ne bloque plus l'affichage - chaque page gère son propre loading */}
-            {children}
-          </div>
-        </main>
+              )}
+              {/* Le layout ne bloque plus l'affichage - chaque page gère son propre loading */}
+              {children}
+            </div>
+          </main>
+        </div>
       </div>
     </div>
   )
