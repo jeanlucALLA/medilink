@@ -105,13 +105,13 @@ export default function RegisterPage() {
 
       if (authData.user) {
         // ACTION 1 : Mise à jour immédiate du profil créé par le Trigger
+        // NOTE: Ne pas toucher à subscription_tier - le trigger SQL le définit à 'trial'
         const { error: profileError } = await supabase
           .from('profiles')
           .update({
             full_name: formData.nomComplet,
             speciality: formData.specialite || null,
             city: formData.zip_code || null, // Code postal comme ville
-            subscription_tier: 'discovery',
           })
           .eq('id', authData.user.id)
 
