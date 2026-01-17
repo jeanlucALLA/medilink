@@ -1,19 +1,27 @@
 'use client'
 
 import Navbar from '@/components/Navbar'
-import { Check, Shield, Zap, Info, Loader2 } from 'lucide-react'
+import { Check, Shield, Zap, Info, Loader2, AlertTriangle } from 'lucide-react'
 import { loadStripe } from '@stripe/stripe-js'
 import { STRIPE_PRICE_IDS } from '@/lib/constants'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { toast } from 'react-hot-toast'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 // Initialisation Stripe (Lazy load)
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
 export default function AbonnementPage() {
     const [loading, setLoading] = useState(false)
+    const [isExpired, setIsExpired] = useState(false)
     const router = useRouter()
+    const searchParams = useSearchParams()
+
+    useEffect(() => {
+        if (searchParams.get('expired') === 'true') {
+            setIsExpired(true)
+        }
+    }, [searchParams])
 
     const handleSubscribe = async () => {
         setLoading(true)
@@ -84,10 +92,33 @@ export default function AbonnementPage() {
             <Navbar />
 
             <main className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+                {/* Alert for expired trial */}
+                {isExpired && (
+                    <div className="max-w-2xl mx-auto mb-8 bg-red-50 border-2 border-red-200 rounded-xl p-6 animate-fade-in-up">
+                        <div className="flex items-start space-x-4">
+                            <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                <AlertTriangle className="w-6 h-6 text-red-600" />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-bold text-red-900 mb-1">
+                                    Votre essai gratuit est terminé
+                                </h3>
+                                <p className="text-red-700">
+                                    Vos 5 jours d&apos;essai sont écoulés. Pour continuer à utiliser TopLinkSante
+                                    et accéder à votre dashboard, choisissez votre abonnement ci-dessous.
+                                </p>
+                                <p className="text-sm text-red-600 mt-2 font-medium">
+                                    ✓ Vos données sont conservées pendant 30 jours
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Header */}
                 <div className="text-center max-w-3xl mx-auto mb-16 animate-fade-in-up">
                     <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 tracking-tight">
-                        Une offre unique pour les professionnels.
+                        {isExpired ? 'Continuez avec TopLinkSante Pro' : 'Une offre unique pour les professionnels.'}
                     </h1>
                     <p className="text-xl text-gray-600">
                         Accédez à l&apos;intégralité des fonctionnalités TopLinkSante.
