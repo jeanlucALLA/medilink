@@ -104,19 +104,27 @@ export default function RegisterPage() {
       }
 
       if (authData.user) {
-        // ACTION 1 : Mise à jour immédiate du profil créé par le Trigger
-        // NOTE: Ne pas toucher à subscription_tier - le trigger SQL le définit à 'trial'
+        // Calculer la date de fin d'essai (5 jours à partir de maintenant)
+        const trialStartedAt = new Date().toISOString()
+        const trialEndsAt = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString()
+
+        // ACTION 1 : Mise à jour du profil avec les infos + activation du trial
         const { error: profileError } = await supabase
           .from('profiles')
           .update({
             full_name: formData.nomComplet,
             speciality: formData.specialite || null,
-            city: formData.zip_code || null, // Code postal comme ville
+            city: formData.zip_code || null,
+            subscription_tier: 'trial',
+            trial_started_at: trialStartedAt,
+            trial_ends_at: trialEndsAt,
           })
           .eq('id', authData.user.id)
 
         if (profileError) {
           console.error('Erreur lors de la mise à jour du profil:', profileError)
+        } else {
+          console.log('✅ Profil mis à jour avec trial jusqu\'au:', trialEndsAt)
         }
 
         // Gérer le parrainage si un code de référence existe
