@@ -116,10 +116,10 @@ export default function Footer() {
                         {/* CTA Button */}
                         <div className="mt-6">
                             <Link
-                                href="/register"
+                                href="/contact-demo"
                                 className="inline-block px-6 py-2.5 bg-primary hover:bg-primary-dark text-white text-sm font-medium rounded-lg transition-colors"
                             >
-                                Démarrer gratuitement
+                                Demander une démo
                             </Link>
                         </div>
                     </div>
