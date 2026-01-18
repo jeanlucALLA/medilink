@@ -656,6 +656,7 @@ export default function DashboardPage() {
               Voici l&apos;aperçu de votre activité aujourd&apos;hui.
             </p>
           </div>
+          {/* Desktop buttons */}
           <div className="hidden md:flex items-center space-x-3">
             <Link
               href="/dashboard/questionnaire"
@@ -667,6 +668,16 @@ export default function DashboardPage() {
             <button
               onClick={handleLogout}
               className="flex items-center space-x-2 px-4 py-2.5 bg-white/10 hover:bg-red-500/30 backdrop-blur-sm text-white/90 hover:text-white font-medium rounded-xl transition-all duration-200 border border-white/10 hover:border-red-400/30"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>Déconnexion</span>
+            </button>
+          </div>
+          {/* Mobile logout button */}
+          <div className="flex md:hidden">
+            <button
+              onClick={handleLogout}
+              className="flex items-center space-x-2 px-3 py-2 bg-white/10 hover:bg-red-500/30 backdrop-blur-sm text-white/90 hover:text-white font-medium rounded-xl transition-all duration-200 border border-white/10"
             >
               <LogOut className="w-4 h-4" />
               <span>Déconnexion</span>
