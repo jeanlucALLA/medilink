@@ -300,9 +300,11 @@ export default function RegisterPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-2xl w-full bg-white rounded-lg shadow-lg p-8">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-full mb-4">
-            <UserPlus className="w-8 h-8 text-white" />
-          </div>
+          <img
+            src="/logo-toplinksante.png"
+            alt="TopLinkSanté"
+            className="h-16 w-auto mx-auto mb-4"
+          />
           <h1 className="text-3xl font-bold text-gray-900">Inscription Professionnel</h1>
           <p className="text-gray-600 mt-2">Créez votre compte TopLinkSante</p>
           {referralCode && (

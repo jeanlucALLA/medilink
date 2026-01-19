@@ -145,18 +145,14 @@ export default function SidebarSafe({
             {/* Logo */}
             <Link
               href="/dashboard"
-              className={`flex items-center gap-2 text-2xl font-bold text-white tracking-tight hover:opacity-90 transition-opacity no-underline ${isCollapsed ? 'justify-center' : ''}`}
+              className={`flex items-center hover:opacity-90 transition-opacity no-underline ${isCollapsed ? 'justify-center' : ''}`}
             >
-              {/* Simple Logo Icon */}
-              <div className="w-9 h-9 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center flex-shrink-0 border border-white/10">
-                <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
-                </svg>
-              </div>
-              {/* Text - hidden when collapsed */}
-              <span className={`transition-all duration-300 ${isCollapsed ? 'hidden' : 'block'}`}>
-                TopLinkSante
-              </span>
+              <img
+                src="/logo-toplinksante.png"
+                alt="TopLinkSanté"
+                className={`transition-all duration-300 ${isCollapsed ? 'h-8 w-auto' : 'h-10 w-auto'}`}
+                style={{ filter: 'brightness(0) invert(1)' }}
+              />
             </Link>
 
             {/* Toggle buttons - only show when not collapsed */}

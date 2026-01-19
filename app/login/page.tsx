@@ -40,10 +40,11 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-full mb-4">
-            <LogIn className="w-8 h-8 text-white" />
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900">TopLinkSante</h1>
+          <img
+            src="/logo-toplinksante.png"
+            alt="TopLinkSanté"
+            className="h-16 w-auto mx-auto mb-4"
+          />
           <p className="text-gray-600 mt-2">Connexion professionnelle</p>
         </div>
 
