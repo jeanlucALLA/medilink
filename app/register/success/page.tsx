@@ -9,12 +9,13 @@ export default function RegisterSuccessPage() {
             <div className="sm:mx-auto sm:w-full sm:max-w-xl">
                 {/* Logo */}
                 <div className="flex justify-center mb-10">
-                    <Link href="/" className="flex items-center group">
-                        <img
-                            src="/logo-toplinksante.png"
-                            alt="TopLinkSanté"
-                            className="h-12 w-auto group-hover:scale-110 transition-transform duration-300"
-                        />
+                    <Link href="/" className="flex items-center gap-2 group hover:opacity-90 transition-opacity">
+                        {/* Croix médicale TopLinkSanté */}
+                        <svg className="h-10 w-10" viewBox="0 0 40 40" fill="none">
+                            <rect x="14" y="4" width="12" height="32" rx="2" fill="#0D9488" />
+                            <rect x="4" y="14" width="32" height="12" rx="2" fill="#3B82F6" />
+                        </svg>
+                        <span className="text-2xl font-bold text-gray-900 tracking-tight">TopLinkSanté</span>
                     </Link>
                 </div>
 

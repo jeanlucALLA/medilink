@@ -145,14 +145,14 @@ export default function SidebarSafe({
             {/* Logo */}
             <Link
               href="/dashboard"
-              className={`flex items-center hover:opacity-90 transition-opacity no-underline ${isCollapsed ? 'justify-center' : ''}`}
+              className={`flex items-center gap-2 hover:opacity-90 transition-opacity no-underline ${isCollapsed ? 'justify-center' : ''}`}
             >
-              <img
-                src="/logo-toplinksante.png"
-                alt="TopLinkSanté"
-                className={`transition-all duration-300 ${isCollapsed ? 'h-8 w-auto' : 'h-10 w-auto'}`}
-                style={{ filter: 'brightness(0) invert(1)' }}
-              />
+              {/* Croix médicale TopLinkSanté */}
+              <svg className={`transition-all duration-300 ${isCollapsed ? 'h-7 w-7' : 'h-8 w-8'}`} viewBox="0 0 40 40" fill="none">
+                <rect x="14" y="4" width="12" height="32" rx="2" fill="#5EEAD4" />
+                <rect x="4" y="14" width="32" height="12" rx="2" fill="#60A5FA" />
+              </svg>
+              <span className={`text-xl font-bold text-white tracking-tight transition-all duration-300 ${isCollapsed ? 'hidden' : 'block'}`}>TopLinkSanté</span>
             </Link>
 
             {/* Toggle buttons - only show when not collapsed */}

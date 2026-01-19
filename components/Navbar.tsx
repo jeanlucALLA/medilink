@@ -33,12 +33,13 @@ export default function Navbar() {
                 <div className="flex justify-between items-center h-20">
                     {/* Logo */}
                     <div className="flex-shrink-0 flex items-center">
-                        <Link href="/" className="flex items-center">
-                            <img
-                                src="/logo-toplinksante.png"
-                                alt="TopLinkSanté"
-                                className="h-10 w-auto"
-                            />
+                        <Link href="/" className="flex items-center gap-2">
+                            {/* Croix médicale TopLinkSanté */}
+                            <svg className="h-8 w-8" viewBox="0 0 40 40" fill="none">
+                                <rect x="14" y="4" width="12" height="32" rx="2" fill="#0D9488" />
+                                <rect x="4" y="14" width="32" height="12" rx="2" fill="#3B82F6" />
+                            </svg>
+                            <span className="text-2xl font-bold text-gray-900 tracking-tight">TopLinkSanté</span>
                         </Link>
                     </div>
 
