@@ -23,7 +23,9 @@ import {
     Download,
     TrendingUp,
     CreditCard,
-    BarChart3
+    BarChart3,
+    Trash2,
+    AlertTriangle
 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import jsPDF from 'jspdf'
@@ -52,6 +54,12 @@ export default function AdminDashboard() {
     const [emailSubject, setEmailSubject] = useState('')
     const [emailBody, setEmailBody] = useState('')
     const [isSendingEmail, setIsSendingEmail] = useState(false)
+
+    // États pour le modal de suppression
+    const [showDeleteModal, setShowDeleteModal] = useState(false)
+    const [userToDelete, setUserToDelete] = useState<any>(null)
+    const [isDeleting, setIsDeleting] = useState(false)
+    const [deleteConfirmText, setDeleteConfirmText] = useState('')
 
     const router = useRouter()
     const menuRef = useRef<HTMLDivElement>(null)
@@ -330,6 +338,47 @@ export default function AdminDashboard() {
             toast.error('Erreur: ' + error.message)
         } finally {
             setIsSendingEmail(false)
+        }
+    }
+
+    const handleDeleteUser = async () => {
+        if (!userToDelete) return
+        if (deleteConfirmText !== 'SUPPRIMER') {
+            toast.error('Veuillez taper SUPPRIMER pour confirmer')
+            return
+        }
+
+        setIsDeleting(true)
+
+        try {
+            const { supabase } = await import('@/lib/supabase') as any
+            const { data: { session } } = await supabase.auth.getSession()
+
+            const response = await fetch('/api/admin/delete-user', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session?.access_token}`
+                },
+                body: JSON.stringify({ userId: userToDelete.id })
+            })
+
+            if (!response.ok) {
+                const errorData = await response.json()
+                throw new Error(errorData.error || 'Erreur lors de la suppression')
+            }
+
+            // Mise à jour locale
+            setUsers(users.filter(u => u.id !== userToDelete.id))
+            toast.success(`Compte de ${userToDelete.nom_complet || userToDelete.email} supprimé`)
+            setShowDeleteModal(false)
+            setUserToDelete(null)
+            setDeleteConfirmText('')
+        } catch (error: any) {
+            console.error('Erreur suppression:', error)
+            toast.error('Erreur: ' + error.message)
+        } finally {
+            setIsDeleting(false)
         }
     }
 
@@ -761,6 +810,16 @@ export default function AdminDashboard() {
                                                 <div className="flex items-center justify-end gap-3 opacity-90 group-hover:opacity-100 transition-opacity">
                                                     <button
                                                         onClick={() => {
+                                                            setUserToDelete(user)
+                                                            setShowDeleteModal(true)
+                                                        }}
+                                                        className="text-gray-400 hover:text-red-600 transition-colors p-1 hover:bg-red-50 rounded-full"
+                                                        title="Supprimer le compte"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
                                                             setEmailTarget(user.email || '')
                                                             setEmailSubject(`Message du support Medi.Link pour Dr. ${user.full_name || user.nom_complet || ''}`)
                                                             setShowEmailModal(true)
@@ -998,6 +1057,98 @@ export default function AdminDashboard() {
                                         <>
                                             <Send className="w-4 h-4" />
                                             Envoyer
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Modal de Confirmation de Suppression */}
+                {showDeleteModal && userToDelete && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+                        <div className="bg-white rounded-[24px] shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+                            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-red-50">
+                                <h2 className="text-xl font-bold text-red-700 flex items-center gap-2">
+                                    <AlertTriangle className="w-5 h-5" />
+                                    Supprimer le compte
+                                </h2>
+                                <button
+                                    onClick={() => {
+                                        setShowDeleteModal(false)
+                                        setUserToDelete(null)
+                                        setDeleteConfirmText('')
+                                    }}
+                                    className="p-2 hover:bg-red-100 rounded-full text-red-400 hover:text-red-700 transition-colors"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+
+                            <div className="p-6 space-y-4">
+                                <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                                    <p className="text-sm text-red-800 font-medium">
+                                        ⚠️ Cette action est <span className="font-bold">IRRÉVERSIBLE</span> !
+                                    </p>
+                                    <p className="text-sm text-red-700 mt-2">
+                                        Toutes les données associées seront supprimées :
+                                    </p>
+                                    <ul className="text-xs text-red-600 mt-2 ml-4 list-disc">
+                                        <li>Profil et paramètres</li>
+                                        <li>Questionnaires envoyés</li>
+                                        <li>Réponses patients</li>
+                                        <li>Templates personnalisés</li>
+                                        <li>Messages de support</li>
+                                    </ul>
+                                </div>
+
+                                <div className="bg-gray-50 rounded-xl p-4">
+                                    <p className="text-sm text-gray-600 mb-1">Utilisateur à supprimer :</p>
+                                    <p className="font-bold text-gray-900">{userToDelete.nom_complet || userToDelete.full_name || 'Inconnu'}</p>
+                                    <p className="text-sm text-gray-500">{userToDelete.email}</p>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Tapez <span className="font-bold text-red-600">SUPPRIMER</span> pour confirmer
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={deleteConfirmText}
+                                        onChange={(e) => setDeleteConfirmText(e.target.value)}
+                                        placeholder="SUPPRIMER"
+                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="p-6 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
+                                <button
+                                    onClick={() => {
+                                        setShowDeleteModal(false)
+                                        setUserToDelete(null)
+                                        setDeleteConfirmText('')
+                                    }}
+                                    disabled={isDeleting}
+                                    className="px-6 py-3 text-gray-600 font-bold hover:bg-gray-100 rounded-xl transition-colors disabled:opacity-50"
+                                >
+                                    Annuler
+                                </button>
+                                <button
+                                    onClick={handleDeleteUser}
+                                    disabled={isDeleting || deleteConfirmText !== 'SUPPRIMER'}
+                                    className="px-6 py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-all shadow-lg hover:shadow-red-500/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                >
+                                    {isDeleting ? (
+                                        <>
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                            Suppression...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Trash2 className="w-4 h-4" />
+                                            Supprimer définitivement
                                         </>
                                     )}
                                 </button>
