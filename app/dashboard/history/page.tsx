@@ -191,7 +191,8 @@ export default function HistoryPage() {
 
   // Calculer la date d'envoi programmée
   const getScheduledDate = (questionnaire: Questionnaire): Date | null => {
-    if (questionnaire.status !== 'pending' || !questionnaire.send_after_days || !questionnaire.created_at) {
+    const isPending = questionnaire.status === 'pending' || questionnaire.status === 'programmé' || questionnaire.status === 'en_attente'
+    if (!isPending || !questionnaire.send_after_days || !questionnaire.created_at) {
       return null
     }
     const createdDate = new Date(questionnaire.created_at)
@@ -234,7 +235,8 @@ export default function HistoryPage() {
 
   // Obtenir le badge de statut avec décompte pour les emails programmés
   const getStatusBadgeWithSchedule = (questionnaire: Questionnaire) => {
-    if (questionnaire.status === 'pending' && questionnaire.send_after_days && questionnaire.patient_email) {
+    const isPending = questionnaire.status === 'pending' || questionnaire.status === 'programmé' || questionnaire.status === 'en_attente'
+    if (isPending && questionnaire.send_after_days && questionnaire.patient_email) {
       const daysRemaining = getDaysUntilScheduled(questionnaire)
 
       if (daysRemaining !== null) {
@@ -262,7 +264,8 @@ export default function HistoryPage() {
 
   // Obtenir le badge de suivi temporel pour la colonne dédiée
   const getScheduleBadge = (questionnaire: Questionnaire) => {
-    if (questionnaire.status === 'pending' && questionnaire.send_after_days && questionnaire.patient_email) {
+    const isPending = questionnaire.status === 'pending' || questionnaire.status === 'programmé' || questionnaire.status === 'en_attente'
+    if (isPending && questionnaire.send_after_days && questionnaire.patient_email) {
       const daysRemaining = getDaysUntilScheduled(questionnaire)
 
       if (daysRemaining !== null) {
@@ -534,6 +537,9 @@ export default function HistoryPage() {
                     Statut
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Envoi prévu
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Score
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -566,6 +572,32 @@ export default function HistoryPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {getStatusBadge(questionnaire.status)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {(() => {
+                        const scheduledDate = getScheduledDate(questionnaire)
+                        if (scheduledDate) {
+                          const daysRemaining = getDaysUntilScheduled(questionnaire)
+                          return (
+                            <div className="flex flex-col">
+                              <div className="flex items-center text-sm text-gray-700">
+                                <Mail className="w-4 h-4 mr-2 text-orange-500" />
+                                {scheduledDate.toLocaleDateString('fr-FR', {
+                                  day: 'numeric',
+                                  month: 'short',
+                                  year: 'numeric'
+                                })}
+                              </div>
+                              {daysRemaining !== null && daysRemaining >= 0 && (
+                                <span className="text-xs text-orange-600 mt-1 ml-6">
+                                  {daysRemaining === 0 ? "Aujourd'hui" : `Dans ${daysRemaining} jour${daysRemaining > 1 ? 's' : ''}`}
+                                </span>
+                              )}
+                            </div>
+                          )
+                        }
+                        return <span className="text-sm text-gray-400">—</span>
+                      })()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {questionnaire.score_resultat ? (
