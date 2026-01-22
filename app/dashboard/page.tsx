@@ -6,6 +6,8 @@ import { LogOut, Building2, MapPin, FileText, Mail, Calendar, Plus, Loader2, Sen
 import Link from 'next/link'
 import AddMedicalActModal from '@/components/dashboard/AddMedicalActModal'
 import LeaderBadge from '@/components/dashboard/LeaderBadge'
+import BadgesCard from '@/components/dashboard/BadgesCard'
+import BenchmarkingCard from '@/components/dashboard/BenchmarkingCard'
 import { toast } from 'react-hot-toast'
 import { supabase } from '@/lib/supabase'
 
@@ -839,6 +841,12 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
+      {/* Section Engagement - Badges & Benchmarking */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <BadgesCard />
+        <BenchmarkingCard />
+      </div>
 
       {/* Liste des questionnaires */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
