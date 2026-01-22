@@ -165,7 +165,7 @@ export async function POST(request: Request) {
     }
 
     const envFrom = process.env.RESEND_FROM_EMAIL
-    let fromEmail = 'onboarding@resend.dev'
+    let fromEmail = 'noreply@toplinksante.com'
 
     if (envFrom) {
       // Tente d'extraire l'email si le format est "Nom <email>"

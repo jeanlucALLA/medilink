@@ -220,7 +220,7 @@ Vos données sont traitées de manière sécurisée et confidentielle.
             'Authorization': `Bearer ${RESEND_API_KEY}`,
           },
           body: JSON.stringify({
-            from: Deno.env.get('RESEND_FROM_EMAIL') || 'TopLinkSante <onboarding@resend.dev>',
+            from: Deno.env.get('RESEND_FROM_EMAIL') || 'TopLinkSante <noreply@toplinksante.com>',
             to: questionnaire.patient_email,
             subject: emailSubject,
             html: emailHtml,

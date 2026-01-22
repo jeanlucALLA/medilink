@@ -95,7 +95,7 @@ export async function POST(req: Request) {
             for (let i = 0; i < recipients.length; i += chunkSize) {
                 const chunk = recipients.slice(i, i + chunkSize);
                 const batch = chunk.map((r: string) => ({
-                    from: process.env.RESEND_FROM_EMAIL || 'TopLinkSante <onboarding@resend.dev>',
+                    from: process.env.RESEND_FROM_EMAIL || 'TopLinkSante <noreply@toplinksante.com>',
                     to: r,
                     subject: subject,
                     html: htmlContent
@@ -108,7 +108,7 @@ export async function POST(req: Request) {
         } else {
             // Single Send
             await resend.emails.send({
-                from: process.env.RESEND_FROM_EMAIL || 'TopLinkSante <onboarding@resend.dev>',
+                from: process.env.RESEND_FROM_EMAIL || 'TopLinkSante <noreply@toplinksante.com>',
 
                 to: email,
                 subject: subject,

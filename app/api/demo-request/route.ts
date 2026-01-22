@@ -85,9 +85,7 @@ ${message || 'Aucun message supplémentaire'}
                 const resend = new Resend(process.env.RESEND_API_KEY)
 
                 await resend.emails.send({
-                    from: process.env.NODE_ENV === 'production'
-                        ? 'TopLinkSante <noreply@toplinksante.com>'
-                        : 'TopLinkSante <onboarding@resend.dev>',
+                    from: process.env.RESEND_FROM_EMAIL || 'TopLinkSante <noreply@toplinksante.com>',
                     to: 'jeanlucallaa@yahoo.fr', // Admin email
                     subject: `🎯 Nouvelle demande de démo - ${name}`,
                     html: `

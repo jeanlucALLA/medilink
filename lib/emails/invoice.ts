@@ -9,11 +9,8 @@ export async function sendInvoiceEmail(email: string, invoiceUrl: string, planNa
     }
 
     // Protection environnements de test/dev sans domaine vérifié
-    // En prod, utiliser 'Ne-Pas-Repondre <billing@medilink.app>'
-    // En dev, on utilise 'onboarding@resend.dev'
-    const from = process.env.NODE_ENV === 'production'
-        ? 'Medi.Link Billing <billing@medilink.app>'
-        : 'Medi.Link Billing <onboarding@resend.dev>'
+    // Utiliser toujours le domaine vérifié toplinksante.com
+    const from = process.env.RESEND_FROM_EMAIL || 'TopLinkSante Billing <noreply@toplinksante.com>'
 
     // Si on est en dev et qu'on utilise le domaine de test Resend, il faut envoyer uniquement à l'adresse du compte Resend (souvent celle du dév)
     // Sauf si on a un domaine vérifié. Pour la démo, on envoie, Resend blocquera si non autorisé.

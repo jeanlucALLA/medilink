@@ -1,15 +1,15 @@
 import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev'; // Fallback for dev
+const fromEmail = process.env.RESEND_FROM_EMAIL || 'noreply@toplinksante.com';
 
 export async function sendWelcomeEmail(toEmail: string, practitionerName: string) {
-    try {
-        const data = await resend.emails.send({
-            from: `Medi-Link <${fromEmail}>`,
-            to: [toEmail],
-            subject: 'Bienvenue chez Medi-Link ! Votre cabinet va passer un cap 🚀',
-            html: `
+  try {
+    const data = await resend.emails.send({
+      from: `Medi-Link <${fromEmail}>`,
+      to: [toEmail],
+      subject: 'Bienvenue chez Medi-Link ! Votre cabinet va passer un cap 🚀',
+      html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
           <h1 style="color: #2563EB;">Bienvenue Dr ${practitionerName},</h1>
           <p>C’est un plaisir de vous compter parmi nous ! Votre abonnement à Medi-Link est désormais actif pour <strong>9,99 € / mois</strong>.</p>
@@ -30,12 +30,12 @@ export async function sendWelcomeEmail(toEmail: string, practitionerName: string
           <p>À très vite,<br/>L’équipe Medi-Link</p>
         </div>
       `
-        });
+    });
 
-        console.log('Welcome email sent successfully:', data);
-        return { success: true, data };
-    } catch (error) {
-        console.error('Error sending welcome email:', error);
-        return { success: false, error };
-    }
+    console.log('Welcome email sent successfully:', data);
+    return { success: true, data };
+  } catch (error) {
+    console.error('Error sending welcome email:', error);
+    return { success: false, error };
+  }
 }
