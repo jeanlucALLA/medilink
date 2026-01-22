@@ -376,9 +376,21 @@ export default function ResolutionPage() {
 
     setSendingReminder(response.id)
     try {
+      // Get auth token from Supabase session
+      const { supabase } = await import('@/lib/supabase') as any
+      const { data: { session } } = await supabase.auth.getSession()
+
+      if (!session?.access_token) {
+        alert('❌ Erreur: Session expirée. Veuillez vous reconnecter.')
+        return
+      }
+
       const res = await fetch('/api/send-followup-email', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
         body: JSON.stringify({
           patientEmail: response.patient_email,
           pathologie: response.pathologie,
