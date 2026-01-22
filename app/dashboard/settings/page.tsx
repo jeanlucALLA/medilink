@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import Image from 'next/image'
 import { User, Building2, CreditCard, Save, Loader2, CheckCircle, Shield, Lock, Mail, Send, MapPin, Map, AlertTriangle, Camera, Bell, BellOff } from 'lucide-react'
 import { geocodePostalCode, extractDepartmentCode } from '@/lib/geocoding'
 
@@ -533,10 +534,12 @@ export default function SettingsPage() {
               className="relative w-20 h-20 rounded-full flex-shrink-0 cursor-pointer group overflow-hidden"
             >
               {avatarUrl ? (
-                <img
+                <Image
                   src={avatarUrl}
                   alt="Avatar"
-                  className="w-full h-full object-cover"
+                  fill
+                  className="object-cover"
+                  unoptimized
                 />
               ) : (
                 <div className="w-full h-full bg-blue-600 flex items-center justify-center">
@@ -1099,11 +1102,15 @@ export default function SettingsPage() {
           <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
             <div className="text-center">
               <h3 className="text-lg font-bold text-gray-900 mb-4">Votre photo de profil</h3>
-              <img
-                src={avatarUrl}
-                alt="Avatar en grand"
-                className="w-48 h-48 rounded-full object-cover mx-auto shadow-lg"
-              />
+              <div className="relative w-48 h-48 rounded-full overflow-hidden mx-auto shadow-lg">
+                <Image
+                  src={avatarUrl}
+                  alt="Avatar en grand"
+                  fill
+                  className="object-cover"
+                  unoptimized
+                />
+              </div>
             </div>
             <div className="flex space-x-3 pt-4">
               <button

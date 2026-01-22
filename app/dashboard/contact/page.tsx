@@ -211,8 +211,8 @@ export default function ContactPage() {
                     <button
                         onClick={() => setActiveTab('new')}
                         className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${activeTab === 'new'
-                                ? 'bg-white text-primary shadow-sm'
-                                : 'text-gray-600 hover:text-gray-800'
+                            ? 'bg-white text-primary shadow-sm'
+                            : 'text-gray-600 hover:text-gray-800'
                             }`}
                     >
                         <Send className="w-4 h-4" />
@@ -221,8 +221,8 @@ export default function ContactPage() {
                     <button
                         onClick={() => setActiveTab('history')}
                         className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${activeTab === 'history'
-                                ? 'bg-white text-primary shadow-sm'
-                                : 'text-gray-600 hover:text-gray-800'
+                            ? 'bg-white text-primary shadow-sm'
+                            : 'text-gray-600 hover:text-gray-800'
                             }`}
                     >
                         <History className="w-4 h-4" />
@@ -338,7 +338,10 @@ export default function ContactPage() {
                                     {attachment ? (
                                         <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-200">
                                             {attachmentPreview ? (
-                                                <img src={attachmentPreview} alt="Aperçu" className="w-12 h-12 object-cover rounded-lg" />
+                                                <div className="relative w-12 h-12 rounded-lg overflow-hidden">
+                                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                    <img src={attachmentPreview} alt="Aperçu" className="w-full h-full object-cover" />
+                                                </div>
                                             ) : (
                                                 <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
                                                     <Paperclip className="w-5 h-5 text-gray-500" />
