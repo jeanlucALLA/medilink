@@ -116,7 +116,7 @@ serve(async (req) => {
             'Authorization': `Bearer ${RESEND_API_KEY}`,
           },
           body: JSON.stringify({
-            from: 'TopLinkSante <noreply@medilink.fr>',
+            from: Deno.env.get('RESEND_FROM_EMAIL') || 'TopLinkSante <noreply@toplinksante.com>',
             to: patientEmail,
             subject: 'Questionnaire de suivi - Votre praticien vous sollicite',
             html: `

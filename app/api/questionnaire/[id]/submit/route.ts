@@ -153,7 +153,7 @@ export async function POST(
                 'Authorization': `Bearer ${resendApiKey}`,
               },
               body: JSON.stringify({
-                from: 'TopLinkSante <noreply@medilink.fr>',
+                from: process.env.RESEND_FROM_EMAIL || 'TopLinkSante <noreply@toplinksante.com>',
                 to: profile.email,
                 subject: `✅ Nouvelle réponse patient : ${pathologie}`,
                 html: `

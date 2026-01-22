@@ -130,7 +130,7 @@ async function sendEmail(email: string, link: string, questionnaireId: string): 
     const resendClient = new resend.Resend(process.env.RESEND_API_KEY)
 
     await resendClient.emails.send({
-      from: process.env.EMAIL_FROM || 'noreply@medilink.app',
+      from: process.env.RESEND_FROM_EMAIL || 'TopLinkSante <noreply@toplinksante.com>',
       to: email,
       subject: 'Questionnaire médical - Medi.Link',
       html: `

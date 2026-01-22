@@ -158,7 +158,7 @@ export function FollowUpEmail({
               
               <!-- Mentions légales -->
               <p style="margin: 0; font-size: 11px; color: #9ca3af; line-height: 1.5;">
-                Cet email a été envoyé automatiquement par Medi.Link. Vos données sont traitées de manière sécurisée et conformément au RGPD.
+                Cet email a été envoyé automatiquement par TopLinkSante. Vos données sont traitées de manière sécurisée et conformément au RGPD.
               </p>
             </td>
           </tr>

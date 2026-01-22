@@ -76,7 +76,7 @@ export async function POST(req: Request) {
     }
 
     const { data, error } = await resend.emails.send({
-      from: 'TopLinkSante <onboarding@resend.dev>', // Modifiez si vous avez un domaine vérifié
+      from: process.env.RESEND_FROM_EMAIL || 'TopLinkSante <noreply@toplinksante.com>',
       to: referrer.email,
       subject: subject,
       html: `
