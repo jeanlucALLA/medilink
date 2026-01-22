@@ -12,12 +12,12 @@ import {
   Mail,
   Send,
   Search,
-  Bell
+  Bell,
+  RefreshCw
 } from 'lucide-react'
 
 // Types
-// Types
-type AlertStatus = 'all' | 'critical' | 'in-progress' | 'resolved' | 'sent'
+type AlertStatus = 'all' | 'critical' | 'in-progress' | 'resolved' | 'sent' | 'reminder'
 
 interface QuestionnaireResponse {
   id: string
@@ -36,6 +36,8 @@ interface QuestionnaireResponse {
   status?: string // 'programmé', 'envoyé', etc.
   sendDate?: string | null
   sentAt?: string | null // Date réelle d'envoi
+  needsReminder?: boolean // Pour les questionnaires envoyés sans réponse
+  hasResponse?: boolean // True si une réponse existe pour ce questionnaire
 }
 
 interface AlertResolution {
@@ -235,7 +237,18 @@ export default function ResolutionPage() {
         })
 
         // --- TRAITEMENT DES ENVOYÉS ---
+        // Identifier les questionnaires envoyés qui ont déjà une réponse
+        const sentIdsWithResponses = new Set(
+          (responsesData || []).map((r: any) => r.questionnaire_id)
+        )
+
         const formattedSent: QuestionnaireResponse[] = (sentData || []).map((q: any) => {
+          const hasResponse = sentIdsWithResponses.has(q.id)
+          // Calculer si une relance est nécessaire (envoyé depuis + de 3 jours et pas de réponse)
+          const sentDate = q.sent_at ? new Date(q.sent_at) : new Date(q.created_at)
+          const daysSinceSent = Math.floor((Date.now() - sentDate.getTime()) / (1000 * 60 * 60 * 24))
+          const needsReminder = !hasResponse && daysSinceSent >= 3
+
           return {
             id: q.id,
             questionnaire_id: q.id,
@@ -251,7 +264,9 @@ export default function ResolutionPage() {
             isSent: true,
             status: q.status,
             sendDate: null,
-            sentAt: q.sent_at
+            sentAt: q.sent_at,
+            needsReminder,
+            hasResponse
           }
         })
 
@@ -309,7 +324,8 @@ export default function ResolutionPage() {
     if (selectedStatus === 'critical') return (response.score_total !== null && response.score_total <= 2)
     if (selectedStatus === 'in-progress') return status === 'in-progress'
     if (selectedStatus === 'resolved') return status === 'resolved'
-    if (selectedStatus === 'sent') return response.isSent === true
+    if (selectedStatus === 'sent') return response.isSent === true && !response.needsReminder
+    if (selectedStatus === 'reminder') return response.needsReminder === true
     return true
   })
 
@@ -318,7 +334,8 @@ export default function ResolutionPage() {
   // En cours : status 'in-progress' (incluant les pending)
   const countInProgress = responses.filter(r => getAlertStatus(r) === 'in-progress').length
   const countResolved = responses.filter(r => getAlertStatus(r) === 'resolved').length
-  const countSent = responses.filter(r => r.isSent === true).length
+  const countSent = responses.filter(r => r.isSent === true && !r.needsReminder).length
+  const countReminder = responses.filter(r => r.needsReminder === true).length
 
   const handleTakeAction = (response: QuestionnaireResponse) => {
     const resolution: AlertResolution = {
@@ -352,12 +369,47 @@ export default function ResolutionPage() {
     }
   }
 
-  const statusFilters: { id: AlertStatus; label: string; count: number }[] = [
+  const [sendingReminder, setSendingReminder] = useState<string | null>(null)
+
+  const handleSendReminder = async (response: QuestionnaireResponse) => {
+    if (!response.patient_email || sendingReminder) return
+
+    setSendingReminder(response.id)
+    try {
+      const res = await fetch('/api/send-followup-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          patientEmail: response.patient_email,
+          pathologie: response.pathologie,
+          questionnaireId: response.id,
+          isReminder: true,
+        }),
+      })
+
+      if (res.ok) {
+        alert('✅ Relance envoyée avec succès !')
+        // Refresh data
+        window.location.reload()
+      } else {
+        const data = await res.json()
+        alert(`❌ Erreur: ${data.error || 'Échec de l\'envoi'}`)
+      }
+    } catch (err) {
+      console.error('Erreur envoi relance:', err)
+      alert('❌ Erreur lors de l\'envoi de la relance')
+    } finally {
+      setSendingReminder(null)
+    }
+  }
+
+  const statusFilters: { id: AlertStatus; label: string; count: number; highlight?: boolean }[] = [
     { id: 'all', label: 'Toutes', count: responses.length },
     { id: 'critical', label: 'Critiques', count: countCritical },
     { id: 'in-progress', label: 'En cours', count: countInProgress },
     { id: 'resolved', label: 'Résolues', count: countResolved },
     { id: 'sent', label: 'Envoyé', count: countSent },
+    { id: 'reminder', label: 'RELANCE', count: countReminder, highlight: true },
   ]
 
   if (!isMounted) return <div className="flex justify-center p-12"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
@@ -378,11 +430,21 @@ export default function ResolutionPage() {
             <button
               key={filter.id}
               onClick={() => { setSelectedStatus(filter.id); setSelectedAlert(null); }}
-              className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${selectedStatus === filter.id ? 'bg-primary text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 ${filter.highlight && filter.count > 0
+                ? selectedStatus === filter.id
+                  ? 'bg-orange-500 text-white shadow-md animate-pulse'
+                  : 'bg-orange-100 text-orange-700 hover:bg-orange-200 border-2 border-orange-300'
+                : selectedStatus === filter.id
+                  ? 'bg-primary text-white shadow-md'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
             >
+              {filter.highlight && <RefreshCw className="w-4 h-4" />}
               {filter.label}
-              <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${selectedStatus === filter.id ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-600'}`}>
+              <span className={`px-2 py-0.5 rounded-full text-xs ${filter.highlight && filter.count > 0
+                ? selectedStatus === filter.id ? 'bg-white/20 text-white' : 'bg-orange-200 text-orange-800'
+                : selectedStatus === filter.id ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-600'
+                }`}>
                 {filter.count}
               </span>
             </button>
@@ -553,24 +615,40 @@ export default function ResolutionPage() {
                         <Clock className="w-4 h-4" />
                         <span>Créé {formatTimestamp(response.submitted_at)}</span>
                       </div>
-                      {!isPending && status !== 'resolved' && (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleTakeAction(response); }}
-                          className="px-4 py-1.5 bg-primary hover:bg-primary-dark text-white text-sm font-medium rounded-lg transition-colors"
-                        >
-                          Prendre en charge
-                        </button>
-                      )}
-                      {isPending && (
-                        <span className="text-xs text-blue-600 font-medium bg-blue-50 px-2 py-1 rounded">
-                          Automatique
-                        </span>
-                      )}
-                      {isSent && (
-                        <span className="text-xs text-green-600 font-medium bg-green-50 px-2 py-1 rounded">
-                          ✓ Délivré
-                        </span>
-                      )}
+                      <div className="flex items-center gap-2">
+                        {response.needsReminder && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleSendReminder(response); }}
+                            disabled={sendingReminder === response.id}
+                            className="px-4 py-1.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
+                          >
+                            {sendingReminder === response.id ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <RefreshCw className="w-4 h-4" />
+                            )}
+                            Relancer
+                          </button>
+                        )}
+                        {!isPending && !response.needsReminder && status !== 'resolved' && !isSent && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleTakeAction(response); }}
+                            className="px-4 py-1.5 bg-primary hover:bg-primary-dark text-white text-sm font-medium rounded-lg transition-colors"
+                          >
+                            Prendre en charge
+                          </button>
+                        )}
+                        {isPending && (
+                          <span className="text-xs text-blue-600 font-medium bg-blue-50 px-2 py-1 rounded">
+                            Automatique
+                          </span>
+                        )}
+                        {isSent && !response.needsReminder && (
+                          <span className="text-xs text-green-600 font-medium bg-green-50 px-2 py-1 rounded">
+                            ✓ Délivré
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
