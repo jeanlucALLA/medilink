@@ -82,6 +82,9 @@ export async function POST(request: NextRequest) {
           </p>
         </div>
       `,
+      headers: {
+        'List-Unsubscribe': '<mailto:contact@toplinksante.com?subject=Unsubscribe>',
+      },
     })
 
     // Log anonyme uniquement (pas d'email dans les logs)

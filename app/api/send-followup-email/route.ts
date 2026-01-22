@@ -184,6 +184,9 @@ export async function POST(request: Request) {
       subject: `Suivi médical - ${cabinetName}`,
       html: htmlContent,
       scheduled_at: scheduledAt,
+      headers: {
+        'List-Unsubscribe': '<mailto:contact@toplinksante.com?subject=Unsubscribe>',
+      },
     } as any)
 
     if (data.error) {

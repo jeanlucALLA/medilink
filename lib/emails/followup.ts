@@ -54,6 +54,9 @@ export async function sendFollowupConfirmationEmail({
       to,
       subject: `Suivi de votre séance - ${cabinetName}`,
       html,
+      headers: {
+        'List-Unsubscribe': '<mailto:contact@toplinksante.com?subject=Unsubscribe>',
+      },
     })
 
     if (result.error) {
