@@ -6,7 +6,7 @@ const fromEmail = process.env.RESEND_FROM_EMAIL || 'noreply@mail.toplinksante.co
 export async function sendWelcomeEmail(toEmail: string, practitionerName: string) {
   try {
     const data = await resend.emails.send({
-      from: `TopLinkSante <${fromEmail}>`,
+      from: `Dr. ${practitionerName} via TopLinkSante <${fromEmail}>`,
       to: [toEmail],
       subject: 'Bienvenue sur TopLinkSante - Votre espace praticien est prêt',
       headers: {
