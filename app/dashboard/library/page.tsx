@@ -3,8 +3,11 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { Library, CheckCircle, Copy, Loader2, ArrowRight } from 'lucide-react'
+import { Library, CheckCircle, Copy, Loader2, ArrowRight, Pencil, Trash2 } from 'lucide-react'
 import { Toaster, toast } from 'react-hot-toast'
+
+// Admin emails list
+const ADMIN_EMAILS = ['jeanlucallaa@yahoo.fr', 'admin@medilink.fr', 'jeanluc@podologue-alla.fr']
 
 interface PublicTemplate {
     id: string
@@ -20,8 +23,10 @@ export default function LibraryPage() {
     const [filteredTemplates, setFilteredTemplates] = useState<PublicTemplate[]>([])
     const [loading, setLoading] = useState(true)
     const [importingId, setImportingId] = useState<string | null>(null)
+    const [deletingId, setDeletingId] = useState<string | null>(null)
     const [searchQuery, setSearchQuery] = useState('')
     const [userEmail, setUserEmail] = useState<string | null>(null)
+    const [isAdmin, setIsAdmin] = useState(false)
     const router = useRouter()
 
     // Derived state for active tag filter (if search starts with #)
@@ -41,6 +46,7 @@ export default function LibraryPage() {
         const { data: { user } } = await supabase.auth.getUser()
         if (user?.email) {
             setUserEmail(user.email)
+            setIsAdmin(ADMIN_EMAILS.includes(user.email))
         }
     }
 
@@ -144,6 +150,36 @@ export default function LibraryPage() {
             toast.error("Erreur lors de l'import : " + error.message)
         } finally {
             setImportingId(null)
+        }
+    }
+
+    const handleDeleteTemplate = async (templateId: string, templateName: string) => {
+        if (!confirm(`Êtes-vous sûr de vouloir supprimer le modèle "${templateName}" ?`)) return
+
+        setDeletingId(templateId)
+        try {
+            // Delete from public_template_questions first (if exists)
+            await supabase
+                .from('public_template_questions')
+                .delete()
+                .eq('template_id', templateId)
+
+            // Delete from public_templates
+            const { error } = await supabase
+                .from('public_templates')
+                .delete()
+                .eq('id', templateId)
+
+            if (error) throw error
+
+            toast.success('Modèle supprimé avec succès')
+            setTemplates(templates.filter(t => t.id !== templateId))
+            setFilteredTemplates(filteredTemplates.filter(t => t.id !== templateId))
+        } catch (error: any) {
+            console.error('Error deleting template:', error)
+            toast.error('Erreur lors de la suppression: ' + error.message)
+        } finally {
+            setDeletingId(null)
         }
     }
 
@@ -251,7 +287,32 @@ export default function LibraryPage() {
                                         </div>
                                     </div>
 
-                                    <div className="mt-6 pt-4 border-t border-gray-100">
+                                    <div className="mt-6 pt-4 border-t border-gray-100 space-y-3">
+                                        {/* Admin Actions */}
+                                        {isAdmin && (
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => router.push(`/dashboard/library/edit/${template.id}`)}
+                                                    className="flex-1 flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-3 rounded-lg transition-colors text-sm"
+                                                >
+                                                    <Pencil className="w-4 h-4" />
+                                                    Modifier
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeleteTemplate(template.id, template.name)}
+                                                    disabled={deletingId === template.id}
+                                                    className="flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 font-medium py-2 px-3 rounded-lg transition-colors text-sm disabled:opacity-50"
+                                                >
+                                                    {deletingId === template.id ? (
+                                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                                    ) : (
+                                                        <Trash2 className="w-4 h-4" />
+                                                    )}
+                                                </button>
+                                            </div>
+                                        )}
+
+                                        {/* Use Template Button */}
                                         <button
                                             onClick={() => handleUseTemplate(template)}
                                             disabled={importingId === template.id}
