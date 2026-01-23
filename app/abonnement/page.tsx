@@ -64,18 +64,15 @@ export default function AbonnementPage() {
                 throw new Error(`Erreur API: ${errorText}`)
             }
 
-            const { sessionId } = await response.json()
+            const { sessionId, url } = await response.json()
             console.log("🎫 Session Stripe créée:", sessionId)
 
-            // 3. Rediriger vers Stripe Checkout
-            const stripe = await stripePromise
-            if (!stripe) throw new Error('Stripe non chargé')
-
-            console.log("🚀 Redirection vers Stripe...")
-            const { error } = await (stripe as any).redirectToCheckout({ sessionId })
-            if (error) {
-                console.error("❌ Erreur redirection Stripe:", error)
-                throw error
+            // 3. Rediriger vers Stripe Checkout via l'URL directe
+            if (url) {
+                console.log("🚀 Redirection vers Stripe via URL...")
+                window.location.href = url
+            } else {
+                throw new Error('URL de checkout non reçue')
             }
 
         } catch (error: any) {
