@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { UserPlus, Mail, Lock, User, Briefcase, Building2, GraduationCap, ArrowLeft, MapPin, Gift } from 'lucide-react'
 import Link from 'next/link'
 import { STRIPE_PRICE_IDS } from '@/lib/constants'
+import toast from 'react-hot-toast'
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -143,38 +144,74 @@ export default function RegisterPage() {
           try {
             // Récupérer l'ID du parrain depuis le code de référence
             // Le code peut être soit l'ID utilisateur, soit le referral_code
+            // IMPORTANT: Seuls les utilisateurs avec abonnement Pro ou Cabinet peuvent parrainer
             let referrerId: string | null = null
+            let referrerFound = false
+            let referrerHasValidSubscription = false
 
-            // D'abord, essayer de trouver par ID utilisateur
+            // D'abord, essayer de trouver par ID utilisateur (avec vérification Pro)
             const { data: referrerById, error: errorById } = await supabase
               .from('profiles')
-              .select('id')
+              .select('id, subscription_tier, subscription_status')
               .eq('id', codeToUse)
               .single()
 
             if (!errorById && referrerById) {
-              referrerId = referrerById.id
-              console.log('[Register] Parrain trouvé par ID:', referrerId)
+              referrerFound = true
+              // Vérifier que le parrain a un abonnement Pro ou Cabinet actif
+              const hasValidTier = ['pro', 'cabinet'].includes(referrerById.subscription_tier)
+              const hasActiveStatus = referrerById.subscription_status === 'active' || referrerById.subscription_status === 'trialing'
+              referrerHasValidSubscription = hasValidTier && hasActiveStatus
+
+              if (referrerHasValidSubscription) {
+                referrerId = referrerById.id
+                console.log('[Register] Parrain Pro/Cabinet trouvé par ID:', referrerId)
+              } else {
+                console.log('[Register] Parrain trouvé mais pas abonnement Pro/Cabinet actif')
+              }
             } else {
-              // Si pas trouvé par ID, essayer par referral_code
+              // Si pas trouvé par ID, essayer par referral_code (avec vérification Pro)
               const { data: referrerByCode, error: errorByCode } = await supabase
                 .from('profiles')
-                .select('id')
+                .select('id, subscription_tier, subscription_status')
                 .eq('referral_code', codeToUse)
                 .single()
 
               if (!errorByCode && referrerByCode) {
-                referrerId = referrerByCode.id
-                console.log('[Register] Parrain trouvé par referral_code:', referrerId)
+                referrerFound = true
+                // Vérifier que le parrain a un abonnement Pro ou Cabinet actif
+                const hasValidTier = ['pro', 'cabinet'].includes(referrerByCode.subscription_tier)
+                const hasActiveStatus = referrerByCode.subscription_status === 'active' || referrerByCode.subscription_status === 'trialing'
+                referrerHasValidSubscription = hasValidTier && hasActiveStatus
+
+                if (referrerHasValidSubscription) {
+                  referrerId = referrerByCode.id
+                  console.log('[Register] Parrain Pro/Cabinet trouvé par referral_code:', referrerId)
+                } else {
+                  console.log('[Register] Parrain trouvé par code mais pas abonnement Pro/Cabinet actif')
+                }
               } else {
                 console.log('[Register] Aucun parrain trouvé pour le code:', codeToUse)
               }
+            }
+
+            // Afficher un message si le code est invalide
+            if (!referrerId && codeToUse) {
+              if (!referrerFound) {
+                // Code de parrainage inexistant
+                toast.error('Code de parrainage invalide. Vérifiez le code et réessayez.')
+              } else if (referrerFound && !referrerHasValidSubscription) {
+                // Parrain trouvé mais pas d'abonnement valide
+                toast.error('Ce code de parrainage n\'est plus actif. Le parrain doit avoir un abonnement Pro ou Cabinet.')
+              }
+              localStorage.removeItem('medi_link_referral_code')
             }
 
             if (referrerId) {
               // Vérifier que l'utilisateur ne se parraine pas lui-même
               if (referrerId === authData.user.id) {
                 console.warn('[Register] Un utilisateur ne peut pas se parrainer lui-même')
+                toast.error('Vous ne pouvez pas utiliser votre propre code de parrainage.')
                 localStorage.removeItem('medi_link_referral_code')
               } else {
                 // Créer l'entrée dans la table referrals
