@@ -76,7 +76,7 @@ export async function POST(req: Request) {
     }
 
     const { data, error } = await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL || 'TopLinkSante <noreply@toplinksante.com>',
+      from: process.env.RESEND_FROM_EMAIL || 'TopLinkSante <noreply@mail.toplinksante.com>',
       to: referrer.email,
       subject: subject,
       html: `

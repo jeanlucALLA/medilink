@@ -50,7 +50,7 @@ export async function sendFollowupConfirmationEmail({
 
     // Envoyer l'email via Resend
     const result = await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL || 'TopLinkSante <noreply@toplinksante.com>',
+      from: process.env.RESEND_FROM_EMAIL || 'TopLinkSante <noreply@mail.toplinksante.com>',
       to,
       subject: `Suivi de votre séance - ${cabinetName}`,
       html,
