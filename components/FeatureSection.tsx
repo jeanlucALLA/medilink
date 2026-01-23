@@ -1,6 +1,6 @@
 'use client'
 
-import { Mail, MessageSquare, Trash2, BarChart3, Send, Star, AlertCircle } from 'lucide-react'
+import { Mail, MessageSquare, Trash2, BarChart3, Send, Star, AlertCircle, Zap } from 'lucide-react'
 
 export default function FeatureSection() {
     return (
@@ -132,14 +132,57 @@ export default function FeatureSection() {
                         </div>
                     </div>
 
-                    {/* CTA Card to complete grid layout (3 cols -> 2+1, 1+1+1) */}
-                    <div className="md:col-span-1 bg-gradient-to-br from-primary to-blue-600 rounded-[24px] p-8 shadow-lg text-white flex flex-col justify-center items-center text-center relative overflow-hidden group cursor-pointer hover:scale-[1.02] transition-transform">
-                        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
-                        <h3 className="text-2xl font-bold mb-4 relative z-10">Prêt à commencer ?</h3>
-                        <p className="text-blue-100 mb-8 max-w-xs relative z-10">Rejoignez 5000+ praticiens aujourd&apos;hui.</p>
-                        <a href="/abonnement" className="bg-white text-primary px-8 py-3 rounded-full font-bold hover:bg-blue-50 transition-colors shadow-lg relative z-10">
-                            Créer un compte
-                        </a>
+                    {/* CTA Card - Premium Design */}
+                    <div className="md:col-span-1 bg-gradient-to-br from-primary via-blue-600 to-indigo-700 rounded-[24px] p-8 shadow-2xl text-white flex flex-col relative overflow-hidden group">
+                        {/* Background Pattern */}
+                        <div className="absolute inset-0 opacity-10">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-white rounded-full -translate-y-1/2 translate-x-1/2"></div>
+                            <div className="absolute bottom-0 left-0 w-24 h-24 bg-white rounded-full translate-y-1/2 -translate-x-1/2"></div>
+                        </div>
+
+                        {/* Badge */}
+                        <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
+                            <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                            5 jours gratuits
+                        </div>
+
+                        <div className="relative z-10 flex flex-col h-full">
+                            <h3 className="text-2xl font-bold mb-2">Prêt à transformer votre cabinet ?</h3>
+                            <p className="text-blue-100 text-sm mb-6">Rejoignez 5000+ praticiens qui améliorent leur relation patient.</p>
+
+                            {/* Benefits List */}
+                            <div className="space-y-3 mb-6 flex-1">
+                                <div className="flex items-center gap-2 text-sm">
+                                    <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center">
+                                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                                    </div>
+                                    <span>Questionnaires illimités</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-sm">
+                                    <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center">
+                                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                                    </div>
+                                    <span>Aucune carte bancaire requise</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-sm">
+                                    <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center">
+                                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                                    </div>
+                                    <span>Configuration en 2 minutes</span>
+                                </div>
+                            </div>
+
+                            {/* CTA Button */}
+                            <a
+                                href="/abonnement"
+                                className="w-full bg-white text-primary px-6 py-4 rounded-xl font-bold hover:bg-blue-50 transition-all shadow-lg text-center flex items-center justify-center gap-2 group-hover:scale-[1.02]"
+                            >
+                                <Zap className="w-5 h-5" />
+                                Démarrer l&apos;essai gratuit
+                            </a>
+
+                            <p className="text-center text-blue-200 text-xs mt-3">Puis 9,99€/mois • Sans engagement</p>
+                        </div>
                     </div>
 
                 </div>
