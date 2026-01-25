@@ -8,7 +8,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-const APP_URL = Deno.env.get('NEXT_PUBLIC_APP_URL') || Deno.env.get('APP_URL') || 'http://localhost:3001'
+const APP_URL = Deno.env.get('NEXT_PUBLIC_APP_URL') || Deno.env.get('APP_URL') || 'https://www.toplinksante.com'
 
 serve(async (req) => {
   try {
@@ -119,6 +119,9 @@ serve(async (req) => {
             from: Deno.env.get('RESEND_FROM_EMAIL') || 'TopLinkSante <noreply@toplinksante.com>',
             to: patientEmail,
             subject: 'Questionnaire de suivi - Votre praticien vous sollicite',
+            headers: {
+              'List-Unsubscribe': '<mailto:contact@toplinksante.com?subject=Unsubscribe>',
+            },
             html: `
               <!DOCTYPE html>
               <html>
@@ -155,7 +158,7 @@ serve(async (req) => {
                     
                     <div style="background-color: #f0f9ff; border-left: 4px solid #3b82f6; padding: 16px; margin: 30px 0; border-radius: 4px;">
                       <p style="color: #1e40af; font-size: 14px; margin: 0; line-height: 1.6;">
-                        <strong>🔒 Confidentialité garantie</strong><br>
+                        <strong>Confidentialité garantie</strong><br>
                         Ce lien est personnel et sécurisé. Vos réponses sont transmises directement à votre praticien et ne sont conservées que le temps nécessaire à votre suivi.
                       </p>
                     </div>
@@ -181,7 +184,7 @@ serve(async (req) => {
                 </body>
               </html>
             `,
-            text: `Bonjour,\n\nVotre professionnel de santé souhaite faire le point sur votre suivi concernant ${questionnaire.pathologie || 'votre suivi'}.\n\nPrenez quelques instants pour répondre à ce questionnaire. Vos réponses permettront à votre praticien de mieux vous accompagner et d'adapter votre suivi.\n\n🔒 Confidentialité garantie : Ce lien est personnel et sécurisé. Vos réponses sont transmises directement à votre praticien.\n\nAccéder au questionnaire :\n${questionnaireLink}\n\n---\nCeci est un message automatique envoyé par TopLinkSante pour votre praticien.\nSi vous n'avez pas demandé ce suivi, vous pouvez ignorer cet email.\n\nTopLinkSante - Plateforme de suivi patient éphémère et confidentiel`,
+            text: `Bonjour,\n\nVotre professionnel de santé souhaite faire le point sur votre suivi concernant ${questionnaire.pathologie || 'votre suivi'}.\n\nPrenez quelques instants pour répondre à ce questionnaire. Vos réponses permettront à votre praticien de mieux vous accompagner et d'adapter votre suivi.\n\nConfidentialité garantie : Ce lien est personnel et sécurisé. Vos réponses sont transmises directement à votre praticien.\n\nAccéder au questionnaire :\n${questionnaireLink}\n\n---\nCeci est un message automatique envoyé par TopLinkSante pour votre praticien.\nSi vous n'avez pas demandé ce suivi, vous pouvez ignorer cet email.\n\nTopLinkSante - Plateforme de suivi patient éphémère et confidentiel`,
           }),
         })
 

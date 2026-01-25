@@ -7,7 +7,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-const APP_URL = Deno.env.get('NEXT_PUBLIC_APP_URL') || Deno.env.get('APP_URL') || 'https://www.medilink-sante.com'
+const APP_URL = Deno.env.get('NEXT_PUBLIC_APP_URL') || Deno.env.get('APP_URL') || 'https://www.toplinksante.com'
 
 // Nombre de jours avant d'envoyer la relance
 const REMINDER_DELAY_DAYS = 3
@@ -116,7 +116,10 @@ serve(async (req) => {
                     body: JSON.stringify({
                         from: Deno.env.get('RESEND_FROM_EMAIL') || 'TopLinkSante <noreply@toplinksante.com>',
                         to: questionnaire.patient_email,
-                        subject: '⏰ Rappel : Votre questionnaire de suivi vous attend',
+                        subject: 'Rappel : Votre questionnaire de suivi vous attend',
+                        headers: {
+                            'List-Unsubscribe': '<mailto:contact@toplinksante.com?subject=Unsubscribe>',
+                        },
                         html: `
               <!DOCTYPE html>
               <html>
@@ -127,7 +130,7 @@ serve(async (req) => {
                 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 0; background-color: #f3f4f6;">
                   <!-- Header -->
                   <div style="background-color: #ffffff; padding: 30px 20px; text-align: center; border-bottom: 3px solid #f59e0b;">
-                    <h1 style="color: #f59e0b; margin: 0; font-size: 28px; font-weight: 700;">⏰ Rappel</h1>
+                    <h1 style="color: #f59e0b; margin: 0; font-size: 28px; font-weight: 700;">Rappel</h1>
                   </div>
                   
                   <!-- Main Content -->

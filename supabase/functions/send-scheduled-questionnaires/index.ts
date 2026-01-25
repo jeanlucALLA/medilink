@@ -8,7 +8,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-const APP_URL = Deno.env.get('NEXT_PUBLIC_APP_URL') || Deno.env.get('APP_URL') || 'http://localhost:3001'
+const APP_URL = Deno.env.get('NEXT_PUBLIC_APP_URL') || Deno.env.get('APP_URL') || 'https://www.toplinksante.com'
 
 serve(async (req) => {
   try {
@@ -123,6 +123,9 @@ serve(async (req) => {
             from: Deno.env.get('RESEND_FROM_EMAIL') || 'TopLinkSante <noreply@toplinksante.com>',
             to: questionnaire.patient_email,
             subject: 'Votre praticien vous invite à compléter votre questionnaire de suivi',
+            headers: {
+              'List-Unsubscribe': '<mailto:contact@toplinksante.com?subject=Unsubscribe>',
+            },
             html: `
               <!DOCTYPE html>
               <html>

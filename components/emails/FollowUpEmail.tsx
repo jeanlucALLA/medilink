@@ -98,7 +98,7 @@ export function FollowUpEmail({
               <!-- Informations complémentaires -->
               <div style="background-color: #f3f4f6; border-radius: 6px; padding: 20px; margin: 30px 0;">
                 <p style="margin: 0 0 10px 0; font-size: 14px; font-weight: 600; color: #111827;">
-                  💡 Pourquoi ce questionnaire ?
+                  Pourquoi ce questionnaire ?
                 </p>
                 <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #4b5563;">
                   Vos retours nous permettent d'améliorer continuellement la qualité de votre prise en charge et d'adapter notre approche à vos besoins spécifiques.
@@ -112,7 +112,7 @@ export function FollowUpEmail({
             <td style="padding: 0 40px 30px 40px;">
               <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; border-radius: 6px; padding: 20px;">
                 <p style="margin: 0 0 12px 0; font-size: 16px; font-weight: 600; color: #991b1b;">
-                  🚨 Besoin d'aide immédiate ?
+                  Besoin d'aide immédiate ?
                 </p>
                 <p style="margin: 0 0 16px 0; font-size: 14px; line-height: 1.6; color: #7f1d1d;">
                   Si vous avez une urgence médicale ou une question nécessitant une réponse rapide, n'hésitez pas à nous contacter directement.
@@ -123,7 +123,7 @@ export function FollowUpEmail({
                     <td>
                       <a href="tel:${cabinetPhone.replace(/\s/g, '')}" 
                          style="display: inline-block; padding: 10px 20px; background-color: #ef4444; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 14px;">
-                        📞 Appeler le cabinet
+                        Appeler le cabinet
                       </a>
                     </td>
                   </tr>
@@ -144,12 +144,12 @@ export function FollowUpEmail({
               </p>
               ${cabinetEmail ? `
               <p style="margin: 0 0 8px 0; font-size: 13px; color: #6b7280;">
-                📧 ${cabinetEmail}
+                Email: ${cabinetEmail}
               </p>
               ` : ''}
               ${cabinetPhone ? `
               <p style="margin: 0 0 20px 0; font-size: 13px; color: #6b7280;">
-                📞 ${cabinetPhone}
+                Tél: ${cabinetPhone}
               </p>
               ` : ''}
               
