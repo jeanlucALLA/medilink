@@ -13,7 +13,8 @@ import {
   Send,
   Search,
   Bell,
-  RefreshCw
+  RefreshCw,
+  XCircle
 } from 'lucide-react'
 
 // Types
@@ -370,6 +371,7 @@ export default function ResolutionPage() {
   }
 
   const [sendingReminder, setSendingReminder] = useState<string | null>(null)
+  const [cancellingReminder, setCancellingReminder] = useState<string | null>(null)
 
   const handleSendReminder = async (response: QuestionnaireResponse) => {
     if (!response.patient_email || sendingReminder) return
@@ -412,6 +414,48 @@ export default function ResolutionPage() {
       alert('❌ Erreur lors de l\'envoi de la relance')
     } finally {
       setSendingReminder(null)
+    }
+  }
+
+  const handleCancelReminder = async (questionnaireId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (cancellingReminder) return
+
+    if (!confirm('Voulez-vous vraiment annuler la relance automatique pour ce questionnaire ?')) {
+      return
+    }
+
+    setCancellingReminder(questionnaireId)
+    try {
+      const { supabase } = await import('@/lib/supabase') as any
+      const { data: { session } } = await supabase.auth.getSession()
+
+      if (!session?.access_token) {
+        alert('❌ Erreur: Session expirée. Veuillez vous reconnecter.')
+        return
+      }
+
+      const res = await fetch('/api/cancel-reminder', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ questionnaireId }),
+      })
+
+      if (res.ok) {
+        alert('✅ Relance annulée avec succès !')
+        window.location.reload()
+      } else {
+        const data = await res.json()
+        alert(`❌ Erreur: ${data.error || 'Échec de l\'annulation'}`)
+      }
+    } catch (err) {
+      console.error('Erreur annulation relance:', err)
+      alert('❌ Erreur lors de l\'annulation de la relance')
+    } finally {
+      setCancellingReminder(null)
     }
   }
 
@@ -564,8 +608,20 @@ export default function ResolutionPage() {
                                 <div className="flex items-center space-x-2 text-orange-600 bg-orange-50 px-3 py-2 rounded-lg w-fit">
                                   <Bell className="w-4 h-4" />
                                   <span className="text-sm font-medium">
-                                    ⏰ Relance automatique dans {daysUntilReminder} jour{daysUntilReminder > 1 ? 's' : ''}
+                                    Relance auto dans {daysUntilReminder} jour{daysUntilReminder > 1 ? 's' : ''}
                                   </span>
+                                  <button
+                                    onClick={(e) => handleCancelReminder(response.id, e)}
+                                    disabled={cancellingReminder === response.id}
+                                    className="ml-2 p-1 hover:bg-orange-200 rounded-full transition-colors"
+                                    title="Annuler la relance"
+                                  >
+                                    {cancellingReminder === response.id ? (
+                                      <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                      <XCircle className="w-4 h-4 text-orange-700 hover:text-red-600" />
+                                    )}
+                                  </button>
                                 </div>
                               )
                             } else if (daysUntilReminder === 0) {

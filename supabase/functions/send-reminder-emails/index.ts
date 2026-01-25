@@ -42,6 +42,7 @@ serve(async (req) => {
             .select('id, patient_email, pathologie, sent_at')
             .eq('status', 'envoyé')
             .is('reminder_sent_at', null)
+            .or('reminder_cancelled.is.null,reminder_cancelled.eq.false') // Exclure les relances annulées
             .not('patient_email', 'is', null)
             .lt('sent_at', reminderThreshold.toISOString())
 
