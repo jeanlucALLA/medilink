@@ -155,7 +155,7 @@ export async function POST(
               body: JSON.stringify({
                 from: process.env.RESEND_FROM_EMAIL || 'TopLinkSante <noreply@toplinksante.com>',
                 to: profile.email,
-                subject: `✅ Nouvelle réponse patient : ${pathologie}`,
+                subject: `Nouvelle réponse patient : ${pathologie}`,
                 html: `
                   <!DOCTYPE html>
                   <html>
@@ -210,6 +210,9 @@ export async function POST(
                   </html>
                 `,
                 text: `Bonjour ${praticienNom},\n\nUn patient vient de compléter son questionnaire de suivi pour la pathologie : ${pathologie}.\n\nVous pouvez dès maintenant consulter le détail de ses réponses et son score de récupération sur votre espace sécurisé.\n\nConsulter la réponse : ${historyLink}\n\nNote : Conformément à votre politique de confidentialité, l'email du patient a été purgé de nos systèmes après l'envoi du questionnaire.\n\nBien cordialement,\nL'équipe TopLinkSante`,
+                headers: {
+                  'List-Unsubscribe': '<mailto:contact@toplinksante.com?subject=Unsubscribe>',
+                },
               }),
             })
 

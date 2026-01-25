@@ -71,7 +71,7 @@ async function sendPractitionerNotification(questionnaireId: string, userId: str
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f3f4f6;">
   <div style="background-color: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
     <div style="text-align: center; margin-bottom: 30px;">
-      <h1 style="color: #3b82f6; margin: 0; font-size: 24px; font-weight: 700;">Medi.Link</h1>
+      <h1 style="color: #3b82f6; margin: 0; font-size: 24px; font-weight: 700;">TopLinkSante</h1>
     </div>
     
     <p style="font-size: 16px; margin-bottom: 20px; color: #1f2937;">
@@ -96,14 +96,17 @@ async function sendPractitionerNotification(questionnaireId: string, userId: str
     <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
     
     <p style="font-size: 12px; color: #9ca3af; text-align: center; margin: 0;">
-      Cet email a été envoyé automatiquement par Medi.Link<br>
+      Cet email a été envoyé automatiquement par TopLinkSante<br>
       Notification de nouvelle réponse patient
     </p>
   </div>
 </body>
 </html>
       `,
-      text: `Bonjour,\n\nUn patient vient de répondre à votre suivi concernant ${pathologie}.\n\nVous pouvez consulter les détails sur votre tableau de bord : ${dashboardLink}\n\n---\nCet email a été envoyé automatiquement par Medi.Link\nNotification de nouvelle réponse patient`,
+      text: `Bonjour,\n\nUn patient vient de répondre à votre suivi concernant ${pathologie}.\n\nVous pouvez consulter les détails sur votre tableau de bord : ${dashboardLink}\n\n---\nCet email a été envoyé automatiquement par TopLinkSante\nNotification de nouvelle réponse patient`,
+      headers: {
+        'List-Unsubscribe': '<mailto:contact@toplinksante.com?subject=Unsubscribe>',
+      },
     })
 
     console.log(`[Notification] Email de notification envoyé au praticien pour le questionnaire ${questionnaireId}`)
@@ -160,7 +163,7 @@ async function sendAlertEmail(alertData: AlertData) {
     const emailResult = await resend.emails.send({
       from: process.env.RESEND_FROM_EMAIL || 'TopLinkSante <noreply@toplinksante.com>',
       to: practitionerEmail,
-      subject: '⚠️ ALERTE CRITIQUE : Score bas détecté pour un patient',
+      subject: 'ALERTE CRITIQUE : Score bas détecté pour un patient',
       html: `
 <!DOCTYPE html>
 <html>
@@ -171,7 +174,7 @@ async function sendAlertEmail(alertData: AlertData) {
 </head>
 <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
   <div style="background-color: #fef2f2; border-left: 4px solid #dc2626; padding: 30px; border-radius: 8px;">
-    <h1 style="color: #dc2626; margin-top: 0; font-size: 24px;">⚠️ ALERTE CRITIQUE</h1>
+    <h1 style="color: #dc2626; margin-top: 0; font-size: 24px;">ALERTE CRITIQUE</h1>
     
     <p style="font-size: 16px; margin-bottom: 20px;">
       <strong>Attention, un patient vient de soumettre un score de <span style="color: #dc2626; font-size: 20px; font-weight: bold;">${alertData.scoreTotal}/5</span> pour la pathologie :</strong>
@@ -201,7 +204,7 @@ async function sendAlertEmail(alertData: AlertData) {
     <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
     
     <p style="font-size: 12px; color: #9ca3af; text-align: center; margin: 0;">
-      Cet email a été envoyé automatiquement par Medi.Link<br>
+      Cet email a été envoyé automatiquement par TopLinkSante<br>
       Système d'alerte pour scores bas (≤ 2/5)
     </p>
   </div>

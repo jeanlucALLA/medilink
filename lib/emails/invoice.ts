@@ -19,11 +19,11 @@ export async function sendInvoiceEmail(email: string, invoiceUrl: string, planNa
         await resend.emails.send({
             from: from,
             to: email, // En mode test Resend, ça ne marche que vers l'email, compte. 
-            subject: `Votre facture Medi.Link disponible : ${planName}`,
+            subject: `Votre facture TopLinkSante disponible : ${planName}`,
             html: `
             <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1f2937;">
                 <div style="text-align: center; margin-bottom: 30px;">
-                    <h1 style="color: #0052FF; font-size: 24px; font-weight: bold; margin: 0;">Medi.Link</h1>
+                    <h1 style="color: #0052FF; font-size: 24px; font-weight: bold; margin: 0;">TopLinkSante</h1>
                 </div>
                 
                 <div style="background-color: white; border-radius: 16px; padding: 30px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); border: 1px solid #f3f4f6;">
@@ -56,7 +56,10 @@ export async function sendInvoiceEmail(email: string, invoiceUrl: string, planNa
                     <p>Ceci est un email automatique, merci de ne pas y répondre.</p>
                 </div>
             </div>
-            `
+            `,
+            headers: {
+                'List-Unsubscribe': '<mailto:contact@toplinksante.com?subject=Unsubscribe>',
+            },
         })
         console.log(`Email facture envoyé à ${email}`)
     } catch (error) {

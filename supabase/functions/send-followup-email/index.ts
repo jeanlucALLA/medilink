@@ -8,7 +8,7 @@ const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
-const APP_URL = Deno.env.get('NEXT_PUBLIC_APP_URL') || 'https://medi-link.fr'
+const APP_URL = Deno.env.get('NEXT_PUBLIC_APP_URL') || 'https://www.toplinksante.com'
 
 serve(async (req) => {
   try {
@@ -81,6 +81,9 @@ serve(async (req) => {
             from: Deno.env.get('RESEND_FROM_EMAIL') || 'TopLinkSante <noreply@toplinksante.com>',
             to: questionnaire.patient_email,
             subject: 'Votre professionnel de santé vous invite à compléter votre suivi',
+            headers: {
+              'List-Unsubscribe': '<mailto:contact@toplinksante.com?subject=Unsubscribe>',
+            },
             html: `
               <!DOCTYPE html>
               <html>
@@ -93,7 +96,7 @@ serve(async (req) => {
                     <h1 style="color: #3b82f6; margin-bottom: 20px;">TopLinkSante</h1>
                     <h2 style="color: #1f2937; margin-bottom: 20px;">Votre professionnel de santé vous invite à compléter votre suivi</h2>
                     <p style="color: #4b5563; margin-bottom: 30px;">
-                      Votre professionnel de santé vous invite à compléter votre suivi sur Medi.Link.
+                      Votre professionnel de santé vous invite à compléter votre suivi sur TopLinkSante.
                     </p>
                     <a href="${questionnaireLink}" 
                        style="display: inline-block; background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; margin-bottom: 30px;">
