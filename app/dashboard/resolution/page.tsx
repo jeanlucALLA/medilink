@@ -15,7 +15,7 @@ import {
 } from 'lucide-react'
 
 // Types
-type TabType = 'pending' | 'alerts' | 'resolved'
+type TabType = 'pending' | 'alerts' | 'resolved' | 'scheduled'
 
 interface ResolutionItem {
   id: string
@@ -25,7 +25,8 @@ interface ResolutionItem {
   patient_name: string
   score: number | null
   date: string
-  type: 'sent' | 'response'
+  scheduledDate?: string | null
+  type: 'sent' | 'response' | 'scheduled'
   isResolved: boolean
   isAlert: boolean
 }
@@ -109,6 +110,14 @@ export default function ResolutionPage() {
           .eq('status', 'envoyé')
           .order('sent_at', { ascending: false })
 
+        // 1b. Récupérer les questionnaires PROGRAMMÉS
+        const { data: scheduledData } = await supabase
+          .from('questionnaires')
+          .select('id, pathologie, patient_email, created_at, send_after_days, status')
+          .eq('user_id', user.id)
+          .eq('status', 'programmé')
+          .order('created_at', { ascending: false })
+
         // 2. Récupérer les RÉPONSES
         const { data: responsesData } = await supabase
           .from('responses')
@@ -166,8 +175,32 @@ export default function ResolutionPage() {
           }
         })
 
+        // Formater les programmés
+        const scheduledItems: ResolutionItem[] = (scheduledData || []).map((q: any) => {
+          // Calculer la date d'envoi prévue
+          const createdDate = new Date(q.created_at)
+          const sendDate = new Date(createdDate)
+          if (q.send_after_days) {
+            sendDate.setDate(sendDate.getDate() + q.send_after_days)
+          }
+
+          return {
+            id: q.id,
+            questionnaire_id: q.id,
+            pathologie: q.pathologie,
+            patient_email: q.patient_email,
+            patient_name: extractNameFromEmail(q.patient_email),
+            score: null,
+            date: q.created_at,
+            scheduledDate: sendDate.toISOString(),
+            type: 'scheduled' as const,
+            isResolved: false,
+            isAlert: false
+          }
+        })
+
         if (isMountedRef.current) {
-          setItems([...sentItems, ...responseItems])
+          setItems([...scheduledItems, ...sentItems, ...responseItems])
           setLoading(false)
         }
       } catch (err: any) {
@@ -240,11 +273,13 @@ export default function ResolutionPage() {
     // Filtre par onglet
     switch (activeTab) {
       case 'pending':
-        return filtered.filter(item => !resolvedIds.has(item.id) && !item.isAlert)
+        return filtered.filter(item => !resolvedIds.has(item.id) && !item.isAlert && item.type !== 'scheduled')
       case 'alerts':
         return filtered.filter(item => !resolvedIds.has(item.id) && item.isAlert)
       case 'resolved':
         return filtered.filter(item => resolvedIds.has(item.id))
+      case 'scheduled':
+        return filtered.filter(item => item.type === 'scheduled')
       default:
         return filtered
     }
@@ -253,9 +288,10 @@ export default function ResolutionPage() {
   const filteredItems = getFilteredItems()
 
   // Compteurs
-  const countPending = items.filter(i => !resolvedIds.has(i.id) && !i.isAlert).length
+  const countPending = items.filter(i => !resolvedIds.has(i.id) && !i.isAlert && i.type !== 'scheduled').length
   const countAlerts = items.filter(i => !resolvedIds.has(i.id) && i.isAlert).length
   const countResolved = items.filter(i => resolvedIds.has(i.id)).length
+  const countScheduled = items.filter(i => i.type === 'scheduled').length
 
   // Sélectionner/désélectionner tous les items visibles
   const selectAll = () => {
@@ -290,8 +326,8 @@ export default function ResolutionPage() {
           <button
             onClick={() => { setActiveTab('pending'); clearSelection() }}
             className={`flex-1 px-6 py-4 text-center font-medium transition-all relative ${activeTab === 'pending'
-                ? 'text-orange-600 bg-orange-50'
-                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+              ? 'text-orange-600 bg-orange-50'
+              : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
               }`}
           >
             <div className="flex items-center justify-center gap-2">
@@ -313,8 +349,8 @@ export default function ResolutionPage() {
           <button
             onClick={() => { setActiveTab('alerts'); clearSelection() }}
             className={`flex-1 px-6 py-4 text-center font-medium transition-all relative ${activeTab === 'alerts'
-                ? 'text-red-600 bg-red-50'
-                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+              ? 'text-red-600 bg-red-50'
+              : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
               }`}
           >
             <div className="flex items-center justify-center gap-2">
@@ -336,8 +372,8 @@ export default function ResolutionPage() {
           <button
             onClick={() => { setActiveTab('resolved'); clearSelection() }}
             className={`flex-1 px-6 py-4 text-center font-medium transition-all relative ${activeTab === 'resolved'
-                ? 'text-green-600 bg-green-50'
-                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+              ? 'text-green-600 bg-green-50'
+              : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
               }`}
           >
             <div className="flex items-center justify-center gap-2">
@@ -354,12 +390,35 @@ export default function ResolutionPage() {
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-green-500" />
             )}
           </button>
+
+          {/* Onglet Programmé */}
+          <button
+            onClick={() => { setActiveTab('scheduled'); clearSelection() }}
+            className={`flex-1 px-6 py-4 text-center font-medium transition-all relative ${activeTab === 'scheduled'
+              ? 'text-blue-600 bg-blue-50'
+              : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+              }`}
+          >
+            <div className="flex items-center justify-center gap-2">
+              <Clock className="w-5 h-5" />
+              <span>Programmés</span>
+              {countScheduled > 0 && (
+                <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${activeTab === 'scheduled' ? 'bg-blue-500 text-white' : 'bg-blue-100 text-blue-600'
+                  }`}>
+                  {countScheduled}
+                </span>
+              )}
+            </div>
+            {activeTab === 'scheduled' && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500" />
+            )}
+          </button>
         </div>
 
         {/* Barre d'actions */}
         <div className="p-4 bg-gray-50 border-b border-gray-100 flex flex-wrap items-center gap-3">
           {/* Actions groupées */}
-          {activeTab !== 'resolved' && filteredItems.length > 0 && (
+          {activeTab !== 'resolved' && activeTab !== 'scheduled' && filteredItems.length > 0 && (
             <>
               {selectedItems.size > 0 ? (
                 <>
@@ -420,15 +479,18 @@ export default function ResolutionPage() {
           {filteredItems.length === 0 ? (
             <div className="p-12 text-center">
               <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${activeTab === 'pending' ? 'bg-orange-100' :
-                  activeTab === 'alerts' ? 'bg-red-100' : 'bg-green-100'
+                activeTab === 'alerts' ? 'bg-red-100' :
+                  activeTab === 'scheduled' ? 'bg-blue-100' : 'bg-green-100'
                 }`}>
                 {activeTab === 'pending' && <Inbox className="w-8 h-8 text-orange-400" />}
                 {activeTab === 'alerts' && <AlertTriangle className="w-8 h-8 text-red-400" />}
+                {activeTab === 'scheduled' && <Clock className="w-8 h-8 text-blue-400" />}
                 {activeTab === 'resolved' && <CheckCircle className="w-8 h-8 text-green-400" />}
               </div>
               <p className="text-gray-500">
                 {activeTab === 'pending' && 'Aucun élément à traiter'}
                 {activeTab === 'alerts' && 'Aucune alerte'}
+                {activeTab === 'scheduled' && 'Aucun envoi programmé'}
                 {activeTab === 'resolved' && 'Aucun élément traité'}
               </p>
             </div>
@@ -440,8 +502,8 @@ export default function ResolutionPage() {
                   }`}
               >
                 <div className="flex items-center gap-4">
-                  {/* Checkbox (sauf pour onglet Traités) */}
-                  {activeTab !== 'resolved' && (
+                  {/* Checkbox (sauf pour onglet Traités et Programmés) */}
+                  {activeTab !== 'resolved' && activeTab !== 'scheduled' && (
                     <button
                       onClick={() => toggleSelect(item.id)}
                       className="flex-shrink-0"
@@ -470,12 +532,18 @@ export default function ResolutionPage() {
                     <div className="flex items-center gap-3 text-sm text-gray-500">
                       <span>{item.pathologie}</span>
                       <span>•</span>
-                      <span>{formatDate(item.date)}</span>
+                      {item.type === 'scheduled' && item.scheduledDate ? (
+                        <span className="text-blue-600 font-medium">
+                          Envoi prévu: {new Date(item.scheduledDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                        </span>
+                      ) : (
+                        <span>{formatDate(item.date)}</span>
+                      )}
                       {item.score !== null && (
                         <>
                           <span>•</span>
                           <span className={`font-medium ${item.score <= 2 ? 'text-red-600' :
-                              item.score === 3 ? 'text-orange-600' : 'text-green-600'
+                            item.score === 3 ? 'text-orange-600' : 'text-green-600'
                             }`}>
                             Score: {item.score}/5
                           </span>
@@ -485,12 +553,16 @@ export default function ResolutionPage() {
                   </div>
 
                   {/* Action */}
-                  {activeTab !== 'resolved' ? (
+                  {activeTab === 'scheduled' ? (
+                    <span className="px-3 py-1.5 bg-blue-100 text-blue-600 text-sm font-medium rounded-lg">
+                      Automatique
+                    </span>
+                  ) : activeTab !== 'resolved' ? (
                     <button
                       onClick={() => markAsResolved(item.id)}
                       className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${item.isAlert
-                          ? 'bg-red-500 hover:bg-red-600 text-white'
-                          : 'bg-green-500 hover:bg-green-600 text-white'
+                        ? 'bg-red-500 hover:bg-red-600 text-white'
+                        : 'bg-green-500 hover:bg-green-600 text-white'
                         }`}
                     >
                       <CheckCircle className="w-4 h-4" />
