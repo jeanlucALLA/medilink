@@ -16,7 +16,7 @@ import {
 } from 'lucide-react'
 
 // Types
-type TabType = 'pending' | 'alerts' | 'resolved' | 'scheduled' | 'sent'
+type TabType = 'pending' | 'alerts' | 'scheduled' | 'sent'
 
 interface ResolutionItem {
   id: string
@@ -222,16 +222,7 @@ export default function ResolutionPage() {
     setSelectedItems(prev => {
       const next = new Set(prev)
       next.delete(id)
-      return next
     })
-  }
-
-  // Annuler résolution
-  const unmarkResolved = (id: string) => {
-    const newResolved = new Set(resolvedIds)
-    newResolved.delete(id)
-    setResolvedIds(newResolved)
-    localStorage.setItem('resolution_resolved_ids', JSON.stringify(Array.from(newResolved)))
   }
 
   // Marquer plusieurs comme traités
@@ -279,8 +270,6 @@ export default function ResolutionPage() {
         return filtered.filter(item => !resolvedIds.has(item.id) && item.type === 'sent')
       case 'alerts':
         return filtered.filter(item => !resolvedIds.has(item.id) && item.isAlert)
-      case 'resolved':
-        return filtered.filter(item => resolvedIds.has(item.id))
       case 'scheduled':
         return filtered.filter(item => item.type === 'scheduled')
       default:
@@ -294,7 +283,6 @@ export default function ResolutionPage() {
   const countPending = items.filter(i => !resolvedIds.has(i.id) && !i.isAlert && i.type === 'response').length
   const countSent = items.filter(i => !resolvedIds.has(i.id) && i.type === 'sent').length
   const countAlerts = items.filter(i => !resolvedIds.has(i.id) && i.isAlert).length
-  const countResolved = items.filter(i => resolvedIds.has(i.id)).length
   const countScheduled = items.filter(i => i.type === 'scheduled').length
 
   // Sélectionner/désélectionner tous les items visibles
@@ -395,28 +383,6 @@ export default function ResolutionPage() {
             )}
           </button>
 
-          {/* Onglet Traités */}
-          <button
-            onClick={() => { setActiveTab('resolved'); clearSelection() }}
-            className={`flex-1 px-6 py-4 text-center font-medium transition-all relative ${activeTab === 'resolved'
-              ? 'text-green-600 bg-green-50'
-              : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-              }`}
-          >
-            <div className="flex items-center justify-center gap-2">
-              <CheckCircle className="w-5 h-5" />
-              <span>Traités</span>
-              {countResolved > 0 && (
-                <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${activeTab === 'resolved' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-600'
-                  }`}>
-                  {countResolved}
-                </span>
-              )}
-            </div>
-            {activeTab === 'resolved' && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-green-500" />
-            )}
-          </button>
 
           {/* Onglet Programmé */}
           <button
@@ -445,7 +411,7 @@ export default function ResolutionPage() {
         {/* Barre d'actions */}
         <div className="p-4 bg-gray-50 border-b border-gray-100 flex flex-wrap items-center gap-3">
           {/* Actions groupées */}
-          {activeTab !== 'resolved' && activeTab !== 'scheduled' && filteredItems.length > 0 && (
+          {activeTab !== 'scheduled' && filteredItems.length > 0 && (
             <>
               {selectedItems.size > 0 ? (
                 <>
@@ -521,7 +487,6 @@ export default function ResolutionPage() {
                 {activeTab === 'sent' && 'Aucun questionnaire envoyé en attente'}
                 {activeTab === 'alerts' && 'Aucune alerte'}
                 {activeTab === 'scheduled' && 'Aucun envoi programmé'}
-                {activeTab === 'resolved' && 'Aucun élément traité'}
               </p>
             </div>
           ) : (
@@ -532,8 +497,8 @@ export default function ResolutionPage() {
                   }`}
               >
                 <div className="flex items-center gap-4">
-                  {/* Checkbox (sauf pour onglet Traités et Programmés) */}
-                  {activeTab !== 'resolved' && activeTab !== 'scheduled' && (
+                  {/* Checkbox (sauf pour Programmés) */}
+                  {activeTab !== 'scheduled' && (
                     <button
                       onClick={() => toggleSelect(item.id)}
                       className="flex-shrink-0"
@@ -587,7 +552,7 @@ export default function ResolutionPage() {
                     <span className="px-3 py-1.5 bg-blue-100 text-blue-600 text-sm font-medium rounded-lg">
                       Automatique
                     </span>
-                  ) : activeTab !== 'resolved' ? (
+                  ) : (
                     <button
                       onClick={() => markAsResolved(item.id)}
                       className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${item.isAlert
@@ -597,13 +562,6 @@ export default function ResolutionPage() {
                     >
                       <CheckCircle className="w-4 h-4" />
                       Traiter
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => unmarkResolved(item.id)}
-                      className="px-4 py-2 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
-                    >
-                      Annuler
                     </button>
                   )}
                 </div>
