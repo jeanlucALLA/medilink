@@ -222,6 +222,7 @@ export default function ResolutionPage() {
     setSelectedItems(prev => {
       const next = new Set(prev)
       next.delete(id)
+      return next
     })
   }
 
