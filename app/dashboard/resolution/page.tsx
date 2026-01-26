@@ -14,7 +14,9 @@ import {
   Search,
   Bell,
   RefreshCw,
-  XCircle
+  XCircle,
+  CheckSquare,
+  Square
 } from 'lucide-react'
 
 // Types
@@ -374,6 +376,80 @@ export default function ResolutionPage() {
 
   const [sendingReminder, setSendingReminder] = useState<string | null>(null)
   const [cancellingReminder, setCancellingReminder] = useState<string | null>(null)
+  const [selectedForBulk, setSelectedForBulk] = useState<Set<string>>(new Set())
+  const [bulkCancelling, setBulkCancelling] = useState(false)
+
+  // Get IDs of questionnaires that have pending reminders (for bulk selection)
+  const pendingReminderIds = responses.filter(r =>
+    r.isSent && !r.reminderCancelled && r.sentAt && (() => {
+      const sentDate = new Date(r.sentAt)
+      const reminderDate = new Date(sentDate)
+      reminderDate.setDate(reminderDate.getDate() + 3)
+      return reminderDate.getTime() > Date.now()
+    })()
+  ).map(r => r.id)
+
+  const toggleBulkSelect = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    const newSelected = new Set(selectedForBulk)
+    if (newSelected.has(id)) {
+      newSelected.delete(id)
+    } else {
+      newSelected.add(id)
+    }
+    setSelectedForBulk(newSelected)
+  }
+
+  const selectAllPendingReminders = () => {
+    setSelectedForBulk(new Set(pendingReminderIds))
+  }
+
+  const clearBulkSelection = () => {
+    setSelectedForBulk(new Set())
+  }
+
+  const handleBulkCancelReminders = async () => {
+    if (selectedForBulk.size === 0 || bulkCancelling) return
+
+    if (!confirm(`Voulez-vous vraiment annuler ${selectedForBulk.size} relance(s) automatique(s) ?`)) {
+      return
+    }
+
+    setBulkCancelling(true)
+    try {
+      const { supabase } = await import('@/lib/supabase') as any
+      const { data: { session } } = await supabase.auth.getSession()
+
+      if (!session?.access_token) {
+        alert('❌ Erreur: Session expirée. Veuillez vous reconnecter.')
+        return
+      }
+
+      const res = await fetch('/api/cancel-reminders-bulk', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ questionnaireIds: Array.from(selectedForBulk) }),
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        alert(`✅ ${data.cancelledCount} relance(s) annulée(s) avec succès !`)
+        setSelectedForBulk(new Set())
+        window.location.reload()
+      } else {
+        const data = await res.json()
+        alert(`❌ Erreur: ${data.error || 'Échec de l\'annulation'}`)
+      }
+    } catch (err) {
+      console.error('Erreur annulation groupée:', err)
+      alert('❌ Erreur lors de l\'annulation groupée')
+    } finally {
+      setBulkCancelling(false)
+    }
+  }
 
   const handleSendReminder = async (response: QuestionnaireResponse) => {
     if (!response.patient_email || sendingReminder) return
@@ -532,6 +608,56 @@ export default function ResolutionPage() {
         </div>
       </div>
 
+      {/* Barre d'actions groupées */}
+      {pendingReminderIds.length > 0 && (
+        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2 text-orange-700">
+              <Bell className="w-5 h-5" />
+              <span className="font-medium">
+                {pendingReminderIds.length} relance(s) prévue(s)
+              </span>
+            </div>
+
+            <div className="flex-1" />
+
+            {selectedForBulk.size > 0 ? (
+              <>
+                <span className="text-sm text-orange-600 font-medium">
+                  {selectedForBulk.size} sélectionnée(s)
+                </span>
+                <button
+                  onClick={clearBulkSelection}
+                  className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 transition-colors"
+                >
+                  Désélectionner
+                </button>
+                <button
+                  onClick={handleBulkCancelReminders}
+                  disabled={bulkCancelling}
+                  className="px-4 py-1.5 bg-red-500 hover:bg-red-600 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
+                >
+                  {bulkCancelling ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <XCircle className="w-4 h-4" />
+                  )}
+                  Annuler les relances sélectionnées
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={selectAllPendingReminders}
+                className="px-4 py-1.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
+              >
+                <CheckSquare className="w-4 h-4" />
+                Tout sélectionner
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Contenu */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className={`space-y-4 ${selectedAlert ? 'lg:col-span-2' : 'lg:col-span-3'}`}>
@@ -559,6 +685,20 @@ export default function ResolutionPage() {
                     {/* Header Carte */}
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center space-x-3 flex-1">
+                        {/* Checkbox for bulk selection (only for pending reminders) */}
+                        {pendingReminderIds.includes(response.id) && (
+                          <button
+                            onClick={(e) => toggleBulkSelect(response.id, e)}
+                            className="flex-shrink-0 p-0.5 rounded hover:bg-orange-100 transition-colors"
+                            title={selectedForBulk.has(response.id) ? "Désélectionner" : "Sélectionner pour annulation groupée"}
+                          >
+                            {selectedForBulk.has(response.id) ? (
+                              <CheckSquare className="w-5 h-5 text-orange-600" />
+                            ) : (
+                              <Square className="w-5 h-5 text-gray-400 hover:text-orange-500" />
+                            )}
+                          </button>
+                        )}
                         <div className={`w-3 h-3 rounded-full flex-shrink-0 ${isSent ? 'bg-green-500' : (isPending ? 'bg-blue-400' : (isCritical ? 'bg-red-500' : 'bg-orange-500'))
                           }`} />
                         <div className="flex items-center space-x-2">
