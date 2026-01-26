@@ -481,7 +481,6 @@ export default function ResolutionPage() {
                 {activeTab === 'sent' && <Send className="w-8 h-8 text-emerald-400" />}
                 {activeTab === 'alerts' && <AlertTriangle className="w-8 h-8 text-red-400" />}
                 {activeTab === 'scheduled' && <Clock className="w-8 h-8 text-blue-400" />}
-                {activeTab === 'resolved' && <CheckCircle className="w-8 h-8 text-green-400" />}
               </div>
               <p className="text-gray-500">
                 {activeTab === 'pending' && 'Aucun retour patient'}
