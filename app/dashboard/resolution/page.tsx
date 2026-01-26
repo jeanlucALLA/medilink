@@ -374,6 +374,22 @@ export default function ResolutionPage() {
     }
   }
 
+  // Marquer rapidement comme traité (sans note)
+  const handleQuickResolve = (response: QuestionnaireResponse, e: React.MouseEvent) => {
+    e.stopPropagation()
+    const resolution: AlertResolution = {
+      response_id: response.id,
+      status: 'resolved',
+      resolution_note: 'Traité',
+      resolved_at: new Date().toISOString(),
+      assigned_to: 'Vous',
+    }
+    const newResolutions = new Map(resolutions)
+    newResolutions.set(response.id, resolution)
+    setResolutions(newResolutions)
+    localStorage.setItem('alert_resolutions', JSON.stringify(Object.fromEntries(newResolutions)))
+  }
+
   const [sendingReminder, setSendingReminder] = useState<string | null>(null)
   const [cancellingReminder, setCancellingReminder] = useState<string | null>(null)
   const [selectedForBulk, setSelectedForBulk] = useState<Set<string>>(new Set())
@@ -449,6 +465,32 @@ export default function ResolutionPage() {
     } finally {
       setBulkCancelling(false)
     }
+  }
+
+  // Marquer plusieurs éléments comme traités d'un coup
+  const handleBulkQuickResolve = () => {
+    if (selectedForBulk.size === 0) return
+
+    if (!confirm(`Voulez-vous marquer ${selectedForBulk.size} élément(s) comme traité(s) ?`)) {
+      return
+    }
+
+    const newResolutions = new Map(resolutions)
+    selectedForBulk.forEach(id => {
+      const resolution: AlertResolution = {
+        response_id: id,
+        status: 'resolved',
+        resolution_note: 'Traité (groupe)',
+        resolved_at: new Date().toISOString(),
+        assigned_to: 'Vous',
+      }
+      newResolutions.set(id, resolution)
+    })
+
+    setResolutions(newResolutions)
+    localStorage.setItem('alert_resolutions', JSON.stringify(Object.fromEntries(newResolutions)))
+    setSelectedForBulk(new Set())
+    alert(`✅ ${selectedForBulk.size} élément(s) marqué(s) comme traité(s) !`)
   }
 
   const handleSendReminder = async (response: QuestionnaireResponse) => {
@@ -633,6 +675,13 @@ export default function ResolutionPage() {
                   Désélectionner
                 </button>
                 <button
+                  onClick={handleBulkQuickResolve}
+                  className="px-4 py-1.5 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  Marquer traité
+                </button>
+                <button
                   onClick={handleBulkCancelReminders}
                   disabled={bulkCancelling}
                   className="px-4 py-1.5 bg-red-500 hover:bg-red-600 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
@@ -642,7 +691,7 @@ export default function ResolutionPage() {
                   ) : (
                     <XCircle className="w-4 h-4" />
                   )}
-                  Annuler les relances sélectionnées
+                  Annuler relances
                 </button>
               </>
             ) : (
@@ -860,9 +909,19 @@ export default function ResolutionPage() {
                             Automatique
                           </span>
                         )}
-                        {isSent && !response.needsReminder && (
-                          <span className="text-xs text-green-600 font-medium bg-green-50 px-2 py-1 rounded">
-                            ✓ Délivré
+                        {isSent && !response.needsReminder && status !== 'resolved' && (
+                          <button
+                            onClick={(e) => handleQuickResolve(response, e)}
+                            className="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-1"
+                          >
+                            <CheckCircle className="w-4 h-4" />
+                            Traité
+                          </button>
+                        )}
+                        {isSent && !response.needsReminder && status === 'resolved' && (
+                          <span className="text-xs text-green-600 font-medium bg-green-50 px-2 py-1 rounded flex items-center gap-1">
+                            <CheckCircle className="w-3 h-3" />
+                            Traité
                           </span>
                         )}
                       </div>
