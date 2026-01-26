@@ -11,11 +11,12 @@ import {
   Inbox,
   CheckSquare,
   Square,
-  X
+  X,
+  Send
 } from 'lucide-react'
 
 // Types
-type TabType = 'pending' | 'alerts' | 'resolved' | 'scheduled'
+type TabType = 'pending' | 'alerts' | 'resolved' | 'scheduled' | 'sent'
 
 interface ResolutionItem {
   id: string
@@ -273,7 +274,9 @@ export default function ResolutionPage() {
     // Filtre par onglet
     switch (activeTab) {
       case 'pending':
-        return filtered.filter(item => !resolvedIds.has(item.id) && !item.isAlert && item.type !== 'scheduled')
+        return filtered.filter(item => !resolvedIds.has(item.id) && !item.isAlert && item.type === 'response')
+      case 'sent':
+        return filtered.filter(item => !resolvedIds.has(item.id) && item.type === 'sent')
       case 'alerts':
         return filtered.filter(item => !resolvedIds.has(item.id) && item.isAlert)
       case 'resolved':
@@ -288,7 +291,8 @@ export default function ResolutionPage() {
   const filteredItems = getFilteredItems()
 
   // Compteurs
-  const countPending = items.filter(i => !resolvedIds.has(i.id) && !i.isAlert && i.type !== 'scheduled').length
+  const countPending = items.filter(i => !resolvedIds.has(i.id) && !i.isAlert && i.type === 'response').length
+  const countSent = items.filter(i => !resolvedIds.has(i.id) && i.type === 'sent').length
   const countAlerts = items.filter(i => !resolvedIds.has(i.id) && i.isAlert).length
   const countResolved = items.filter(i => resolvedIds.has(i.id)).length
   const countScheduled = items.filter(i => i.type === 'scheduled').length
@@ -342,6 +346,29 @@ export default function ResolutionPage() {
             </div>
             {activeTab === 'pending' && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-500" />
+            )}
+          </button>
+
+          {/* Onglet Envoyés */}
+          <button
+            onClick={() => { setActiveTab('sent'); clearSelection() }}
+            className={`flex-1 px-6 py-4 text-center font-medium transition-all relative ${activeTab === 'sent'
+              ? 'text-emerald-600 bg-emerald-50'
+              : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+              }`}
+          >
+            <div className="flex items-center justify-center gap-2">
+              <Send className="w-5 h-5" />
+              <span>Envoyés</span>
+              {countSent > 0 && (
+                <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${activeTab === 'sent' ? 'bg-emerald-500 text-white' : 'bg-emerald-100 text-emerald-600'
+                  }`}>
+                  {countSent}
+                </span>
+              )}
+            </div>
+            {activeTab === 'sent' && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-500" />
             )}
           </button>
 
@@ -479,16 +506,19 @@ export default function ResolutionPage() {
           {filteredItems.length === 0 ? (
             <div className="p-12 text-center">
               <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${activeTab === 'pending' ? 'bg-orange-100' :
-                activeTab === 'alerts' ? 'bg-red-100' :
-                  activeTab === 'scheduled' ? 'bg-blue-100' : 'bg-green-100'
+                activeTab === 'sent' ? 'bg-emerald-100' :
+                  activeTab === 'alerts' ? 'bg-red-100' :
+                    activeTab === 'scheduled' ? 'bg-blue-100' : 'bg-green-100'
                 }`}>
                 {activeTab === 'pending' && <Inbox className="w-8 h-8 text-orange-400" />}
+                {activeTab === 'sent' && <Send className="w-8 h-8 text-emerald-400" />}
                 {activeTab === 'alerts' && <AlertTriangle className="w-8 h-8 text-red-400" />}
                 {activeTab === 'scheduled' && <Clock className="w-8 h-8 text-blue-400" />}
                 {activeTab === 'resolved' && <CheckCircle className="w-8 h-8 text-green-400" />}
               </div>
               <p className="text-gray-500">
-                {activeTab === 'pending' && 'Aucun élément à traiter'}
+                {activeTab === 'pending' && 'Aucun retour patient'}
+                {activeTab === 'sent' && 'Aucun questionnaire envoyé en attente'}
                 {activeTab === 'alerts' && 'Aucune alerte'}
                 {activeTab === 'scheduled' && 'Aucun envoi programmé'}
                 {activeTab === 'resolved' && 'Aucun élément traité'}
