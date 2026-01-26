@@ -39,6 +39,7 @@ interface QuestionnaireResponse {
   sentAt?: string | null // Date réelle d'envoi
   needsReminder?: boolean // Pour les questionnaires envoyés sans réponse
   hasResponse?: boolean // True si une réponse existe pour ce questionnaire
+  reminderCancelled?: boolean // True si la relance a été annulée manuellement
 }
 
 interface AlertResolution {
@@ -170,7 +171,7 @@ export default function ResolutionPage() {
         // 3. Récupérer les questionnaires ENVOYÉS
         const { data: sentData, error: sentError } = await supabase
           .from('questionnaires')
-          .select('id, pathologie, patient_email, questions, created_at, send_after_days, status, sent_at')
+          .select('id, pathologie, patient_email, questions, created_at, send_after_days, status, sent_at, reminder_cancelled')
           .eq('user_id', user.id)
           .eq('status', 'envoyé')
           .order('sent_at', { ascending: false })
@@ -267,7 +268,8 @@ export default function ResolutionPage() {
             sendDate: null,
             sentAt: q.sent_at,
             needsReminder,
-            hasResponse
+            hasResponse,
+            reminderCancelled: q.reminder_cancelled === true
           }
         })
 
@@ -596,7 +598,7 @@ export default function ResolutionPage() {
                             </span>
                           </div>
                           {/* Badge relance prévue */}
-                          {response.sentAt && (() => {
+                          {response.sentAt && !response.reminderCancelled && (() => {
                             const sentDate = new Date(response.sentAt)
                             const reminderDate = new Date(sentDate)
                             reminderDate.setDate(reminderDate.getDate() + 3) // Relance après 3 jours
@@ -634,6 +636,13 @@ export default function ResolutionPage() {
                             }
                             return null
                           })()}
+                          {/* Badge relance annulée */}
+                          {response.reminderCancelled && (
+                            <div className="flex items-center space-x-2 text-gray-500 bg-gray-100 px-3 py-2 rounded-lg w-fit">
+                              <XCircle className="w-4 h-4" />
+                              <span className="text-sm font-medium">Relance annulée</span>
+                            </div>
+                          )}
                         </div>
                       ) : isPending ? (
                         <div className="flex items-center space-x-2 text-blue-600 bg-blue-50 px-3 py-2 rounded-lg w-fit">
