@@ -92,7 +92,7 @@ export default function AboutPage() {
                                     {
                                         name: "Dr. Étienne Moreau",
                                         role: "Podologue & Conseiller Clinique",
-                                        image: "/team/dr-etienne-moreau.png"
+                                        image: "/team/etienne-moreau.png"
                                     },
                                     {
                                         name: "Sophie Bernard",
