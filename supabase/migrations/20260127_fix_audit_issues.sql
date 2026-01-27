@@ -61,8 +61,9 @@ BEGIN
 END $$;
 
 -- Insert missing notifications for existing profiles
-INSERT INTO notifications (message, type, practitioner_id, metadata)
+INSERT INTO notifications (title, message, type, practitioner_id, metadata)
 SELECT 
+  'Nouvelle inscription',
   'Nouveau praticien inscrit : ' || COALESCE(p.nom_complet, 'Praticien'),
   'signup',
   p.id,
