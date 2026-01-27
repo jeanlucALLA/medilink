@@ -86,11 +86,12 @@ ${message || 'Aucun message supplémentaire'}
                 const { Resend } = await import('resend')
                 const resend = new Resend(process.env.RESEND_API_KEY)
 
-                // Email vers l'administrateur
-                const adminEmail = process.env.ADMIN_EMAIL || 'contact@toplinksante.com'
+                // Email vers l'administrateur - fallback sur Yahoo pour garantir réception
+                const adminEmail = process.env.ADMIN_EMAIL || 'jeanlucallaa@yahoo.fr'
+                console.log(`📧 Tentative d'envoi email à: ${adminEmail}`)
 
-                await resend.emails.send({
-                    from: process.env.RESEND_FROM_EMAIL || 'TopLinkSante <noreply@mail.toplinksante.com>',
+                const emailResult = await resend.emails.send({
+                    from: process.env.RESEND_FROM_EMAIL || 'TopLinkSante <noreply@toplinksante.com>',
                     to: adminEmail,
                     subject: `🎯 Nouvelle demande de démo - ${name}`,
                     html: `
@@ -111,7 +112,7 @@ ${message || 'Aucun message supplémentaire'}
             </div>
           `
                 })
-                console.log(`✅ Email de notification envoyé à ${adminEmail}`)
+                console.log(`✅ Email de notification envoyé à ${adminEmail}`, emailResult)
             } catch (emailError) {
                 console.error('Erreur envoi email admin:', emailError)
             }
