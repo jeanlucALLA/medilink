@@ -197,9 +197,29 @@ export async function POST(request: Request) {
       )
     }
 
+    const resendEmailId = data.data?.id
+
+    // Store the Resend email ID for tracking via webhooks
+    if (resendEmailId) {
+      const { error: updateError } = await supabaseClient
+        .from('questionnaires')
+        .update({
+          resend_email_id: resendEmailId,
+          statut: scheduledAt ? 'programmé' : 'envoyé',
+          sent_at: scheduledAt ? null : new Date().toISOString()
+        })
+        .eq('id', questionnaireId)
+
+      if (updateError) {
+        console.warn('[Email Tracking] Failed to store resend_email_id:', updateError)
+      } else {
+        console.log(`[Email Tracking] Stored resend_email_id: ${resendEmailId} for questionnaire ${questionnaireId}`)
+      }
+    }
+
     return NextResponse.json({
       success: true,
-      messageId: data.data?.id,
+      messageId: resendEmailId,
       scheduled: !!scheduledAt,
       date: scheduledAt || 'Immédiat'
     })
