@@ -76,17 +76,22 @@ ${message || 'Aucun message supplémentaire'}
             .single()
 
         if (error) {
-            // Si admin_notifications n'existe pas, on log et on considère comme succès
+            // Si admin_notifications n'existe pas, on log l'erreur
             console.error('Erreur insertion notification:', error)
+        }
 
-            // Fallback: envoyer par email si Resend est configuré
-            if (process.env.RESEND_API_KEY) {
+        // TOUJOURS envoyer un email à l'admin pour être informé immédiatement
+        if (process.env.RESEND_API_KEY) {
+            try {
                 const { Resend } = await import('resend')
                 const resend = new Resend(process.env.RESEND_API_KEY)
 
+                // Email vers l'administrateur
+                const adminEmail = process.env.ADMIN_EMAIL || 'contact@toplinksante.com'
+
                 await resend.emails.send({
                     from: process.env.RESEND_FROM_EMAIL || 'TopLinkSante <noreply@mail.toplinksante.com>',
-                    to: 'jeanlucallaa@yahoo.fr', // Admin email
+                    to: adminEmail,
                     subject: `🎯 Nouvelle demande de démo - ${name}`,
                     html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -106,7 +111,9 @@ ${message || 'Aucun message supplémentaire'}
             </div>
           `
                 })
-                console.log('Email de notification envoyé à l\'admin')
+                console.log(`✅ Email de notification envoyé à ${adminEmail}`)
+            } catch (emailError) {
+                console.error('Erreur envoi email admin:', emailError)
             }
         }
 
