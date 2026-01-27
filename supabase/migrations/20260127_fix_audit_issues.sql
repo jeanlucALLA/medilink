@@ -29,7 +29,21 @@ CREATE POLICY "Admin can view all email tracking" ON email_tracking
 -- ============================================================================
 -- FIX 2: Backfill Missing Notifications
 -- Problem: 5 profiles exist but 0 notifications were created
+-- Note: Schema may have 'user_id' instead of 'practitioner_id' depending on 
+--       whether original migration was run
 -- ============================================================================
+
+-- First, check if practitioner_id column exists, if not add it
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'notifications' AND column_name = 'practitioner_id'
+  ) THEN
+    -- Add the column if it doesn't exist
+    ALTER TABLE notifications ADD COLUMN practitioner_id uuid REFERENCES profiles(id);
+  END IF;
+END $$;
 
 -- Insert missing notifications for existing profiles
 INSERT INTO notifications (message, type, practitioner_id, metadata)
