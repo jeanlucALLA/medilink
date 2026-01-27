@@ -29,19 +29,34 @@ CREATE POLICY "Admin can view all email tracking" ON email_tracking
 -- ============================================================================
 -- FIX 2: Backfill Missing Notifications
 -- Problem: 5 profiles exist but 0 notifications were created
--- Note: Schema may have 'user_id' instead of 'practitioner_id' depending on 
---       whether original migration was run
+-- Note: Production schema missing columns - add them dynamically
 -- ============================================================================
 
--- First, check if practitioner_id column exists, if not add it
+-- Add missing columns if they don't exist
 DO $$
 BEGIN
+  -- Add practitioner_id if missing
   IF NOT EXISTS (
     SELECT 1 FROM information_schema.columns 
     WHERE table_name = 'notifications' AND column_name = 'practitioner_id'
   ) THEN
-    -- Add the column if it doesn't exist
     ALTER TABLE notifications ADD COLUMN practitioner_id uuid REFERENCES profiles(id);
+  END IF;
+  
+  -- Add metadata if missing
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'notifications' AND column_name = 'metadata'
+  ) THEN
+    ALTER TABLE notifications ADD COLUMN metadata jsonb DEFAULT '{}'::jsonb;
+  END IF;
+  
+  -- Add type if missing  
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'notifications' AND column_name = 'type'
+  ) THEN
+    ALTER TABLE notifications ADD COLUMN type text DEFAULT 'info';
   END IF;
 END $$;
 
@@ -51,7 +66,7 @@ SELECT
   'Nouveau praticien inscrit : ' || COALESCE(p.nom_complet, 'Praticien'),
   'signup',
   p.id,
-  jsonb_build_object('email', p.email, 'backfilled', true, 'original_created_at', p.created_at)
+  jsonb_build_object('email', p.email, 'backfilled', true)
 FROM profiles p
 WHERE NOT EXISTS (
   SELECT 1 FROM notifications n 
