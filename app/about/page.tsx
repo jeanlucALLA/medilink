@@ -75,6 +75,50 @@ export default function AboutPage() {
                                 Pas de logiciel complexe à installer, pas de formation interminable.
                                 Juste un outil qui s&apos;intègre naturellement dans la pratique quotidienne.
                             </p>
+
+                            {/* Team Grid */}
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 mt-12">
+                                {[
+                                    {
+                                        name: "Marcus Diallo",
+                                        role: "Co-fondateur & CTO",
+                                        image: "/team/marcus-diallo.png"
+                                    },
+                                    {
+                                        name: "Dr. Aïssatou Ndiaye",
+                                        role: "Co-fondatrice & Dir. Médicale",
+                                        image: "/team/aissatou-ndiaye.png"
+                                    },
+                                    {
+                                        name: "Dr. Étienne Moreau",
+                                        role: "Podologue & Conseiller Clinique",
+                                        image: "/team/dr-etienne-moreau.png"
+                                    },
+                                    {
+                                        name: "Sophie Bernard",
+                                        role: "Directrice Produit",
+                                        image: "/team/sophie-bernard.png"
+                                    },
+                                    {
+                                        name: "Julien Petit",
+                                        role: "CEO & Co-fondateur",
+                                        image: "/team/julien-petit.png"
+                                    }
+                                ].map((member, index) => (
+                                    <div key={index} className="text-center group">
+                                        <div className="relative mb-4 overflow-hidden rounded-2xl aspect-square">
+                                            <img
+                                                src={member.image}
+                                                alt={member.name}
+                                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                            />
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                                        </div>
+                                        <h4 className="font-semibold text-gray-900 text-sm md:text-base">{member.name}</h4>
+                                        <p className="text-xs md:text-sm text-gray-500 mt-1">{member.role}</p>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
 
                         {/* Chapter 3 */}
