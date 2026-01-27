@@ -51,7 +51,7 @@ export default function MentionsLegalesPage() {
                             <p><strong>Forme juridique :</strong> Entreprise individuelle / Auto-entrepreneur</p>
                             <p><strong>Siège social :</strong> Paris, France</p>
                             <p><strong>Email de contact :</strong> <a href="mailto:contact@toplinksante.com" className="text-primary hover:underline">contact@toplinksante.com</a></p>
-                            <p><strong>Directeur de la publication :</strong> Jean-Luc ALLA</p>
+                            <p><strong>Directeur de la publication :</strong> Marcus Diallo</p>
                         </div>
                     </div>
                 </section>
