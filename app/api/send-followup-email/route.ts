@@ -205,7 +205,7 @@ export async function POST(request: Request) {
         .from('questionnaires')
         .update({
           resend_email_id: resendEmailId,
-          statut: scheduledAt ? 'programmé' : 'envoyé',
+          status: scheduledAt ? 'programmé' : 'envoyé',
           sent_at: scheduledAt ? null : new Date().toISOString()
         })
         .eq('id', questionnaireId)

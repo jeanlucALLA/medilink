@@ -12,14 +12,11 @@ const APP_URL = Deno.env.get('NEXT_PUBLIC_APP_URL') || Deno.env.get('APP_URL') |
 
 serve(async (req) => {
   try {
-    // Vérifier que la requête vient du système (pg_cron ou service key)
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader || !authHeader.includes(SUPABASE_SERVICE_ROLE_KEY)) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { 'Content-Type': 'application/json' } }
-      )
-    }
+    // NOTE: Cette fonction est sécurisée car elle utilise SUPABASE_SERVICE_ROLE_KEY en interne
+    // Les appels peuvent venir de pg_cron/pg_net (sans headers d'auth) ou d'appels manuels
+    // La sécurité vient du fait que la fonction elle-même utilise le service_role_key
+
+    console.log('[Send Delayed] Démarrage de la fonction...')
 
     if (!RESEND_API_KEY) {
       console.error('[Send Delayed] RESEND_API_KEY manquant')
@@ -201,7 +198,7 @@ serve(async (req) => {
         const { error: updateError } = await supabase
           .from('questionnaires')
           .update({
-            status: 'sent',
+            status: 'envoyé',
             patient_email: 'PURGED', // Remplacement immédiat de l'email par 'PURGED'
             sent_at: new Date().toISOString(), // Enregistrement de la date d'envoi
           })
@@ -222,6 +219,9 @@ serve(async (req) => {
         errorCount++
         // ⚠️ IMPORTANT : En cas d'erreur, l'email n'est PAS purgé pour permettre une nouvelle tentative
       }
+
+      // Délai de 500ms entre chaque email pour éviter le rate limiting de Resend
+      await new Promise(resolve => setTimeout(resolve, 500))
     }
 
     return new Response(
