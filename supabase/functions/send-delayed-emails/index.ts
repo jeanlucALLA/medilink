@@ -40,14 +40,14 @@ serve(async (req) => {
 
     // Sélectionner les questionnaires à envoyer
     // Critères :
-    // - status = 'pending' (ou 'programmé' selon votre convention)
+    // - status = 'pending' OU 'programmé' OU 'en_attente'
     // - patient_email IS NOT NULL
     // - send_after_days IS NOT NULL
     // - created_at + send_after_days <= aujourd'hui
     const { data: questionnaires, error: fetchError } = await supabase
       .from('questionnaires')
       .select('id, patient_email, pathologie, created_at, send_after_days')
-      .eq('status', 'pending')
+      .in('status', ['pending', 'programmé', 'en_attente'])
       .not('patient_email', 'is', null)
       .not('send_after_days', 'is', null)
 
