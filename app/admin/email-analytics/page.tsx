@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
     BarChart3,
     Mail,
@@ -11,9 +11,18 @@ import {
     AlertTriangle,
     Loader2,
     RefreshCw,
-    TrendingUp,
-    TrendingDown
+    TrendingDown,
+    Clock,
+    Filter,
+    ChevronLeft,
+    ChevronRight,
+    ArrowUpRight,
+    Calendar,
+    Search,
+    Ban
 } from 'lucide-react'
+
+// ─── Types ───────────────────────────────────────────────────────────
 
 interface EmailStats {
     sent: number
@@ -25,34 +34,77 @@ interface EmailStats {
     delivery_delayed: number
 }
 
-interface DailyStats {
-    day: string
-    sent: number
-    delivered: number
-    opened: number
+interface TrackingEvent {
+    id: string
+    resend_email_id: string
+    questionnaire_id: string | null
+    event_type: string
+    event_data: Record<string, any> | null
+    created_at: string
+    recipient_email_hash: string | null
 }
+
+type TimePeriod = '24h' | '7d' | '30d' | '90d' | 'all'
+type EventFilter = 'all' | 'sent' | 'delivered' | 'opened' | 'clicked' | 'bounced' | 'complained' | 'delivery_delayed'
+
+// ─── Constants ───────────────────────────────────────────────────────
+
+const EVENT_CONFIG: Record<string, { label: string; color: string; bgColor: string; icon: any }> = {
+    sent: { label: 'Envoyé', color: 'text-blue-600', bgColor: 'bg-blue-50', icon: Mail },
+    delivered: { label: 'Délivré', color: 'text-emerald-600', bgColor: 'bg-emerald-50', icon: CheckCircle },
+    opened: { label: 'Ouvert', color: 'text-violet-600', bgColor: 'bg-violet-50', icon: Eye },
+    clicked: { label: 'Cliqué', color: 'text-indigo-600', bgColor: 'bg-indigo-50', icon: MousePointerClick },
+    bounced: { label: 'Rejeté', color: 'text-red-600', bgColor: 'bg-red-50', icon: XCircle },
+    complained: { label: 'Spam', color: 'text-orange-600', bgColor: 'bg-orange-50', icon: AlertTriangle },
+    delivery_delayed: { label: 'Retardé', color: 'text-amber-600', bgColor: 'bg-amber-50', icon: Clock },
+}
+
+const PERIOD_LABELS: Record<TimePeriod, string> = {
+    '24h': '24 heures',
+    '7d': '7 jours',
+    '30d': '30 jours',
+    '90d': '90 jours',
+    'all': 'Tout',
+}
+
+const PAGE_SIZE = 25
+
+// ─── Component ───────────────────────────────────────────────────────
 
 export default function EmailAnalyticsPage() {
     const [stats, setStats] = useState<EmailStats | null>(null)
-    const [dailyStats, setDailyStats] = useState<DailyStats[]>([])
-    const [recentEvents, setRecentEvents] = useState<any[]>([])
+    const [events, setEvents] = useState<TrackingEvent[]>([])
+    const [totalEvents, setTotalEvents] = useState(0)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
 
-    const loadStats = async () => {
+    // Filters
+    const [period, setPeriod] = useState<TimePeriod>('30d')
+    const [eventFilter, setEventFilter] = useState<EventFilter>('all')
+    const [searchQuery, setSearchQuery] = useState('')
+    const [page, setPage] = useState(0)
+
+    // Auto-refresh
+    const [lastRefresh, setLastRefresh] = useState<Date>(new Date())
+
+    const getPeriodDate = useCallback((p: TimePeriod): string | null => {
+        if (p === 'all') return null
+        const now = new Date()
+        const hours = p === '24h' ? 24 : p === '7d' ? 168 : p === '30d' ? 720 : 2160
+        now.setHours(now.getHours() - hours)
+        return now.toISOString()
+    }, [])
+
+    const loadData = useCallback(async () => {
         try {
             setLoading(true)
             setError(null)
 
             const { supabase } = await import('@/lib/supabase') as any
 
-            // Verify admin access
+            // Verify admin
             const { data: { user } } = await supabase.auth.getUser()
-            if (!user) {
-                setError('Non autorisé')
-                setLoading(false)
-                return
-            }
+            if (!user) { setError('Non autorisé'); setLoading(false); return }
 
             const { data: profile } = await supabase
                 .from('profiles')
@@ -66,115 +118,98 @@ export default function EmailAnalyticsPage() {
                 return
             }
 
-            // Fetch aggregate stats
-            const { data: trackingData, error: trackingError } = await supabase
+            const periodDate = getPeriodDate(period)
+
+            // 1. Aggregate stats (for the selected period)
+            let statsQuery = supabase
                 .from('email_tracking')
                 .select('event_type')
 
+            if (periodDate) {
+                statsQuery = statsQuery.gte('created_at', periodDate)
+            }
+
+            const { data: trackingData, error: trackingError } = await statsQuery
+
             if (trackingError) {
-                console.error('Error fetching stats:', trackingError)
-                setError('Erreur lors du chargement des statistiques')
+                setError('Erreur lors du chargement')
                 setLoading(false)
                 return
             }
 
-            // Calculate stats
             const counts: EmailStats = {
-                sent: 0,
-                delivered: 0,
-                opened: 0,
-                clicked: 0,
-                bounced: 0,
-                complained: 0,
-                delivery_delayed: 0
+                sent: 0, delivered: 0, opened: 0, clicked: 0,
+                bounced: 0, complained: 0, delivery_delayed: 0
             }
 
-            trackingData?.forEach((event: any) => {
-                const type = event.event_type as keyof EmailStats
-                if (type in counts) {
-                    counts[type]++
-                }
+            trackingData?.forEach((e: any) => {
+                const type = e.event_type as keyof EmailStats
+                if (type in counts) counts[type]++
             })
 
             setStats(counts)
 
-            // Fetch recent events
-            const { data: recentData } = await supabase
+            // 2. Paginated events with filters
+            let eventsQuery = supabase
                 .from('email_tracking')
-                .select('id, event_type, created_at, event_data')
+                .select('id, resend_email_id, questionnaire_id, event_type, event_data, created_at, recipient_email_hash', { count: 'exact' })
                 .order('created_at', { ascending: false })
-                .limit(20)
+                .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
 
-            setRecentEvents(recentData || [])
+            if (periodDate) {
+                eventsQuery = eventsQuery.gte('created_at', periodDate)
+            }
 
-            // Fetch daily stats using the view
-            const { data: dailyData } = await supabase
-                .from('email_delivery_stats')
-                .select('*')
-                .order('day', { ascending: false })
-                .limit(30)
+            if (eventFilter !== 'all') {
+                eventsQuery = eventsQuery.eq('event_type', eventFilter)
+            }
 
-            // Group by day
-            const dailyMap = new Map<string, DailyStats>()
-            dailyData?.forEach((row: any) => {
-                const dayStr = new Date(row.day).toLocaleDateString('fr-FR')
-                if (!dailyMap.has(dayStr)) {
-                    dailyMap.set(dayStr, { day: dayStr, sent: 0, delivered: 0, opened: 0 })
-                }
-                const entry = dailyMap.get(dayStr)!
-                if (row.event_type === 'sent') entry.sent = row.count
-                if (row.event_type === 'delivered') entry.delivered = row.count
-                if (row.event_type === 'opened') entry.opened = row.count
-            })
+            if (searchQuery.trim()) {
+                eventsQuery = eventsQuery.ilike('resend_email_id', `%${searchQuery.trim()}%`)
+            }
 
-            setDailyStats(Array.from(dailyMap.values()).slice(0, 7))
+            const { data: eventsData, count, error: eventsError } = await eventsQuery
+
+            if (eventsError) {
+                console.error('Events fetch error:', eventsError)
+            }
+
+            setEvents(eventsData || [])
+            setTotalEvents(count || 0)
+            setLastRefresh(new Date())
             setLoading(false)
 
         } catch (err: any) {
-            console.error('Error:', err)
             setError(err.message || 'Erreur inconnue')
             setLoading(false)
         }
-    }
+    }, [period, eventFilter, searchQuery, page, getPeriodDate])
 
     useEffect(() => {
-        loadStats()
-    }, [])
+        loadData()
+    }, [loadData])
 
-    const calculateRate = (numerator: number, denominator: number): string => {
-        if (denominator === 0) return '—'
-        return ((numerator / denominator) * 100).toFixed(1) + '%'
+    // Reset page when filters change
+    useEffect(() => {
+        setPage(0)
+    }, [period, eventFilter, searchQuery])
+
+    const calcRate = (num: number, den: number): string => {
+        if (den === 0) return '—'
+        return ((num / den) * 100).toFixed(1) + '%'
     }
 
-    const getEventIcon = (type: string) => {
-        switch (type) {
-            case 'sent': return <Mail className="w-4 h-4 text-blue-500" />
-            case 'delivered': return <CheckCircle className="w-4 h-4 text-green-500" />
-            case 'opened': return <Eye className="w-4 h-4 text-purple-500" />
-            case 'clicked': return <MousePointerClick className="w-4 h-4 text-indigo-500" />
-            case 'bounced': return <XCircle className="w-4 h-4 text-red-500" />
-            case 'complained': return <AlertTriangle className="w-4 h-4 text-orange-500" />
-            default: return <Mail className="w-4 h-4 text-gray-500" />
-        }
-    }
+    const totalPages = Math.ceil(totalEvents / PAGE_SIZE)
 
-    const getEventLabel = (type: string) => {
-        const labels: Record<string, string> = {
-            sent: 'Envoyé',
-            delivered: 'Délivré',
-            opened: 'Ouvert',
-            clicked: 'Cliqué',
-            bounced: 'Rejeté',
-            complained: 'Signalé spam',
-            delivery_delayed: 'Retardé'
-        }
-        return labels[type] || type
-    }
+    // ─── Loading / Error States ──────────────────────────────────────
 
-    if (loading) {
+    if (loading && !stats) {
         return (
-            <div className="flex items-center justify-center min-h-[400px]">
-                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            <div className="flex items-center justify-center min-h-[500px]">
+                <div className="text-center">
+                    <Loader2 className="w-10 h-10 animate-spin text-blue-600 mx-auto mb-3" />
+                    <p className="text-gray-500">Chargement des analytics...</p>
+                </div>
             </div>
         )
     }
@@ -182,7 +217,7 @@ export default function EmailAnalyticsPage() {
     if (error) {
         return (
             <div className="p-6">
-                <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+                <div className="bg-red-50 border border-red-200 rounded-2xl p-8 text-center">
                     <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
                     <h2 className="text-lg font-semibold text-red-800 mb-2">Erreur</h2>
                     <p className="text-red-600">{error}</p>
@@ -191,209 +226,357 @@ export default function EmailAnalyticsPage() {
         )
     }
 
-    const deliveryRate = stats ? calculateRate(stats.delivered, stats.sent) : '—'
-    const openRate = stats ? calculateRate(stats.opened, stats.delivered) : '—'
-    const clickRate = stats ? calculateRate(stats.clicked, stats.opened) : '—'
-    const bounceRate = stats ? calculateRate(stats.bounced, stats.sent) : '—'
+    const deliveryRate = stats ? calcRate(stats.delivered, stats.sent) : '—'
+    const openRate = stats ? calcRate(stats.opened, stats.delivered) : '—'
+    const clickRate = stats ? calcRate(stats.clicked, stats.opened) : '—'
+    const bounceRate = stats ? calcRate(stats.bounced, stats.sent) : '—'
 
     return (
-        <div className="p-6 space-y-6">
-            {/* Header */}
-            <div className="flex items-center justify-between">
+        <div className="p-4 md:p-6 space-y-6 max-w-[1400px] mx-auto">
+            {/* ─── Header ─────────────────────────────────────────── */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                        <BarChart3 className="w-7 h-7 text-primary" />
-                        Analytics Email
+                        <BarChart3 className="w-7 h-7 text-blue-600" />
+                        Email Analytics
                     </h1>
-                    <p className="text-gray-500 mt-1">Suivi de la délivrabilité des questionnaires</p>
+                    <p className="text-gray-500 mt-1 text-sm">
+                        Suivi en temps réel de la délivrabilité • Dernière MAJ : {lastRefresh.toLocaleTimeString('fr-FR')}
+                    </p>
                 </div>
-                <button
-                    onClick={loadStats}
-                    className="px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2 text-sm font-medium text-gray-700"
-                >
-                    <RefreshCw className="w-4 h-4" />
-                    Actualiser
-                </button>
-            </div>
-
-            {/* Main Stats Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {/* Sent */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-                    <div className="flex items-center justify-between mb-3">
-                        <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                            <Mail className="w-5 h-5 text-blue-600" />
-                        </div>
-                    </div>
-                    <p className="text-2xl font-bold text-gray-900">{stats?.sent || 0}</p>
-                    <p className="text-sm text-gray-500">Emails envoyés</p>
-                </div>
-
-                {/* Delivered */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-                    <div className="flex items-center justify-between mb-3">
-                        <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                            <CheckCircle className="w-5 h-5 text-green-600" />
-                        </div>
-                        <span className={`text-sm font-medium ${parseFloat(deliveryRate) >= 95 ? 'text-green-600' : parseFloat(deliveryRate) >= 80 ? 'text-orange-600' : 'text-red-600'}`}>
-                            {deliveryRate}
-                        </span>
-                    </div>
-                    <p className="text-2xl font-bold text-gray-900">{stats?.delivered || 0}</p>
-                    <p className="text-sm text-gray-500">Délivrés</p>
-                </div>
-
-                {/* Opened */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-                    <div className="flex items-center justify-between mb-3">
-                        <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                            <Eye className="w-5 h-5 text-purple-600" />
-                        </div>
-                        <span className="text-sm font-medium text-purple-600">{openRate}</span>
-                    </div>
-                    <p className="text-2xl font-bold text-gray-900">{stats?.opened || 0}</p>
-                    <p className="text-sm text-gray-500">Ouverts</p>
-                </div>
-
-                {/* Bounced */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-                    <div className="flex items-center justify-between mb-3">
-                        <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-                            <XCircle className="w-5 h-5 text-red-600" />
-                        </div>
-                        <span className={`text-sm font-medium ${parseFloat(bounceRate) <= 2 ? 'text-green-600' : parseFloat(bounceRate) <= 5 ? 'text-orange-600' : 'text-red-600'}`}>
-                            {bounceRate}
-                        </span>
-                    </div>
-                    <p className="text-2xl font-bold text-gray-900">{stats?.bounced || 0}</p>
-                    <p className="text-sm text-gray-500">Rejetés (bounce)</p>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={loadData}
+                        disabled={loading}
+                        className="px-4 py-2.5 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-all flex items-center gap-2 text-sm font-medium text-gray-700 shadow-sm disabled:opacity-50"
+                    >
+                        <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                        Actualiser
+                    </button>
                 </div>
             </div>
 
-            {/* Performance Overview */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* ─── Period Selector ─────────────────────────────────── */}
+            <div className="flex items-center gap-2 flex-wrap">
+                <Calendar className="w-4 h-4 text-gray-400" />
+                {(Object.entries(PERIOD_LABELS) as [TimePeriod, string][]).map(([key, label]) => (
+                    <button
+                        key={key}
+                        onClick={() => setPeriod(key)}
+                        className={`px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all ${period === key
+                                ? 'bg-blue-600 text-white shadow-sm'
+                                : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
+                            }`}
+                    >
+                        {label}
+                    </button>
+                ))}
+            </div>
+
+            {/* ─── Main Stats Cards ───────────────────────────────── */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                {[
+                    { label: 'Envoyés', value: stats?.sent || 0, rate: null, icon: Mail, iconBg: 'bg-blue-100', iconColor: 'text-blue-600', rateColor: '' },
+                    { label: 'Délivrés', value: stats?.delivered || 0, rate: deliveryRate, icon: CheckCircle, iconBg: 'bg-emerald-100', iconColor: 'text-emerald-600', rateColor: parseFloat(deliveryRate) >= 95 ? 'text-emerald-600' : parseFloat(deliveryRate) >= 80 ? 'text-orange-600' : 'text-red-600' },
+                    { label: 'Ouverts', value: stats?.opened || 0, rate: openRate, icon: Eye, iconBg: 'bg-violet-100', iconColor: 'text-violet-600', rateColor: 'text-violet-600' },
+                    { label: 'Rejetés', value: stats?.bounced || 0, rate: bounceRate, icon: XCircle, iconBg: 'bg-red-100', iconColor: 'text-red-600', rateColor: parseFloat(bounceRate) <= 2 ? 'text-emerald-600' : parseFloat(bounceRate) <= 5 ? 'text-orange-600' : 'text-red-600' },
+                ].map((card, i) => (
+                    <div key={i} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow">
+                        <div className="flex items-center justify-between mb-3">
+                            <div className={`w-10 h-10 ${card.iconBg} rounded-xl flex items-center justify-center`}>
+                                <card.icon className={`w-5 h-5 ${card.iconColor}`} />
+                            </div>
+                            {card.rate && (
+                                <span className={`text-sm font-semibold ${card.rateColor}`}>
+                                    {card.rate}
+                                </span>
+                            )}
+                        </div>
+                        <p className="text-2xl font-bold text-gray-900">{card.value.toLocaleString('fr-FR')}</p>
+                        <p className="text-sm text-gray-500 mt-0.5">{card.label}</p>
+                    </div>
+                ))}
+            </div>
+
+            {/* ─── Funnel + Secondary Stats ───────────────────────── */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Funnel */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-4">Entonnoir de conversion</h2>
-                    <div className="space-y-4">
+                <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                    <h2 className="text-lg font-semibold text-gray-900 mb-5">Entonnoir de conversion</h2>
+                    <div className="space-y-3">
                         {[
                             { label: 'Envoyés', value: stats?.sent || 0, color: 'bg-blue-500', rate: '100%' },
-                            { label: 'Délivrés', value: stats?.delivered || 0, color: 'bg-green-500', rate: deliveryRate },
-                            { label: 'Ouverts', value: stats?.opened || 0, color: 'bg-purple-500', rate: openRate },
+                            { label: 'Délivrés', value: stats?.delivered || 0, color: 'bg-emerald-500', rate: deliveryRate },
+                            { label: 'Ouverts', value: stats?.opened || 0, color: 'bg-violet-500', rate: openRate },
                             { label: 'Cliqués', value: stats?.clicked || 0, color: 'bg-indigo-500', rate: clickRate },
-                        ].map((item, i) => (
-                            <div key={i} className="flex items-center gap-4">
-                                <div className="w-24 text-sm text-gray-600">{item.label}</div>
-                                <div className="flex-1 bg-gray-100 rounded-full h-6 relative overflow-hidden">
-                                    <div
-                                        className={`${item.color} h-full rounded-full transition-all duration-500`}
-                                        style={{ width: `${Math.max(5, (item.value / (stats?.sent || 1)) * 100)}%` }}
-                                    />
-                                    <span className="absolute inset-0 flex items-center justify-center text-xs font-medium text-gray-700">
-                                        {item.value}
-                                    </span>
+                        ].map((item, i) => {
+                            const pct = stats?.sent ? Math.max(3, (item.value / stats.sent) * 100) : 3
+                            return (
+                                <div key={i} className="flex items-center gap-3">
+                                    <div className="w-20 text-sm text-gray-600 font-medium">{item.label}</div>
+                                    <div className="flex-1 bg-gray-100 rounded-full h-8 relative overflow-hidden">
+                                        <div
+                                            className={`${item.color} h-full rounded-full transition-all duration-700 ease-out`}
+                                            style={{ width: `${pct}%` }}
+                                        />
+                                        <span className="absolute inset-0 flex items-center justify-center text-xs font-semibold text-gray-700">
+                                            {item.value.toLocaleString('fr-FR')}
+                                        </span>
+                                    </div>
+                                    <div className="w-14 text-right text-sm font-semibold text-gray-700">{item.rate}</div>
                                 </div>
-                                <div className="w-16 text-right text-sm font-medium text-gray-700">{item.rate}</div>
-                            </div>
-                        ))}
+                            )
+                        })}
                     </div>
                 </div>
 
-                {/* Problems */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-4">Problèmes détectés</h2>
-                    {(stats?.bounced || 0) + (stats?.complained || 0) === 0 ? (
-                        <div className="text-center py-8">
-                            <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-3" />
-                            <p className="text-green-700 font-medium">Aucun problème détecté</p>
-                            <p className="text-sm text-gray-500 mt-1">Tous les emails ont été délivrés avec succès</p>
-                        </div>
-                    ) : (
-                        <div className="space-y-3">
-                            {stats?.bounced ? (
-                                <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
-                                    <div className="flex items-center gap-3">
-                                        <XCircle className="w-5 h-5 text-red-500" />
-                                        <span className="text-red-800">Emails rejetés (bounce)</span>
+                {/* Side Panel: Problems + Extra Stats */}
+                <div className="space-y-4">
+                    {/* Health Score */}
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                        <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Santé email</h3>
+                        {(() => {
+                            const score = stats?.sent
+                                ? Math.round(((stats.delivered - stats.bounced - stats.complained) / stats.sent) * 100)
+                                : 100
+                            const color = score >= 95 ? 'text-emerald-600' : score >= 80 ? 'text-orange-600' : 'text-red-600'
+                            const bg = score >= 95 ? 'bg-emerald-100' : score >= 80 ? 'bg-orange-100' : 'bg-red-100'
+                            const label = score >= 95 ? 'Excellent' : score >= 80 ? 'Attention requise' : 'Critique'
+                            return (
+                                <div className="text-center">
+                                    <div className={`inline-flex items-center justify-center w-20 h-20 rounded-full ${bg} mb-2`}>
+                                        <span className={`text-3xl font-bold ${color}`}>{score}</span>
                                     </div>
-                                    <span className="text-red-700 font-bold">{stats.bounced}</span>
+                                    <p className={`text-sm font-semibold ${color}`}>{label}</p>
+                                    <p className="text-xs text-gray-400 mt-1">(Délivrés − Bounces − Spam) / Envoyés</p>
                                 </div>
-                            ) : null}
-                            {stats?.complained ? (
-                                <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
-                                    <div className="flex items-center gap-3">
-                                        <AlertTriangle className="w-5 h-5 text-orange-500" />
-                                        <span className="text-orange-800">Signalés comme spam</span>
-                                    </div>
-                                    <span className="text-orange-700 font-bold">{stats.complained}</span>
-                                </div>
-                            ) : null}
-                            {stats?.delivery_delayed ? (
-                                <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
-                                    <div className="flex items-center gap-3">
-                                        <TrendingDown className="w-5 h-5 text-yellow-600" />
-                                        <span className="text-yellow-800">Livraison retardée</span>
-                                    </div>
-                                    <span className="text-yellow-700 font-bold">{stats.delivery_delayed}</span>
-                                </div>
-                            ) : null}
-                        </div>
-                    )}
+                            )
+                        })()}
+                    </div>
+
+                    {/* Problems */}
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                        <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Problèmes</h3>
+                        {(stats?.bounced || 0) + (stats?.complained || 0) + (stats?.delivery_delayed || 0) === 0 ? (
+                            <div className="text-center py-3">
+                                <CheckCircle className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
+                                <p className="text-sm text-emerald-700 font-medium">Aucun problème</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-2">
+                                {[
+                                    { type: 'bounced', count: stats?.bounced || 0, icon: XCircle, color: 'text-red-600', bg: 'bg-red-50' },
+                                    { type: 'complained', count: stats?.complained || 0, icon: Ban, color: 'text-orange-600', bg: 'bg-orange-50' },
+                                    { type: 'delivery_delayed', count: stats?.delivery_delayed || 0, icon: TrendingDown, color: 'text-amber-600', bg: 'bg-amber-50' },
+                                ].filter(p => p.count > 0).map((p, i) => (
+                                    <button
+                                        key={i}
+                                        onClick={() => setEventFilter(p.type as EventFilter)}
+                                        className={`w-full flex items-center justify-between p-2.5 ${p.bg} rounded-xl hover:opacity-80 transition-opacity`}
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            <p.icon className={`w-4 h-4 ${p.color}`} />
+                                            <span className={`text-sm font-medium ${p.color}`}>
+                                                {EVENT_CONFIG[p.type]?.label}
+                                            </span>
+                                        </div>
+                                        <span className={`text-sm font-bold ${p.color}`}>{p.count}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
 
-            {/* Recent Events */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Événements récents</h2>
-                {recentEvents.length === 0 ? (
-                    <div className="text-center py-12 text-gray-500">
+            {/* ─── Events Table ────────────────────────────────────── */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                {/* Table Header */}
+                <div className="p-5 border-b border-gray-100">
+                    <div className="flex flex-col md:flex-row md:items-center gap-3 justify-between">
+                        <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                            Journal des événements
+                            <span className="text-sm font-normal text-gray-400">
+                                ({totalEvents.toLocaleString('fr-FR')} total)
+                            </span>
+                        </h2>
+                        <div className="flex items-center gap-2 flex-wrap">
+                            {/* Search */}
+                            <div className="relative">
+                                <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                                <input
+                                    type="text"
+                                    placeholder="Rechercher par email ID..."
+                                    value={searchQuery}
+                                    onChange={e => setSearchQuery(e.target.value)}
+                                    className="pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none w-56"
+                                />
+                            </div>
+                            {/* Event type filter */}
+                            <div className="relative">
+                                <Filter className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                                <select
+                                    value={eventFilter}
+                                    onChange={e => setEventFilter(e.target.value as EventFilter)}
+                                    className="pl-9 pr-8 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none appearance-none bg-white cursor-pointer"
+                                >
+                                    <option value="all">Tous les types</option>
+                                    {Object.entries(EVENT_CONFIG).map(([key, cfg]) => (
+                                        <option key={key} value={key}>{cfg.label}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Table */}
+                {events.length === 0 ? (
+                    <div className="text-center py-16 text-gray-500">
                         <Mail className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                        <p>Aucun événement enregistré</p>
-                        <p className="text-sm mt-1">Les événements apparaîtront ici une fois le webhook configuré</p>
+                        <p className="font-medium">Aucun événement</p>
+                        <p className="text-sm mt-1 text-gray-400">
+                            {eventFilter !== 'all'
+                                ? 'Aucun événement de ce type pour la période sélectionnée'
+                                : 'Les événements apparaîtront ici au prochain email envoyé'
+                            }
+                        </p>
                     </div>
                 ) : (
-                    <div className="divide-y divide-gray-100">
-                        {recentEvents.map((event) => (
-                            <div key={event.id} className="py-3 flex items-center gap-4">
-                                {getEventIcon(event.event_type)}
-                                <div className="flex-1">
-                                    <span className="font-medium text-gray-900">{getEventLabel(event.event_type)}</span>
-                                    {event.event_data?.bounce_message && (
-                                        <p className="text-sm text-red-600">{event.event_data.bounce_message}</p>
-                                    )}
-                                </div>
-                                <span className="text-sm text-gray-500">
-                                    {new Date(event.created_at).toLocaleString('fr-FR', {
-                                        day: 'numeric',
-                                        month: 'short',
-                                        hour: '2-digit',
-                                        minute: '2-digit'
+                    <>
+                        <div className="overflow-x-auto">
+                            <table className="w-full">
+                                <thead>
+                                    <tr className="bg-gray-50/80 text-left">
+                                        <th className="pl-5 pr-3 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Type</th>
+                                        <th className="px-3 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Email ID</th>
+                                        <th className="px-3 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden md:table-cell">Questionnaire</th>
+                                        <th className="px-3 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell">Détails</th>
+                                        <th className="px-3 pr-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-50">
+                                    {events.map((event) => {
+                                        const config = EVENT_CONFIG[event.event_type] || EVENT_CONFIG.sent
+                                        const Icon = config.icon
+                                        return (
+                                            <tr key={event.id} className="hover:bg-gray-50/50 transition-colors">
+                                                <td className="pl-5 pr-3 py-3">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className={`w-7 h-7 rounded-lg ${config.bgColor} flex items-center justify-center`}>
+                                                            <Icon className={`w-3.5 h-3.5 ${config.color}`} />
+                                                        </div>
+                                                        <span className={`text-sm font-medium ${config.color}`}>
+                                                            {config.label}
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-3 py-3">
+                                                    <code className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded font-mono">
+                                                        {event.resend_email_id?.slice(0, 12)}...
+                                                    </code>
+                                                </td>
+                                                <td className="px-3 py-3 hidden md:table-cell">
+                                                    {event.questionnaire_id ? (
+                                                        <a
+                                                            href={`/dashboard/history`}
+                                                            className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                                                        >
+                                                            {event.questionnaire_id.slice(0, 8)}...
+                                                            <ArrowUpRight className="w-3 h-3" />
+                                                        </a>
+                                                    ) : (
+                                                        <span className="text-sm text-gray-400">—</span>
+                                                    )}
+                                                </td>
+                                                <td className="px-3 py-3 hidden lg:table-cell">
+                                                    {event.event_data?.bounce_message ? (
+                                                        <span className="text-xs text-red-600 bg-red-50 px-2 py-1 rounded-full">
+                                                            {event.event_data.bounce_message.slice(0, 50)}
+                                                        </span>
+                                                    ) : event.event_data?.clicked_link ? (
+                                                        <span className="text-xs text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full">
+                                                            Lien cliqué
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-sm text-gray-400">—</span>
+                                                    )}
+                                                </td>
+                                                <td className="px-3 pr-5 py-3 text-right">
+                                                    <span className="text-sm text-gray-500">
+                                                        {new Date(event.created_at).toLocaleString('fr-FR', {
+                                                            day: 'numeric',
+                                                            month: 'short',
+                                                            hour: '2-digit',
+                                                            minute: '2-digit'
+                                                        })}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        )
                                     })}
-                                </span>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* Pagination */}
+                        {totalPages > 1 && (
+                            <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100 bg-gray-50/50">
+                                <p className="text-sm text-gray-500">
+                                    Page {page + 1} sur {totalPages}
+                                </p>
+                                <div className="flex items-center gap-1">
+                                    <button
+                                        onClick={() => setPage(Math.max(0, page - 1))}
+                                        disabled={page === 0}
+                                        className="p-2 rounded-lg hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                    >
+                                        <ChevronLeft className="w-4 h-4" />
+                                    </button>
+                                    {/* Page numbers */}
+                                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                                        const pageNum = Math.max(0, Math.min(page - 2, totalPages - 5)) + i
+                                        if (pageNum >= totalPages) return null
+                                        return (
+                                            <button
+                                                key={pageNum}
+                                                onClick={() => setPage(pageNum)}
+                                                className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${page === pageNum
+                                                        ? 'bg-blue-600 text-white'
+                                                        : 'hover:bg-gray-200 text-gray-600'
+                                                    }`}
+                                            >
+                                                {pageNum + 1}
+                                            </button>
+                                        )
+                                    })}
+                                    <button
+                                        onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
+                                        disabled={page >= totalPages - 1}
+                                        className="p-2 rounded-lg hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                    >
+                                        <ChevronRight className="w-4 h-4" />
+                                    </button>
+                                </div>
                             </div>
-                        ))}
-                    </div>
+                        )}
+                    </>
                 )}
             </div>
 
-            {/* Setup Instructions */}
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
-                <h3 className="text-lg font-semibold text-blue-900 mb-2">Configuration du Webhook Resend</h3>
-                <p className="text-blue-800 mb-4">
-                    Pour activer le tracking en temps réel, configurez le webhook dans votre dashboard Resend :
-                </p>
-                <ol className="list-decimal list-inside space-y-2 text-blue-800">
-                    <li>Allez sur <strong>resend.com/webhooks</strong></li>
-                    <li>Cliquez sur <strong>Add Webhook</strong></li>
-                    <li>
-                        Entrez l&apos;URL : <code className="bg-blue-100 px-2 py-1 rounded text-sm">
-                            https://www.toplinksante.com/api/webhooks/resend
-                        </code>
-                    </li>
-                    <li>Sélectionnez tous les événements (Delivered, Opened, Clicked, Bounced, Complained)</li>
-                    <li>Cliquez sur <strong>Create</strong></li>
-                </ol>
-            </div>
+            {/* ─── Webhook Status ──────────────────────────────────── */}
+            {totalEvents === 0 && (
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-6">
+                    <h3 className="text-lg font-semibold text-blue-900 mb-2 flex items-center gap-2">
+                        <Mail className="w-5 h-5" />
+                        Webhook Resend configuré ✓
+                    </h3>
+                    <p className="text-blue-800 text-sm">
+                        Le webhook est prêt. Les événements (envoyé, délivré, ouvert, cliqué, rejeté)
+                        apparaîtront ici automatiquement au prochain email envoyé depuis la plateforme.
+                    </p>
+                </div>
+            )}
         </div>
     )
 }
