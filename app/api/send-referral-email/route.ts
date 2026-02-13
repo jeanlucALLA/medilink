@@ -4,12 +4,21 @@ import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { createClient } from '@supabase/supabase-js'
 
-const resend = new Resend(process.env.RESEND_API_KEY || 're_123')
+// MAIL-01: Crash on missing env vars instead of using placeholders
+const resendApiKey = process.env.RESEND_API_KEY
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+if (!resendApiKey || !supabaseUrl || !supabaseServiceKey) {
+  throw new Error(
+    'Variables manquantes pour send-referral-email (RESEND_API_KEY, NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)'
+  )
+}
+
+const resend = new Resend(resendApiKey)
+const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
 export async function POST(req: Request) {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder-key'
-  const supabase = createClient(supabaseUrl, supabaseServiceKey)
   try {
     const { referrerId } = await req.json()
 
@@ -25,12 +34,11 @@ export async function POST(req: Request) {
       .single()
 
     if (referrerError || !referrer || !referrer.email) {
-      console.error('Erreur récupération parrain:', referrerError)
+      console.error('[Referral] Parrain introuvable:', referrerError?.message)
       return new NextResponse('Referrer not found or no email', { status: 404 })
     }
 
     // 2. Compter le nombre de parrainages (RPC ou count direct)
-    // On essaie d'abord la fonction RPC si elle existe, sinon on compte manuellement
     let referralCount = 0
     const { data: rpcCount, error: rpcError } = await supabase
       .rpc('get_referral_count', { user_id: referrerId })
@@ -52,13 +60,13 @@ export async function POST(req: Request) {
     const remaining = Math.max(0, goal - referralCount)
 
     // 4. Envoyer l'email via Resend
-    let subject = 'Bonne nouvelle ! Un confrère a rejoint TopLinkSante grâce à vous 🎁'
+    let subject = 'Bonne nouvelle ! Un confrère a rejoint TopLinkSante grâce à vous'
     let progressMessage = ''
 
     if (referralCount >= goal) {
       progressMessage = `
         <p style="font-size: 16px; color: #166534; font-weight: bold; background-color: #dcfce7; padding: 12px; border-radius: 8px;">
-          🎉 Félicitations ! Vous avez atteint l'objectif de ${goal} parrainages !
+          Félicitations ! Vous avez atteint l'objectif de ${goal} parrainages !
         </p>
         <p style="font-size: 14px; margin-top: 10px;">
           Votre accès aux <strong>Statistiques Avancées à vie</strong> est débloqué. Vous n'avez rien à faire, c'est automatique.
@@ -67,7 +75,7 @@ export async function POST(req: Request) {
     } else {
       progressMessage = `
         <p style="font-size: 16px; color: #1e40af; font-weight: bold; background-color: #dbeafe; padding: 12px; border-radius: 8px;">
-          🚀 Vous en êtes à <strong>${referralCount} / ${goal}</strong> parrainages.
+          Vous en êtes à <strong>${referralCount} / ${goal}</strong> parrainages.
         </p>
         <p style="font-size: 14px; margin-top: 10px;">
           Plus que <strong>${remaining}</strong> confrère${remaining > 1 ? 's' : ''} pour débloquer votre récompense exclusive !
@@ -96,17 +104,23 @@ export async function POST(req: Request) {
           </p>
         </div>
       `,
+      headers: {
+        'List-Unsubscribe': '<mailto:contact@toplinksante.com?subject=Unsubscribe>',
+      },
     })
 
     if (error) {
-      console.error('Erreur envoi email Resend:', error)
-      return new NextResponse(JSON.stringify({ error }), { status: 500 })
+      console.error('[Referral] Erreur Resend:', error.message)
+      return NextResponse.json({ error: 'Erreur lors de l\'envoi' }, { status: 500 })
     }
 
     return NextResponse.json({ success: true, data })
 
   } catch (error: any) {
-    console.error('Erreur interne API referral-email:', error)
-    return new NextResponse(`Internal Error: ${error.message}`, { status: 500 })
+    console.error('[Referral] Erreur interne:', error.message)
+    return NextResponse.json(
+      { error: 'Erreur interne' },
+      { status: 500 }
+    )
   }
 }

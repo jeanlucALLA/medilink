@@ -45,11 +45,7 @@ export async function POST(request: NextRequest) {
 
     questionnairesMap.set(id, questionnaire)
 
-    // Log pour debug : afficher le contenu actuel du store
-    console.log('[Debug] Contenu actuel du store:')
-    console.log(`[Debug] Nombre de questionnaires dans la Map: ${questionnairesMap.size}`)
-    console.log(`[Debug] Questionnaire créé - ID: ${id}, Titre: ${questionnaire.title}`)
-    console.log(`[Debug] Tous les IDs dans la Map:`, Array.from(questionnairesMap.keys()))
+    console.log(`[Questionnaire] Créé: ${id}`)
 
     // Sauvegarder dans Supabase (Superviseur de Sauvegarde)
     try {
@@ -110,11 +106,11 @@ export async function POST(request: NextRequest) {
                 })
                 .eq('id', backupLogId)
             }
-            console.log('[Debug] Questionnaire sauvegardé dans Supabase avec succès et loggué.')
+            console.log(`[Questionnaire] Sauvegardé dans Supabase: ${id}`)
 
           } catch (execError: any) {
             // 4. Gestion d'Erreur (Échec)
-            console.error('[Debug] Erreur sauvegarde Supabase:', execError)
+            console.error('[Questionnaire] Erreur sauvegarde Supabase:', execError.message)
             if (backupLogId) {
               await supabase
                 .from('backups_logs')
@@ -126,11 +122,11 @@ export async function POST(request: NextRequest) {
             }
           }
         } else {
-          console.log('[Debug] Pas de user_id, sauvegarde ignorée.')
+          console.log('[Questionnaire] Pas de user_id, sauvegarde Supabase ignorée')
         }
       }
     } catch (supabaseError: any) {
-      console.error('[Debug] Erreur critique configuration Supabase:', supabaseError.message || supabaseError)
+      console.error('[Questionnaire] Erreur config Supabase:', supabaseError.message || supabaseError)
     }
 
     // Programmer la suppression automatique
@@ -147,7 +143,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       id,
-      link: `${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001'}/survey/${id}`,
+      link: `${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001'}/q/${id}`,
       expiresAt,
     })
   } catch (error) {
@@ -161,9 +157,7 @@ export async function POST(request: NextRequest) {
 // GET: Récupérer tous les questionnaires (pour le dashboard)
 export async function GET() {
   try {
-    // Log pour debug
-    console.log('[Debug GET] Nombre de questionnaires dans la Map:', questionnairesMap.size)
-    console.log('[Debug GET] IDs présents:', Array.from(questionnairesMap.keys()))
+
 
     const questionnaires = Array.from(questionnairesMap.values()).map((q) => ({
       id: q.id,
@@ -217,11 +211,7 @@ export async function GET() {
       // On continue même si Supabase échoue
     }
 
-    console.log('[Debug GET] Questionnaires retournés:', questionnaires.length)
-
-    const response = NextResponse.json({ questionnaires })
-    response.headers.set('X-Debug-Antigravity', 'v1')
-    return response
+    return NextResponse.json({ questionnaires })
   } catch (error) {
     return NextResponse.json(
       { error: 'Erreur lors de la récupération' },

@@ -37,7 +37,7 @@ export async function GET(
     if (response.viewedAt === null) {
       response.viewedAt = Date.now()
       responsesMap.set(id, response)
-      
+
       // Programmer la suppression après consultation (dans 1 minute)
       setTimeout(() => {
         responsesMap.delete(id)
@@ -78,14 +78,6 @@ export async function DELETE(
         { error: 'ID requis' },
         { status: 400 }
       )
-    }
-
-    // Annuler l'envoi d'email programmé si existe
-    try {
-      const { cancelScheduledEmail } = await import('@/lib/email-scheduler')
-      cancelScheduledEmail(id)
-    } catch (error) {
-      // Continuer même si l'annulation échoue
     }
 
     const deletedResponse = responsesMap.delete(id)

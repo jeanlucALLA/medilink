@@ -28,7 +28,7 @@ async function sendPractitionerNotification(questionnaireId: string, userId: str
 
     // Récupérer l'email du praticien depuis la table profiles
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
     let practitionerEmail: string | null = null
 
@@ -58,7 +58,7 @@ async function sendPractitionerNotification(questionnaireId: string, userId: str
 
     // Envoyer l'email de notification
     await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL || 'TopLinkSante <noreply@toplinksante.com>',
+      from: process.env.RESEND_FROM_EMAIL || 'TopLinkSante <noreply@mail.toplinksante.com>',
       to: practitionerEmail,
       subject: `Nouvelle réponse reçue : ${pathologie}`,
       html: `
@@ -131,7 +131,7 @@ async function sendAlertEmail(alertData: AlertData) {
 
     // Récupérer l'email du praticien depuis la table profiles
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
     let practitionerEmail: string | null = null
 
@@ -161,7 +161,7 @@ async function sendAlertEmail(alertData: AlertData) {
 
     // Envoyer l'email d'alerte
     const emailResult = await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL || 'TopLinkSante <noreply@toplinksante.com>',
+      from: process.env.RESEND_FROM_EMAIL || 'TopLinkSante <noreply@mail.toplinksante.com>',
       to: practitionerEmail,
       subject: 'ALERTE CRITIQUE : Score bas détecté pour un patient',
       html: `
@@ -185,7 +185,7 @@ async function sendAlertEmail(alertData: AlertData) {
     </div>
     
     <div style="background-color: #ffffff; padding: 15px; border-radius: 6px; margin: 20px 0;">
-      <p style="margin: 5px 0;"><strong>Email du patient :</strong> ${alertData.patientEmail || 'Non renseigné'}</p>
+      <p style="margin: 5px 0;"><strong>Patient :</strong> Identifié dans le dashboard</p>
       <p style="margin: 5px 0;"><strong>Score total :</strong> ${alertData.scoreTotal}/5</p>
       <p style="margin: 5px 0;"><strong>Date de soumission :</strong> ${new Date().toLocaleString('fr-FR')}</p>
     </div>
@@ -211,12 +211,10 @@ async function sendAlertEmail(alertData: AlertData) {
 </body>
 </html>
       `,
-      text: `
-⚠️ ALERTE CRITIQUE : Score bas détecté pour un patient
+      text: `ALERTE CRITIQUE : Score bas détecté pour un patient
 
 Attention, un patient vient de soumettre un score de ${alertData.scoreTotal}/5 pour la pathologie : ${alertData.pathologie}
 
-Email du patient : ${alertData.patientEmail || 'Non renseigné'}
 Score total : ${alertData.scoreTotal}/5
 Date de soumission : ${new Date().toLocaleString('fr-FR')}
 
@@ -225,9 +223,11 @@ Lien vers les détails : ${dashboardLink}
 Action recommandée : Contactez rapidement ce patient pour évaluer sa situation.
 
 ---
-Cet email a été envoyé automatiquement par Medi.Link
-Système d'alerte pour scores bas (≤ 2/5)
-      `.trim(),
+Cet email a été envoyé automatiquement par TopLinkSante
+Système d'alerte pour scores bas (≤ 2/5)`.trim(),
+      headers: {
+        'List-Unsubscribe': '<mailto:contact@toplinksante.com?subject=Unsubscribe>',
+      },
     })
 
     // Enregistrer le log de l'alerte dans Supabase
@@ -260,7 +260,7 @@ Système d'alerte pour scores bas (≤ 2/5)
     // Enregistrer le log même en cas d'erreur
     try {
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
       if (supabaseUrl && supabaseKey) {
         const supabase = createClient(supabaseUrl, supabaseKey)
@@ -345,7 +345,7 @@ export async function POST(
     // Sauvegarder dans Supabase pour les statistiques (non bloquant)
     try {
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
       if (supabaseUrl && supabaseKey) {
         const supabase = createClient(supabaseUrl, supabaseKey)

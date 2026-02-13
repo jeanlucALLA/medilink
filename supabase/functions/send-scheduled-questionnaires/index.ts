@@ -99,7 +99,7 @@ serve(async (req) => {
     for (const questionnaire of questionnairesToSend) {
       try {
         // Lien vers la page publique du questionnaire
-        const questionnaireLink = `${APP_URL}/questionnaire/${questionnaire.id}`
+        const questionnaireLink = `${APP_URL}/q/${questionnaire.id}`
 
         console.log(`[Send Scheduled] Envoi email pour questionnaire ${questionnaire.id} à ${questionnaire.patient_email}`)
 
@@ -111,7 +111,7 @@ serve(async (req) => {
             'Authorization': `Bearer ${RESEND_API_KEY}`,
           },
           body: JSON.stringify({
-            from: Deno.env.get('RESEND_FROM_EMAIL') || 'TopLinkSante <noreply@toplinksante.com>',
+            from: Deno.env.get('RESEND_FROM_EMAIL') || 'TopLinkSante <noreply@mail.toplinksante.com>',
             to: questionnaire.patient_email,
             subject: 'Votre praticien vous invite à compléter votre questionnaire de suivi',
             headers: {
@@ -192,6 +192,12 @@ serve(async (req) => {
         } else {
           successCount++
           console.log(`[Send Scheduled] Questionnaire ${questionnaire.id} marqué comme envoyé`)
+
+          // Purger patient_email après envoi réussi (conformité Zero-Data)
+          await supabase
+            .from('questionnaires')
+            .update({ patient_email: null })
+            .eq('id', questionnaire.id)
         }
 
       } catch (error: any) {

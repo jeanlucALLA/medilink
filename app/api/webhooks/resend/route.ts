@@ -47,18 +47,48 @@ export async function POST(request: Request) {
         const svixTimestamp = request.headers.get('svix-timestamp')
         const svixSignature = request.headers.get('svix-signature')
 
-        // Note: For production, verify the signature with Resend's webhook secret
-        // For now, we check basic headers existence
-        if (!svixId || !svixTimestamp) {
+        if (!svixId || !svixTimestamp || !svixSignature) {
             console.warn('[Resend Webhook] Missing SVix headers')
             return NextResponse.json({ error: 'Invalid webhook' }, { status: 400 })
         }
 
+        // Read the raw body for signature verification
+        const rawBody = await request.text()
+
+        // MAIL-02: Verify SVix signature if webhook secret is configured
+        const webhookSecret = process.env.RESEND_WEBHOOK_SECRET
+        if (webhookSecret) {
+            const signedContent = `${svixId}.${svixTimestamp}.${rawBody}`
+            const secretKey = webhookSecret.startsWith('whsec_')
+                ? webhookSecret.slice(6)
+                : webhookSecret
+            const secretBytes = Buffer.from(secretKey, 'base64')
+            const expectedSignature = crypto
+                .createHmac('sha256', secretBytes)
+                .update(signedContent)
+                .digest('base64')
+
+            // SVix sends multiple signatures separated by space, each prefixed with version
+            const signatures = svixSignature.split(' ').map(s => {
+                const parts = s.split(',')
+                return parts.length > 1 ? parts[1] : parts[0]
+            })
+
+            const isValid = signatures.some(sig => sig === expectedSignature)
+
+            if (!isValid) {
+                console.warn('[Resend Webhook] Invalid SVix signature — rejected')
+                return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
+            }
+        } else {
+            console.warn('[Resend Webhook] RESEND_WEBHOOK_SECRET non configuré — signature non vérifiée')
+        }
+
         // 2. Parse payload
-        const payload: ResendWebhookPayload = await request.json()
+        const payload: ResendWebhookPayload = JSON.parse(rawBody)
 
         if (!payload.type || !payload.data?.email_id) {
-            console.error('[Resend Webhook] Invalid payload:', payload)
+            console.error('[Resend Webhook] Invalid payload')
             return NextResponse.json({ error: 'Invalid payload' }, { status: 400 })
         }
 
@@ -119,7 +149,6 @@ export async function POST(request: Request) {
         // 7. Special handling for bounces - could trigger alerts
         if (payload.type === 'email.bounced' || payload.type === 'email.complained') {
             console.warn(`[Resend Webhook] ALERT: Email ${payload.data.email_id} ${payload.type}`)
-            // TODO: Could send notification to admin or practitioner
         }
 
         return NextResponse.json({

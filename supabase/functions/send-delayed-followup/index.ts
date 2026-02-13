@@ -67,8 +67,8 @@ serve(async (req) => {
     for (const questionnaire of questionnaires) {
       try {
         // Lien magique vers la page publique du questionnaire
-        // Format: https://medi-link.fr/questionnaire/[id]
-        const questionnaireLink = `${APP_URL}/questionnaire/${questionnaire.id}`
+        // Format: https://toplinksante.com/q/[id]
+        const questionnaireLink = `${APP_URL}/q/${questionnaire.id}`
 
         // Envoyer l'email via Resend avec contenu agnostique
         const emailResponse = await fetch('https://api.resend.com/emails', {

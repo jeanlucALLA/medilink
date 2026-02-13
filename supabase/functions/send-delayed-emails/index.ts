@@ -101,7 +101,7 @@ serve(async (req) => {
 
       try {
         // Lien vers la page publique du questionnaire
-        const questionnaireLink = `${APP_URL}/questionnaire/${questionnaire.id}`
+        const questionnaireLink = `${APP_URL}/q/${questionnaire.id}`
 
         console.log(`[Send Delayed] Envoi email pour questionnaire ${questionnaire.id} à ${patientEmail}`)
 

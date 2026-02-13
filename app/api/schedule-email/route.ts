@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
 
     // Construire le lien sécurisé
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001'
-    const surveyLink = `${baseUrl}/survey/${questionnaireId}`
+    const surveyLink = `${baseUrl}/q/${questionnaireId}`
 
     // IMPORTANT: L'envoi est IMMÉDIAT, pas différé.
     // Resend ne supporte pas nativement scheduledAt dans le SDK actuel.

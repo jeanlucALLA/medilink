@@ -103,7 +103,7 @@ serve(async (req) => {
         // Envoyer les emails de relance
         for (const questionnaire of questionnairesToRemind) {
             try {
-                const questionnaireLink = `${APP_URL}/questionnaire/${questionnaire.id}`
+                const questionnaireLink = `${APP_URL}/q/${questionnaire.id}`
 
                 console.log(`[Send Reminder] Envoi relance pour questionnaire ${questionnaire.id} à ${questionnaire.patient_email}`)
 
@@ -115,7 +115,7 @@ serve(async (req) => {
                         'Authorization': `Bearer ${RESEND_API_KEY}`,
                     },
                     body: JSON.stringify({
-                        from: Deno.env.get('RESEND_FROM_EMAIL') || 'TopLinkSante <noreply@toplinksante.com>',
+                        from: Deno.env.get('RESEND_FROM_EMAIL') || 'TopLinkSante <noreply@mail.toplinksante.com>',
                         to: questionnaire.patient_email,
                         subject: 'Rappel : Votre questionnaire de suivi vous attend',
                         headers: {
