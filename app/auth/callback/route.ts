@@ -1,4 +1,4 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 
@@ -13,14 +13,13 @@ export async function GET(request: Request) {
             process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
             {
                 cookies: {
-                    get(name: string) {
-                        return cookieStore.get(name)?.value
+                    getAll() {
+                        return cookieStore.getAll()
                     },
-                    set(name: string, value: string, options: CookieOptions) {
-                        cookieStore.set({ name, value, ...options })
-                    },
-                    remove(name: string, options: CookieOptions) {
-                        cookieStore.set({ name, value: '', ...options })
+                    setAll(cookiesToSet) {
+                        cookiesToSet.forEach(({ name, value, options }) => {
+                            cookieStore.set(name, value, options)
+                        })
                     },
                 },
             }
@@ -41,8 +40,6 @@ export async function GET(request: Request) {
             if (profile?.subscription_tier === 'pro' || profile?.subscription_tier === 'cabinet') {
                 return NextResponse.redirect(`${requestUrl.origin}/dashboard`)
             } else {
-                // Rediriger vers la page d'abonnement si pas encore abonné
-                // On ajoute un paramètre pour afficher un message si besoin
                 return NextResponse.redirect(`${requestUrl.origin}/abonnement?verified=true`)
             }
         }
