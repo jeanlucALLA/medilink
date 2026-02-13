@@ -1,7 +1,4 @@
-'use client'
-
 import dynamic from 'next/dynamic'
-import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import Hero from '@/components/Hero'
 import FeatureSection from '@/components/FeatureSection'

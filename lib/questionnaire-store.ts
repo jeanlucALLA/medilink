@@ -1,3 +1,15 @@
+/**
+ * ⚠️ AVERTISSEMENT ARCHITECTURE ⚠️
+ * Ce module utilise des Map JavaScript en mémoire et setInterval.
+ * Sur Vercel (serverless), ces données sont PERDUES entre les requêtes
+ * car chaque invocation peut utiliser un processus différent.
+ * 
+ * Ce module est utilisé par 4 routes API (/api/questionnaire, /api/survey, /api/responses).
+ * Pour une fiabilité en production, migrer vers :
+ * - Upstash Redis (recommandé) pour le stockage éphémère
+ * - Ou Supabase avec TTL pour l'expiration automatique
+ */
+
 // Stockage en mémoire pour les questionnaires et réponses
 // Ce fichier est partagé entre toutes les routes API
 

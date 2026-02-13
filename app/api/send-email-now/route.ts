@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
 
 // API Route pour forcer l'envoi immédiat d'un email
 // Cette route agit comme un proxy vers l'Edge Function Supabase
+// Note: L'authentification est vérifiée par le middleware.ts
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
@@ -20,14 +20,14 @@ export async function POST(request: NextRequest) {
 
     if (!supabaseUrl) {
       return NextResponse.json(
-        { error: 'NEXT_PUBLIC_SUPABASE_URL non configurée' },
+        { error: 'Configuration serveur incomplète' },
         { status: 500 }
       )
     }
 
     if (!serviceKey) {
       return NextResponse.json(
-        { error: 'SUPABASE_SERVICE_ROLE_KEY ou SERVICE_KEY non configurée' },
+        { error: 'Configuration serveur incomplète' },
         { status: 500 }
       )
     }
@@ -44,9 +44,9 @@ export async function POST(request: NextRequest) {
 
     if (!response.ok) {
       const errorData = await response.text()
-      console.error('Erreur Edge Function:', errorData)
+      console.error('[send-email-now] Erreur Edge Function:', response.status)
       return NextResponse.json(
-        { error: 'Erreur lors de l\'appel de l\'Edge Function' },
+        { error: 'Erreur lors de l\'envoi de l\'email' },
         { status: response.status }
       )
     }
@@ -59,9 +59,9 @@ export async function POST(request: NextRequest) {
       result,
     })
   } catch (error: any) {
-    console.error('Erreur lors de l\'envoi immédiat:', error)
+    console.error('[send-email-now] Erreur:', error.message)
     return NextResponse.json(
-      { error: error.message || 'Erreur lors de l\'envoi' },
+      { error: 'Erreur lors de l\'envoi' },
       { status: 500 }
     )
   }
@@ -76,4 +76,3 @@ export async function OPTIONS() {
 }
 
 export const runtime = 'nodejs';
-

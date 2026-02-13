@@ -1,3 +1,16 @@
+/**
+ * @deprecated Ce module est du CODE MORT — il n'est importé nulle part dans le projet.
+ * Il est également INCOMPATIBLE avec l'environnement serverless (Vercel) car il utilise
+ * des Map en mémoire et setTimeout qui ne survivent pas entre les requêtes.
+ * 
+ * L'envoi d'emails est géré par :
+ * - /api/schedule-email (envoi immédiat via Resend)
+ * - /api/send-email-now (proxy vers l'Edge Function Supabase)
+ * - Supabase Edge Functions + pg_cron (emails différés)
+ * 
+ * CE FICHIER PEUT ÊTRE SUPPRIMÉ EN TOUTE SÉCURITÉ.
+ */
+
 // Système de planification d'envoi d'emails différés
 // Stockage en mémoire uniquement
 

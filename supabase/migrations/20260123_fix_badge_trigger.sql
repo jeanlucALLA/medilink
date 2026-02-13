@@ -146,3 +146,4 @@ CREATE TRIGGER check_badges_on_response
 
 -- Vérification
 SELECT 'Correction appliquée avec succès!' as message;
+

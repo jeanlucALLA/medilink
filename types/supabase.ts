@@ -15,7 +15,6 @@ export interface Database {
                     created_at: string
                     user_id?: string
                     pathologie?: string
-                    statut?: string
                     status?: string
                     questions?: any
                     reponses?: any

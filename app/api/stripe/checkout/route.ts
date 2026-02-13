@@ -5,8 +5,13 @@ import { stripe } from '@/lib/stripe'
 import { createClient } from '@supabase/supabase-js'
 
 export async function POST(req: Request) {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder-key'
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+        return new NextResponse('Configuration serveur incomplète', { status: 500 })
+    }
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
     try {
         const { priceId, tier, userId } = await req.json()
@@ -73,7 +78,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ sessionId: session.id, url: session.url })
 
     } catch (error: any) {
-        console.error('Erreur Stripe Checkout:', error)
-        return new NextResponse(`Erreur interne: ${error.message}`, { status: 500 })
+        console.error('[Stripe Checkout] Erreur:', error.message)
+        return new NextResponse('Erreur lors de la création de la session de paiement', { status: 500 })
     }
 }

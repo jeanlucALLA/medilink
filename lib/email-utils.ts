@@ -6,7 +6,7 @@ const fromEmail = process.env.RESEND_FROM_EMAIL || 'noreply@mail.toplinksante.co
 export async function sendWelcomeEmail(toEmail: string, practitionerName: string) {
   try {
     const data = await resend.emails.send({
-      from: `Dr. ${practitionerName} via TopLinkSante <${fromEmail}>`,
+      from: `TopLinkSante <${fromEmail}>`,
       to: [toEmail],
       subject: 'Bienvenue sur TopLinkSante - Votre espace praticien est prêt',
       headers: {
@@ -41,10 +41,10 @@ export async function sendWelcomeEmail(toEmail: string, practitionerName: string
       `
     });
 
-    console.log('Welcome email sent successfully:', data);
+    console.log('[Welcome email] Envoyé avec succès');
     return { success: true, data };
   } catch (error) {
-    console.error('Error sending welcome email:', error);
+    console.error('[Welcome email] Erreur envoi:', error);
     return { success: false, error };
   }
 }

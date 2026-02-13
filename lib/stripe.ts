@@ -1,14 +1,16 @@
-import Stripe from 'stripe';
+import Stripe from 'stripe'
 
-// Fallback to a mock key during build if variable is missing
-// The key is required for runtime but not for build-time static analysis of imports
-export const stripe = new Stripe((process.env.STRIPE_SECRET_KEY || 'sk_test_mock_key_for_build'), {
-    apiVersion: '2023-10-16' as any,
+if (!process.env.STRIPE_SECRET_KEY) {
+    throw new Error(
+        'STRIPE_SECRET_KEY manquante. Vérifiez vos variables d\'environnement.'
+    )
+}
+
+export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+    apiVersion: '2024-12-18.acacia' as Stripe.LatestApiVersion,
     appInfo: {
-        name: 'Medi.Link',
-        version: '0.1.0'
+        name: 'TopLinkSante',
+        version: '0.1.0',
     },
     typescript: true,
-});
-
-
+})

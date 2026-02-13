@@ -5,8 +5,13 @@ import { NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder-key'
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+if (!supabaseUrl || !supabaseServiceKey) {
+    throw new Error('Variables Supabase manquantes pour le webhook Stripe (NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)')
+}
+
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
@@ -67,7 +72,7 @@ export async function POST(req: Request) {
 
                     if (profile?.email) {
                         const name = profile.nom_complet || 'Docteur'
-                        console.log(`📧 Envoi email de bienvenue à ${profile.email}...`)
+                        console.log(`📧 Envoi email de bienvenue pour user ${userId}`)
                         await sendWelcomeEmail(profile.email, name)
                     }
                 } catch (emailErr) {
@@ -118,7 +123,7 @@ export async function POST(req: Request) {
                 .single()
 
             if (profile) {
-                console.warn(`⚠️ Utilisateur concerné: ${profile.nom_complet} (${profile.email})`)
+                console.warn(`⚠️ Utilisateur concerné: user lié au customer ${customerId}`)
             }
         }
 

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { Menu, Shield } from 'lucide-react'
-import type { SupabaseClient } from '@supabase/supabase-js'
+import type { SupabaseClient, User } from '@supabase/supabase-js'
 import { Toaster } from 'react-hot-toast'
 import Confetti from 'react-confetti'
 import SidebarSafe from '@/components/dashboard/SidebarSafe'
@@ -19,8 +19,14 @@ export default function DashboardLayout({
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [isCollapsed, setIsCollapsed] = useState(false)
-  const [user, setUser] = useState<any>(null)
-  const [profile, setProfile] = useState<any>(null)
+  const [user, setUser] = useState<User | null>(null)
+  const [profile, setProfile] = useState<{
+    nom_complet: string | null;
+    specialite: string | null;
+    city: string | null;
+    subscription_tier: string | null;
+    trial_ends_at: string | null;
+  } | null>(null)
   const [loading, setLoading] = useState(true)
   const [profileChecked, setProfileChecked] = useState(false)
   const [isMounted, setIsMounted] = useState(false)
@@ -34,7 +40,7 @@ export default function DashboardLayout({
   }, [])
 
   useEffect(() => {
-    let isMounted = true
+    let isEffectActive = true
     let retryCount = 0
     const MAX_RETRIES = 5
 
@@ -49,7 +55,7 @@ export default function DashboardLayout({
 
         if (sessionError || !session) {
           console.log('🚫 Aucune session dans le layout, redirection vers /login')
-          if (isMounted) {
+          if (isEffectActive) {
             router.push('/login')
             setLoading(false)
           }
@@ -60,20 +66,20 @@ export default function DashboardLayout({
 
         if (error || !user) {
           console.log('🚫 Aucun utilisateur dans le layout, redirection vers /login')
-          if (isMounted) {
+          if (isEffectActive) {
             router.push('/login')
             setLoading(false)
           }
           return
         }
 
-        if (isMounted) {
+        if (isEffectActive) {
           setUser(user)
         }
 
         // Si on est sur la page welcome, ne pas vérifier le profil (laisser la page gérer)
         if (pathname === '/dashboard/welcome') {
-          if (isMounted) {
+          if (isEffectActive) {
             setLoading(false)
           }
           return
@@ -97,12 +103,12 @@ export default function DashboardLayout({
             retryCount++
             console.log(`[Dashboard] Profil non trouvé, tentative ${retryCount}/${MAX_RETRIES}...`)
             setTimeout(() => {
-              if (isMounted) getUserAndCheckProfile()
+              if (isEffectActive) getUserAndCheckProfile()
             }, 800)
             return
           }
 
-          if (isMounted) {
+          if (isEffectActive) {
             // Normaliser les données du profil (full_name ou nom_complet)
             const normalizedProfile = profileData ? {
               nom_complet: profileData.full_name || profileData.nom_complet,
@@ -139,7 +145,7 @@ export default function DashboardLayout({
 
           // Si profil incomplet, rediriger vers welcome
           if (!isProfileComplete) {
-            if (isMounted) {
+            if (isEffectActive) {
               router.push('/dashboard/welcome')
               setLoading(false)
             }
@@ -155,7 +161,7 @@ export default function DashboardLayout({
 
           // Si profil incomplet, rediriger vers welcome
           if (!isProfileComplete) {
-            if (isMounted) {
+            if (isEffectActive) {
               router.push('/dashboard/welcome')
               setLoading(false)
             }
@@ -164,13 +170,13 @@ export default function DashboardLayout({
         }
 
         // Si tout est OK, arrêter le loading
-        if (isMounted) {
+        if (isEffectActive) {
           setLoading(false)
         }
 
       } catch (err) {
         console.error('Erreur lors de la vérification de l\'utilisateur:', err)
-        if (isMounted) {
+        if (isEffectActive) {
           router.push('/login')
           setLoading(false)
         }
@@ -180,7 +186,7 @@ export default function DashboardLayout({
     getUserAndCheckProfile()
 
     return () => {
-      isMounted = false
+      isEffectActive = false
     }
   }, [router, pathname, profileChecked, profile])
 

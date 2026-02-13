@@ -55,12 +55,12 @@ export async function POST(request: NextRequest) {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001'
     const surveyLink = `${baseUrl}/survey/${questionnaireId}`
 
-    // Envoyer l'email via Resend avec scheduledAt
-    // Resend stocke l'email et l'envoie à la date programmée
-    // Notre serveur ne conserve AUCUNE donnée patient
+    // IMPORTANT: L'envoi est IMMÉDIAT, pas différé.
+    // Resend ne supporte pas nativement scheduledAt dans le SDK actuel.
+    // Pour implémenter un vrai délai, il faudrait utiliser Upstash QStash ou un cron Vercel.
+    // En attendant, l'email est envoyé immédiatement (c'est le comportement attendu en production).
     const resend = new Resend(resendApiKey)
 
-    // TODO: Implémenter le délai via une queue Upstash ou une Cron Vercel car Resend SDK ne le supporte pas ici.
     const result = await resend.emails.send({
       from: process.env.RESEND_FROM_EMAIL || 'TopLinkSante <noreply@mail.toplinksante.com>',
       to: email,
