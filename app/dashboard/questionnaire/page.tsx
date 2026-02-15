@@ -30,7 +30,7 @@ export default function QuestionnairePage() {
 
   // Email & Scheduling State
   const [patientEmail, setPatientEmail] = useState('')
-  const [sendImmediately, setSendImmediately] = useState(false)
+  const [sendImmediately, setSendImmediately] = useState(true)
   const [sendDelayDays, setSendDelayDays] = useState(14)
 
   // Result State
@@ -212,7 +212,7 @@ export default function QuestionnairePage() {
         title: pathology.trim(),
         patient_email: email, // Email spécifique ou null
         send_after_days: sendImmediately ? 0 : sendDelayDays,
-        status: (email && sendImmediately) ? 'envoyé' : 'en_attente'
+        status: email ? 'en_attente' : 'brouillon'
       })
       .select()
       .single()

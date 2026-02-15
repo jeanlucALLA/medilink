@@ -196,6 +196,15 @@ serve(async (req) => {
                 } else {
                     successCount++
                     console.log(`[Send Reminder] Questionnaire ${questionnaire.id} marqué comme relancé`)
+
+                    // CONFORMITÉ RGPD : Purge de patient_email APRÈS la relance
+                    // C'est le bon moment car l'email n'est plus nécessaire
+                    // (envoi initial + relance effectués)
+                    await supabase
+                        .from('questionnaires')
+                        .update({ patient_email: 'PURGED' })
+                        .eq('id', questionnaire.id)
+                    console.log(`[Send Reminder] patient_email purgé pour questionnaire ${questionnaire.id}`)
                 }
 
             } catch (error: any) {

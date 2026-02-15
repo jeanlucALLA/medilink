@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Appeler l'Edge Function Supabase pour forcer l'envoi
-    const response = await fetch(`${supabaseUrl}/functions/v1/send-delayed-email`, {
+    const response = await fetch(`${supabaseUrl}/functions/v1/send-scheduled-questionnaires`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

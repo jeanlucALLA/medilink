@@ -156,19 +156,36 @@ export async function POST(request: Request) {
       </html>
     `
 
-    let scheduledAt: string | undefined = undefined
-
+    // FIX #1: Si envoi programmé (sendDelayDays > 0), ne PAS envoyer via Resend.
+    // Le cron Edge Function (send-scheduled-questionnaires) s'en chargera à la date prévue.
+    // Cela élimine le bug de double envoi (Resend scheduled_at + cron).
     if (sendDelayDays > 0) {
-      const date = new Date()
-      date.setDate(date.getDate() + sendDelayDays)
-      scheduledAt = date.toISOString()
+      console.log(`[Email] Questionnaire ${questionnaireId} programmé pour J+${sendDelayDays}, pas d'envoi Resend immédiat.`)
+      const { error: updateError } = await supabaseClient
+        .from('questionnaires')
+        .update({
+          status: 'programmé',
+          sent_at: null
+        })
+        .eq('id', questionnaireId)
+
+      if (updateError) {
+        console.warn('[Email] Erreur mise à jour status programmé:', updateError)
+      }
+
+      return NextResponse.json({
+        success: true,
+        messageId: null,
+        scheduled: true,
+        date: new Date(Date.now() + sendDelayDays * 86400000).toISOString()
+      })
     }
 
+    // Envoi immédiat via Resend
     const envFrom = process.env.RESEND_FROM_EMAIL
     let fromEmail = 'noreply@mail.toplinksante.com'
 
     if (envFrom) {
-      // Tente d'extraire l'email si le format est "Nom <email>"
       const match = envFrom.match(/<(.+)>/)
       if (match && match[1]) {
         fromEmail = match[1]
@@ -183,7 +200,6 @@ export async function POST(request: Request) {
       reply_to: practitionerEmail,
       subject: `Suivi médical - ${cabinetName}`,
       html: htmlContent,
-      scheduled_at: scheduledAt,
       headers: {
         'List-Unsubscribe': '<mailto:contact@toplinksante.com?subject=Unsubscribe>',
       },
@@ -205,8 +221,8 @@ export async function POST(request: Request) {
         .from('questionnaires')
         .update({
           resend_email_id: resendEmailId,
-          status: scheduledAt ? 'programmé' : 'envoyé',
-          sent_at: scheduledAt ? null : new Date().toISOString()
+          status: 'envoyé',
+          sent_at: new Date().toISOString()
         })
         .eq('id', questionnaireId)
 
@@ -220,8 +236,8 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       messageId: resendEmailId,
-      scheduled: !!scheduledAt,
-      date: scheduledAt || 'Immédiat'
+      scheduled: false,
+      date: 'Immédiat'
     })
 
   } catch (error: any) {

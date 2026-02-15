@@ -177,6 +177,10 @@ serve(async (req) => {
         console.log(`[Send Scheduled] Email envoyé avec succès (ID: ${emailResult.id}) pour questionnaire ${questionnaire.id}`)
 
         // Mettre à jour le statut du questionnaire à 'envoyé' avec la date d'envoi
+        // NOTE: On ne purge PAS patient_email ici. La purge casse le système de relance
+        // (send-reminder-emails) qui a besoin de patient_email pour envoyer les rappels.
+        // La purge sera effectuée par send-reminder-emails APRÈS envoi de la relance,
+        // ou après expiration du délai de relance (3 jours).
         const { error: updateError } = await supabase
           .from('questionnaires')
           .update({
@@ -192,12 +196,6 @@ serve(async (req) => {
         } else {
           successCount++
           console.log(`[Send Scheduled] Questionnaire ${questionnaire.id} marqué comme envoyé`)
-
-          // Purger patient_email après envoi réussi (conformité Zero-Data)
-          await supabase
-            .from('questionnaires')
-            .update({ patient_email: null })
-            .eq('id', questionnaire.id)
         }
 
       } catch (error: any) {
