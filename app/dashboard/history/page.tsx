@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Eye, Calendar, FileText, Loader2, X, CheckCircle, Clock, Mail, Search, User, Send } from 'lucide-react'
+import { Eye, Calendar, FileText, Loader2, X, CheckCircle, Clock, Mail, Search, User, Send, XCircle } from 'lucide-react'
 
 interface Questionnaire {
   id: string
@@ -306,10 +306,18 @@ export default function HistoryPage() {
           </span>
         )
       case 'sent':
+      case 'envoyé':
         return (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-            <Clock className="w-3 h-3 mr-1" />
+            <Send className="w-3 h-3 mr-1" />
             Envoyé
+          </span>
+        )
+      case 'expiré':
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+            <XCircle className="w-3 h-3 mr-1" />
+            Expiré
           </span>
         )
       case 'en_attente':
