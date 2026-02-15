@@ -1,0 +1,18 @@
+﻿Step 1: Marking overdue scheduled questionnaires as expir├®...
+Marked as expir├®: 21
+
+Step 2: Syncing statut column to match status for all records...
+Synced rows: {
+  "message": "Failed to run sql query: ERROR:  23514: new row for relation \"questionnaires\" violates check constraint \"questionnaires_statut_check\"\nDETAIL:  Failing row contains (e9f624a7-15e6-4cec-8a73-4ea849ce33b9, 2026-01-12 09:13:10.34594+00, null, null, null, null, Compl├®t├®, 2026-01-26 09:13:10.34594+00, null, 0, 93d2d320-72de-4650-bea7-76eb5381abed, {}, null, null, c.vicent@orange.fr, Compl├®t├®, null, bilan, bilan, [{\"type\": \"scale\", \"label1\": \"Pas du tout\", \"label5\": \"├ënorm├®m..., null, 2026-01-12 09:15:56.820891+00, null, null, f, null).\n"
+}
+
+Step 3: Final state:
+  statut='expir├®' | status='expir├®' | count=79
+  statut='en_attente' | status='envoy├®' | count=57
+  statut='envoy├®' | status='envoy├®' | count=35
+  statut='en_attente' | status='Compl├®t├®' | count=19
+  statut='envoy├®' | status='Compl├®t├®' | count=18
+  statut='en_attente' | status='programm├®' | count=3
+  statut='en_attente' | status='en_attente' | count=1
+
+Total: 212

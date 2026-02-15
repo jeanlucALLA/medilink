@@ -55,7 +55,7 @@ export default function HistoryPage() {
         // On récupère tout pour avoir les métadonnées (titre, etc) des réponses
         const { data: questionnairesData, error: questionnairesError } = await supabase
           .from('questionnaires')
-          .select('id, pathologie, statut, created_at, send_after_days, patient_email, questions')
+          .select('id, pathologie, status, created_at, send_after_days, patient_email, questions')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
 
@@ -103,11 +103,11 @@ export default function HistoryPage() {
             // Ou se fier au statut 'Complété'.
             const isCompleted = responsesData?.some((r: any) => r.questionnaire_id === q.id)
 
-            if (!isCompleted && q.statut !== 'Complété') {
+            if (!isCompleted && q.status !== 'Complété') {
               mergedList.push({
                 id: q.id,
                 pathologie: q.pathologie,
-                status: q.statut,
+                status: q.status,
                 created_at: q.created_at,
                 updated_at: undefined,
                 reponses: undefined,

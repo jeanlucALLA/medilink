@@ -117,6 +117,7 @@ export async function POST(
       .from('questionnaires')
       .update({
         status: 'Complété',
+        statut: 'complété',
         updated_at: new Date().toISOString(),
       })
       .eq('id', id)

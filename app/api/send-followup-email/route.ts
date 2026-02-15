@@ -165,6 +165,7 @@ export async function POST(request: Request) {
         .from('questionnaires')
         .update({
           status: 'programmé',
+          statut: 'programmé',
           sent_at: null
         })
         .eq('id', questionnaireId)

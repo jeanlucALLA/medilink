@@ -36,7 +36,7 @@ export async function GET(
     // Note: La colonne peut s'appeler 'status' ou 'statut' selon la migration
     const { data: questionnaire, error } = await supabase
       .from('questionnaires')
-      .select('id, pathologie, questions, statut, patient_email, patient_name, user_id')
+      .select('id, pathologie, questions, status, patient_email, patient_name, user_id')
       .eq('id', id)
       .single()
 
@@ -57,7 +57,7 @@ export async function GET(
 
     // Sécurisation : Utiliser 'statut' (FR)
     // Normaliser en minuscules pour la comparaison
-    const currentStatus = (questionnaire.statut || '').toLowerCase()
+    const currentStatus = (questionnaire.status || '').toLowerCase()
 
     // Vérifier que le questionnaire est envoyé ou programmé/en_attente
     // Accepte: 'envoyé', 'Envoyé', 'programmé', 'Programmé', 'en_attente'

@@ -106,17 +106,17 @@ export default function ResolutionPage() {
         // 1. Récupérer les questionnaires ENVOYÉS
         const { data: sentData } = await supabase
           .from('questionnaires')
-          .select('id, pathologie, patient_email, sent_at, statut')
+          .select('id, pathologie, patient_email, sent_at, status')
           .eq('user_id', user.id)
-          .eq('statut', 'envoyé')
+          .eq('status', 'envoyé')
           .order('sent_at', { ascending: false })
 
         // 1b. Récupérer les questionnaires PROGRAMMÉS
         const { data: scheduledData } = await supabase
           .from('questionnaires')
-          .select('id, pathologie, patient_email, created_at, send_after_days, statut')
+          .select('id, pathologie, patient_email, created_at, send_after_days, status')
           .eq('user_id', user.id)
-          .eq('statut', 'programmé')
+          .eq('status', 'programmé')
           .order('created_at', { ascending: false })
 
         // 2. Récupérer les RÉPONSES
