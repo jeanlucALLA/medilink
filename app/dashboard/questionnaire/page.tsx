@@ -212,7 +212,8 @@ export default function QuestionnairePage() {
         title: pathology.trim(),
         patient_email: email, // Email spécifique ou null
         send_after_days: sendImmediately ? 0 : sendDelayDays,
-        status: email ? 'en_attente' : 'brouillon'
+        status: email ? 'en_attente' : 'brouillon',
+        statut: email ? 'en_attente' : 'brouillon'
       })
       .select()
       .single()

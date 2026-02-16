@@ -22,7 +22,7 @@ export default function HistoryPage() {
   const [selectedQuestionnaire, setSelectedQuestionnaire] = useState<Questionnaire | null>(null)
   const [showModal, setShowModal] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedFilter, setSelectedFilter] = useState<'all' | 'programmé' | 'envoyé' | 'Complété'>('all')
+  const [selectedFilter, setSelectedFilter] = useState<'all' | 'programmé' | 'envoyé' | 'Complété' | 'expiré'>('all')
 
   // Charger les questionnaires depuis Supabase
   useEffect(() => {
@@ -289,7 +289,8 @@ export default function HistoryPage() {
 
   // Vérifier si l'email est visible (pas encore purgé)
   const isEmailVisible = (questionnaire: Questionnaire): boolean => {
-    return questionnaire.status === 'pending' &&
+    const isPending = questionnaire.status === 'en_attente' || questionnaire.status === 'programmé' || questionnaire.status === 'pending'
+    return isPending &&
       typeof questionnaire.patient_email === 'string' &&
       questionnaire.patient_email !== 'PURGED' &&
       questionnaire.patient_email.trim() !== ''
@@ -355,6 +356,7 @@ export default function HistoryPage() {
   const countProgramme = questionnaires.filter(q => q.status === 'programmé' || q.status === 'pending' || q.status === 'en_attente').length
   const countEnvoye = questionnaires.filter(q => q.status === 'envoyé' || q.status === 'sent').length
   const countComplete = questionnaires.filter(q => q.status === 'Complété').length
+  const countExpire = questionnaires.filter(q => q.status === 'expiré').length
 
   // Filtrer les questionnaires
   const filteredQuestionnaires = questionnaires.filter(q => {
@@ -370,6 +372,7 @@ export default function HistoryPage() {
     if (selectedFilter === 'programmé') return q.status === 'programmé' || q.status === 'pending' || q.status === 'en_attente'
     if (selectedFilter === 'envoyé') return q.status === 'envoyé' || q.status === 'sent'
     if (selectedFilter === 'Complété') return q.status === 'Complété'
+    if (selectedFilter === 'expiré') return q.status === 'expiré'
     return true
   })
 
@@ -451,6 +454,7 @@ export default function HistoryPage() {
             { id: 'programmé', label: 'Programmés', count: countProgramme },
             { id: 'envoyé', label: 'Envoyés', count: countEnvoye },
             { id: 'Complété', label: 'Réponses', count: countComplete },
+            { id: 'expiré', label: 'Expirés', count: countExpire },
           ].map((filter) => (
             <button
               key={filter.id}
