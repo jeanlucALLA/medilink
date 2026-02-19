@@ -165,7 +165,6 @@ export async function POST(request: Request) {
         .from('questionnaires')
         .update({
           status: 'programmé',
-          statut: 'programmé',
           sent_at: null
         })
         .eq('id', questionnaireId)
@@ -223,7 +222,6 @@ export async function POST(request: Request) {
         .update({
           resend_email_id: resendEmailId,
           status: 'envoyé',
-          statut: 'envoyé',
           sent_at: new Date().toISOString()
         })
         .eq('id', questionnaireId)

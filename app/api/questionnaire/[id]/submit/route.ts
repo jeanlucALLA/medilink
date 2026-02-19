@@ -116,8 +116,7 @@ export async function POST(
     const { error: updateError } = await supabase
       .from('questionnaires')
       .update({
-        status: 'Complété',
-        statut: 'complété',
+        status: 'complété',
         updated_at: new Date().toISOString(),
       })
       .eq('id', id)

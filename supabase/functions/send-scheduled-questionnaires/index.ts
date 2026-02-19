@@ -185,7 +185,6 @@ serve(async (req) => {
           .from('questionnaires')
           .update({
             status: 'envoyé',
-            statut: 'envoyé',
             sent_at: new Date().toISOString()
           })
           .eq('id', questionnaire.id)

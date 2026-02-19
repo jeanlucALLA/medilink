@@ -1,10 +1,10 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
 const fromEmail = process.env.RESEND_FROM_EMAIL || 'noreply@mail.toplinksante.com';
 
 export async function sendWelcomeEmail(toEmail: string, practitionerName: string) {
   try {
+    const resend = new Resend(process.env.RESEND_API_KEY);
     const data = await resend.emails.send({
       from: `TopLinkSante <${fromEmail}>`,
       to: [toEmail],

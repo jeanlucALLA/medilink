@@ -98,10 +98,10 @@ export function EmailSendingSection({
                             placeholder="patient1@example.com&#10;patient2@example.com"
                             rows={4}
                             className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent font-mono text-sm ${emailAnalysis.invalid.length > 0
-                                    ? 'border-orange-300 bg-orange-50/30'
-                                    : emailAnalysis.valid.length > 0
-                                        ? 'border-green-300 bg-green-50/30'
-                                        : 'border-gray-300'
+                                ? 'border-orange-300 bg-orange-50/30'
+                                : emailAnalysis.valid.length > 0
+                                    ? 'border-green-300 bg-green-50/30'
+                                    : 'border-gray-300'
                                 }`}
                         />
 
@@ -212,7 +212,7 @@ export function EmailSendingSection({
                                 <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
                                     <div className="flex items-center space-x-2 text-sm text-gray-600">
                                         <span className="font-medium">De:</span>
-                                        <span>TopLinkSante &lt;noreply@medilink.fr&gt;</span>
+                                        <span>Dr. {practitionerName || 'Praticien'} via TopLinkSante &lt;noreply@mail.toplinksante.com&gt;</span>
                                     </div>
                                     <div className="flex items-center space-x-2 text-sm text-gray-600 mt-1">
                                         <span className="font-medium">À:</span>
@@ -220,7 +220,7 @@ export function EmailSendingSection({
                                     </div>
                                     <div className="flex items-center space-x-2 text-sm text-gray-600 mt-1">
                                         <span className="font-medium">Objet:</span>
-                                        <span>Questionnaire de suivi - {pathologie || 'Votre consultation'}</span>
+                                        <span>Suivi médical - Cabinet Médical</span>
                                     </div>
                                 </div>
 
@@ -236,10 +236,10 @@ export function EmailSendingSection({
                                     <div className="space-y-4 text-gray-700">
                                         <p>Bonjour,</p>
                                         <p>
-                                            <strong>Dr. {practitionerName || 'Votre praticien'}</strong> souhaite prendre de vos nouvelles suite à votre consultation.
+                                            Suite à votre consultation avec <strong>{practitionerName || 'Votre praticien'}</strong>, nous souhaiterions avoir votre retour.
                                         </p>
                                         <p>
-                                            Merci de prendre quelques minutes pour remplir ce questionnaire de suivi concernant : <strong>{pathologie || 'votre consultation'}</strong>.
+                                            Merci de prendre quelques instants pour répondre à ce questionnaire :
                                         </p>
 
                                         <div className="text-center py-4">

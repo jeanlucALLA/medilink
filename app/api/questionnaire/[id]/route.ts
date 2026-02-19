@@ -55,21 +55,11 @@ export async function GET(
       )
     }
 
-    // Sécurisation : Utiliser 'statut' (FR)
     // Normaliser en minuscules pour la comparaison
     const currentStatus = (questionnaire.status || '').toLowerCase()
 
-    // Vérifier que le questionnaire est envoyé ou programmé/en_attente
-    // Accepte: 'envoyé', 'Envoyé', 'programmé', 'Programmé', 'en_attente'
-    if (currentStatus !== 'envoyé' && currentStatus !== 'programmé' && currentStatus !== 'en_attente') {
-      return NextResponse.json(
-        { error: 'Questionnaire non disponible' },
-        { status: 403 }
-      )
-    }
-
     // Vérifier si déjà complété
-    if (currentStatus === 'Complété') {
+    if (currentStatus === 'complété') {
       return NextResponse.json({
         id: questionnaire.id,
         pathologie: questionnaire.pathologie,
@@ -77,6 +67,15 @@ export async function GET(
         patient_name: questionnaire.patient_name,
         patient_email: questionnaire.patient_email,
       })
+    }
+
+    // Vérifier que le questionnaire est envoyé ou programmé/en_attente
+    // Accepte: 'envoyé', 'programmé', 'en_attente'
+    if (currentStatus !== 'envoyé' && currentStatus !== 'programmé' && currentStatus !== 'en_attente') {
+      return NextResponse.json(
+        { error: 'Questionnaire non disponible' },
+        { status: 403 }
+      )
     }
 
     // Retourner uniquement les données nécessaires
