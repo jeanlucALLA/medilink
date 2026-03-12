@@ -26,6 +26,7 @@ const PUBLIC_API_ROUTES = [
     '/api/consultation',
     '/api/demo-request',
     '/api/responses',
+    '/api/questionnaire',
 ]
 
 function isPublicRoute(pathname: string): boolean {
