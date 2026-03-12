@@ -33,10 +33,9 @@ export async function GET(
     const supabase = createClient(supabaseUrl, supabaseKey)
 
     // Récupérer le questionnaire depuis la base de données
-    // Note: La colonne peut s'appeler 'status' ou 'statut' selon la migration
     const { data: questionnaire, error } = await supabase
       .from('questionnaires')
-      .select('id, pathologie, questions, status, patient_email, patient_name, user_id')
+      .select('id, pathologie, questions, status, user_id, created_at')
       .eq('id', id)
       .single()
 
@@ -64,9 +63,19 @@ export async function GET(
         id: questionnaire.id,
         pathologie: questionnaire.pathologie,
         status: 'Complété',
-        patient_name: questionnaire.patient_name,
-        patient_email: questionnaire.patient_email,
       })
+    }
+
+    // Vérifier expiration du lien (30 jours max)
+    if (questionnaire.created_at) {
+      const createdAt = new Date(questionnaire.created_at)
+      const maxAgeMs = 30 * 24 * 60 * 60 * 1000 // 30 jours
+      if (Date.now() - createdAt.getTime() > maxAgeMs) {
+        return NextResponse.json(
+          { error: 'Ce lien a expiré. Veuillez contacter votre praticien.' },
+          { status: 410 }
+        )
+      }
     }
 
     // Vérifier que le questionnaire est envoyé ou programmé/en_attente
@@ -78,15 +87,13 @@ export async function GET(
       )
     }
 
-    // Retourner uniquement les données nécessaires
+    // Retourner uniquement les données nécessaires (sans PII patient)
     const response_data: any = {
       id: questionnaire.id,
       pathologie: questionnaire.pathologie,
-      status: currentStatus, // Le frontend attend "status"
-      patient_name: questionnaire.patient_name,
-      patient_email: questionnaire.patient_email,
+      status: currentStatus,
       questions: questionnaire.questions || [],
-      google_review_url: null, // Initialiser à null
+      google_review_url: null,
     }
 
     // Récupérer le lien Google Reviews du praticien si disponible

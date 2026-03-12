@@ -30,9 +30,10 @@ interface ResendWebhookPayload {
     }
 }
 
-// Hash email for privacy
+// Hash email for privacy (with application salt for rainbow table protection)
+const EMAIL_HASH_SALT = process.env.EMAIL_HASH_SALT || 'toplinksante-tracking-2026'
 function hashEmail(email: string): string {
-    return crypto.createHash('sha256').update(email.toLowerCase()).digest('hex')
+    return crypto.createHash('sha256').update(EMAIL_HASH_SALT + email.toLowerCase()).digest('hex')
 }
 
 // Map Resend event type to our simplified type
@@ -55,33 +56,34 @@ export async function POST(request: Request) {
         // Read the raw body for signature verification
         const rawBody = await request.text()
 
-        // MAIL-02: Verify SVix signature if webhook secret is configured
+        // MAIL-02: Verify SVix signature (OBLIGATOIRE)
         const webhookSecret = process.env.RESEND_WEBHOOK_SECRET
-        if (webhookSecret) {
-            const signedContent = `${svixId}.${svixTimestamp}.${rawBody}`
-            const secretKey = webhookSecret.startsWith('whsec_')
-                ? webhookSecret.slice(6)
-                : webhookSecret
-            const secretBytes = Buffer.from(secretKey, 'base64')
-            const expectedSignature = crypto
-                .createHmac('sha256', secretBytes)
-                .update(signedContent)
-                .digest('base64')
+        if (!webhookSecret) {
+            console.error('[Resend Webhook] RESEND_WEBHOOK_SECRET non configuré — rejet de sécurité')
+            return NextResponse.json({ error: 'Webhook secret not configured' }, { status: 500 })
+        }
 
-            // SVix sends multiple signatures separated by space, each prefixed with version
-            const signatures = svixSignature.split(' ').map(s => {
-                const parts = s.split(',')
-                return parts.length > 1 ? parts[1] : parts[0]
-            })
+        const signedContent = `${svixId}.${svixTimestamp}.${rawBody}`
+        const secretKey = webhookSecret.startsWith('whsec_')
+            ? webhookSecret.slice(6)
+            : webhookSecret
+        const secretBytes = Buffer.from(secretKey, 'base64')
+        const expectedSignature = crypto
+            .createHmac('sha256', secretBytes)
+            .update(signedContent)
+            .digest('base64')
 
-            const isValid = signatures.some(sig => sig === expectedSignature)
+        // SVix sends multiple signatures separated by space, each prefixed with version
+        const signatures = svixSignature.split(' ').map(s => {
+            const parts = s.split(',')
+            return parts.length > 1 ? parts[1] : parts[0]
+        })
 
-            if (!isValid) {
-                console.warn('[Resend Webhook] Invalid SVix signature — rejected')
-                return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
-            }
-        } else {
-            console.warn('[Resend Webhook] RESEND_WEBHOOK_SECRET non configuré — signature non vérifiée')
+        const isValid = signatures.some(sig => sig === expectedSignature)
+
+        if (!isValid) {
+            console.warn('[Resend Webhook] Invalid SVix signature — rejected')
+            return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
         }
 
         // 2. Parse payload

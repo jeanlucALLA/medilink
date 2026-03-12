@@ -44,7 +44,7 @@ serve(async (req) => {
     // - created_at + send_after_days <= aujourd'hui
     const { data: questionnaires, error: fetchError } = await supabase
       .from('questionnaires')
-      .select('id, patient_email, pathologie, created_at, send_after_days')
+      .select('id, patient_email, pathologie, created_at, send_after_days, user_id')
       .in('status', ['programmé', 'en_attente', 'pending'])
       .not('patient_email', 'is', null)
       .not('send_after_days', 'is', null)
@@ -202,10 +202,39 @@ serve(async (req) => {
         console.error(`[Send Scheduled] Erreur lors de l'envoi pour le questionnaire ${questionnaire.id}:`, error)
         errors.push(`Questionnaire ${questionnaire.id}: ${error.message || 'Erreur inconnue'}`)
         errorCount++
+
+        // Marquer l'erreur dans la base pour suivi
+        await supabase
+          .from('questionnaires')
+          .update({
+            last_send_error: error.message || 'Erreur inconnue',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', questionnaire.id)
       }
 
       // Délai de 500ms entre chaque email pour éviter le rate limiting de Resend
       await new Promise(resolve => setTimeout(resolve, 500))
+    }
+
+    // Envoyer des notifications aux praticiens concernés si des erreurs
+    if (errorCount > 0) {
+      // Regrouper les erreurs par praticien (user_id)
+      const practitionerErrors = new Map<string, number>()
+      for (const q of questionnairesToSend) {
+        if (q.user_id && errors.some(e => e.includes(q.id))) {
+          practitionerErrors.set(q.user_id, (practitionerErrors.get(q.user_id) || 0) + 1)
+        }
+      }
+
+      for (const [userId, count] of practitionerErrors) {
+        await supabase.from('notifications').insert({
+          practitioner_id: userId,
+          type: 'warning',
+          message: `${count} email(s) programmé(s) n'ont pas pu être envoyés. Le système réessaiera demain automatiquement.`,
+          metadata: { error_count: count, date: new Date().toISOString() }
+        }).catch(e => console.error('[Send Scheduled] Erreur notification:', e))
+      }
     }
 
     return new Response(

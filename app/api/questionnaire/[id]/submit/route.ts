@@ -65,9 +65,23 @@ export async function POST(
     }
 
     // Vérifier si déjà complété
-    if (questionnaire.status === 'Complété') {
+    if (questionnaire.status === 'Complété' || questionnaire.status === 'complété') {
       return NextResponse.json(
         { error: 'Ce questionnaire a déjà été complété' },
+        { status: 400 }
+      )
+    }
+
+    // Protection double soumission: vérifier si une réponse existe déjà
+    const { data: existingResponse } = await supabase
+      .from('responses')
+      .select('id')
+      .eq('questionnaire_id', id)
+      .maybeSingle()
+
+    if (existingResponse) {
+      return NextResponse.json(
+        { error: 'Ce questionnaire a déjà été rempli' },
         { status: 400 }
       )
     }

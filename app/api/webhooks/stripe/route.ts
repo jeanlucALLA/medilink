@@ -4,22 +4,24 @@ import { headers } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { createClient } from '@supabase/supabase-js'
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-if (!supabaseUrl || !supabaseServiceKey) {
-    throw new Error('Variables Supabase manquantes pour le webhook Stripe (NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)')
-}
-
-const supabase = createClient(supabaseUrl, supabaseServiceKey)
-
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
-
-import { sendWelcomeEmail } from '@/lib/email-utils' // Nouvelle fonction d'envoi
+import { sendWelcomeEmail } from '@/lib/email-utils'
 
 export async function POST(req: Request) {
     try {
+        // Instanciation à l'intérieur du handler pour éviter les crashs cold-start
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+        const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+        const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
+
+        if (!supabaseUrl || !supabaseServiceKey || !webhookSecret) {
+            console.error('❌ Variables manquantes pour webhook Stripe')
+            return new NextResponse('Server configuration error', { status: 500 })
+        }
+
+        const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+            auth: { persistSession: false }
+        })
+
         const body = await req.text()
         const signature = headers().get('stripe-signature')
 
@@ -107,7 +109,7 @@ export async function POST(req: Request) {
             console.log(`✅ Abonnement désactivé avec succès pour customer ${customerId}`)
         }
 
-        // Handle payment failure (monitoring)
+        // Handle payment failure — notifier le praticien et downgrade après 3 échecs
         if (event.type === 'invoice.payment_failed') {
             const invoice = event.data.object as any
             const customerId = invoice.customer
@@ -115,15 +117,31 @@ export async function POST(req: Request) {
 
             console.warn(`⚠️ Échec paiement pour customer ${customerId} (tentative ${attemptCount})`)
 
-            // Optionnel: Récupérer l'email pour notification interne
             const { data: profile } = await supabase
                 .from('profiles')
-                .select('email, nom_complet')
+                .select('id, email, nom_complet')
                 .eq('stripe_customer_id', customerId)
                 .single()
 
             if (profile) {
-                console.warn(`⚠️ Utilisateur concerné: user lié au customer ${customerId}`)
+                // Notifier le praticien
+                await supabase.from('notifications').insert({
+                    practitioner_id: profile.id,
+                    type: 'warning',
+                    message: attemptCount >= 3
+                        ? 'Votre abonnement a été suspendu après plusieurs échecs de paiement. Mettez à jour vos informations bancaires dans Paramètres.'
+                        : `Échec de paiement (tentative ${attemptCount}/3). Veuillez vérifier vos informations bancaires.`,
+                    metadata: { attempt_count: attemptCount, customer_id: customerId }
+                })
+
+                // Downgrade après 3 tentatives échouées
+                if (attemptCount >= 3) {
+                    await supabase.from('profiles').update({
+                        subscription_tier: 'inactive',
+                        updated_at: new Date().toISOString()
+                    }).eq('stripe_customer_id', customerId)
+                    console.warn(`🚫 Abonnement désactivé pour customer ${customerId} après ${attemptCount} échecs`)
+                }
             }
         }
 
