@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Send, AlertCircle, Clock } from 'lucide-react'
+import { Send, AlertCircle, Clock, Star, Heart } from 'lucide-react'
 import { useParams } from 'next/navigation'
 
 export default function SurveyPage() {
@@ -14,6 +14,8 @@ export default function SurveyPage() {
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showReviewPage, setShowReviewPage] = useState(false)
+  const [reviewDeclined, setReviewDeclined] = useState(false)
 
   useEffect(() => {
     const loadQuestionnaire = async () => {
@@ -58,7 +60,7 @@ export default function SurveyPage() {
       const answer = answers[index]
       return typeof answer === 'number' && answer >= 1 && answer <= 5
     })
-    
+
     if (!allAnswered) {
       alert('Veuillez répondre à toutes les questions en sélectionnant une valeur de 1 à 5')
       return
@@ -89,12 +91,11 @@ export default function SurveyPage() {
       // Afficher le message de remerciement
       setSubmitted(true)
 
-      // Attendre 2 secondes avant de rediriger (si score élevé)
+      // Si score élevé, afficher la page de demande d'avis
       if (average >= 4.5 && questionnaire.googleReviewUrl) {
         setTimeout(() => {
-          // Rediriger vers Google Review dans un nouvel onglet
-          window.open(questionnaire.googleReviewUrl, '_blank', 'noopener,noreferrer')
-        }, 2000)
+          setShowReviewPage(true)
+        }, 1000)
       }
     } catch (err) {
       alert('Erreur lors de l\'envoi des réponses')
@@ -132,25 +133,107 @@ export default function SurveyPage() {
       : 0
     const willRedirect = average >= 4.5 && questionnaire?.googleReviewUrl
 
+    // Page dédiée pour demander un avis 5 étoiles
+    if (showReviewPage && willRedirect) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 p-4">
+          <div className="max-w-lg w-full">
+            {/* Étoiles animées en haut */}
+            <div className="flex justify-center gap-2 mb-6">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <Star
+                  key={i}
+                  className="w-10 h-10 text-yellow-400 fill-yellow-400 drop-shadow-md"
+                  style={{
+                    animation: `bounceIn 0.4s ease-out ${i * 0.1}s both`,
+                  }}
+                />
+              ))}
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-2xl border border-yellow-200 p-8 sm:p-10 text-center">
+              <div className="w-20 h-20 bg-gradient-to-br from-yellow-400 to-orange-400 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+                <Heart className="w-10 h-10 text-white fill-white" />
+              </div>
+
+              <h1 className="text-3xl font-extrabold text-gray-900 mb-3">
+                Vous êtes formidable ! 🎉
+              </h1>
+
+              <p className="text-lg text-gray-600 mb-2">
+                Votre note de <span className="font-bold text-yellow-600">5/5</span> nous touche énormément.
+              </p>
+
+              <p className="text-gray-500 mb-8">
+                Si votre expérience vous a plu, un avis 5 étoiles sur Google ferait <span className="font-semibold text-gray-700">très plaisir</span> à votre praticien et aiderait d&apos;autres patients à le trouver.
+              </p>
+
+              {/* Aperçu Google Stars */}
+              <div className="bg-gray-50 rounded-xl p-4 mb-8 border border-gray-100">
+                <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">Avis Google</p>
+                <div className="flex justify-center gap-1 mb-1">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <Star key={i} className="w-7 h-7 text-yellow-400 fill-yellow-400" />
+                  ))}
+                </div>
+                <p className="text-sm text-gray-500">5.0 sur 5</p>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={() => {
+                    if (questionnaire?.googleReviewUrl) {
+                      window.location.href = questionnaire.googleReviewUrl
+                    }
+                  }}
+                  className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-bold rounded-xl hover:from-yellow-600 hover:to-orange-600 transition-all shadow-lg hover:shadow-xl transform hover:scale-[1.02] text-lg"
+                >
+                  <Star className="w-5 h-5 fill-white" />
+                  Oui, je laisse un avis !
+                </button>
+                <button
+                  onClick={() => {
+                    setShowReviewPage(false)
+                    setReviewDeclined(true)
+                  }}
+                  className="w-full px-6 py-3 text-gray-500 font-medium rounded-xl hover:bg-gray-50 transition-colors text-sm"
+                >
+                  Non merci, peut-être une prochaine fois
+                </button>
+              </div>
+            </div>
+
+            <p className="text-center text-xs text-gray-400 mt-4">
+              Vous serez redirigé vers la page Google Avis de votre praticien.
+            </p>
+          </div>
+
+          <style jsx>{`
+            @keyframes bounceIn {
+              0% { opacity: 0; transform: scale(0.3); }
+              50% { transform: scale(1.1); }
+              70% { transform: scale(0.9); }
+              100% { opacity: 1; transform: scale(1); }
+            }
+          `}</style>
+        </div>
+      )
+    }
+
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
         <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <Send className="w-8 h-8 text-green-600" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Merci !</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            {reviewDeclined ? 'Merci, à bientôt !' : 'Merci !'}
+          </h1>
           <p className="text-gray-600 mb-4">
-            {willRedirect 
-              ? "Merci pour votre retour ! Votre avis nous est précieux."
+            {reviewDeclined
+              ? "Vos réponses ont été enregistrées. Prenez soin de vous !"
               : "Vos réponses ont été enregistrées."}
           </p>
-          {willRedirect && (
-            <div className="bg-green-50 border-l-4 border-green-400 p-4 text-left mb-4">
-              <p className="text-sm text-green-800">
-                Vous allez être redirigé vers Google Review dans quelques instants...
-              </p>
-            </div>
-          )}
           <div className="bg-blue-50 border-l-4 border-blue-400 p-4 text-left">
             <p className="text-sm text-blue-800">
               Vos réponses seront supprimées du serveur après lecture par votre praticien ou dans 2 heures maximum.
@@ -177,7 +260,7 @@ export default function SurveyPage() {
                 Confidentialité des données
               </h3>
               <p className="text-xs text-red-700">
-                Vos réponses seront supprimées du serveur après lecture par votre praticien ou dans 2 heures maximum. 
+                Vos réponses seront supprimées du serveur après lecture par votre praticien ou dans 2 heures maximum.
                 Aucune donnée n&apos;est stockée de manière permanente.
               </p>
             </div>
@@ -186,7 +269,7 @@ export default function SurveyPage() {
 
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            {questionnaire.pathologyName 
+            {questionnaire.pathologyName
               ? `Suivi ${questionnaire.pathologyName}`
               : questionnaire.title}
           </h1>

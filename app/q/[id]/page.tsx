@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Loader2, CheckCircle, AlertCircle, Heart, Check, Smile, ExternalLink } from 'lucide-react'
+import { Loader2, CheckCircle, AlertCircle, Heart, Check, Smile, ExternalLink, Star } from 'lucide-react'
 import { Toaster, toast } from 'react-hot-toast'
 import Link from 'next/link'
 
@@ -14,6 +14,8 @@ interface Questionnaire {
   status: string
   questions?: Array<{ text: string;[key: string]: any }> | any[]
   google_review_url?: string | null
+  text: string
+  practitioner_name?: string | null
 }
 
 export default function QuestionnairePage() {
@@ -137,12 +139,11 @@ export default function QuestionnairePage() {
 
       // Redirection conditionnelle Smart Review
       if (isPerfectScore && questionnaire?.google_review_url) {
-        // 5/5 : Redirection automatique vers Google Reviews (nouvel onglet)
-        console.log('🌟 Score parfait (5/5) ! Redirection vers Google Reviews...')
-        toast.success('Redirection vers Google Avis...', { icon: '⭐', duration: 3000 })
+        // 5/5 : Afficher la page de demande d'avis 5 étoiles
+        console.log('🌟 Score parfait (5/5) ! Affichage de la page d\'avis...')
         setTimeout(() => {
-          window.open(questionnaire.google_review_url!, '_blank')
-        }, 1500)
+          setShowReviewModal(true)
+        }, 1000)
       } else if (isHighScore && questionnaire?.google_review_url) {
         // 4/5 : Afficher la modale de demande d'avis
         console.log('⭐ Bon score (4/5) ! Affichage de la modale...')
@@ -212,6 +213,90 @@ export default function QuestionnairePage() {
     const averageScore = answers.reduce((a, b) => a + b, 0) / answers.length
     const isPerfectScore = averageScore === 5
 
+    // Page dédiée pour demander un avis 5 étoiles (score parfait)
+    if (showReviewModal && isPerfectScore && questionnaire?.google_review_url) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 p-4">
+          <div className="max-w-lg w-full">
+            {/* Étoiles animées en haut */}
+            <div className="flex justify-center gap-2 mb-6">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <Star
+                  key={i}
+                  className="w-10 h-10 text-yellow-400 fill-yellow-400 drop-shadow-md"
+                  style={{
+                    animation: `bounceIn 0.4s ease-out ${i * 0.1}s both`,
+                  }}
+                />
+              ))}
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-2xl border border-yellow-200 p-8 sm:p-10 text-center">
+              {/* Icône principale */}
+              <div className="w-20 h-20 bg-gradient-to-br from-yellow-400 to-orange-400 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+                <Heart className="w-10 h-10 text-white fill-white" />
+              </div>
+
+              <h1 className="text-3xl font-extrabold text-gray-900 mb-3">
+                Vous êtes formidable ! 🎉
+              </h1>
+
+              <p className="text-lg text-gray-600 mb-2">
+                Votre note de <span className="font-bold text-yellow-600">5/5</span> nous touche énormément.
+              </p>
+
+              <p className="text-gray-500 mb-8">
+                Si votre expérience vous a plu, un avis 5 étoiles sur Google ferait <span className="font-semibold text-gray-700">très plaisir</span> à votre praticien et aiderait d&apos;autres patients à le trouver.
+              </p>
+
+              {/* Aperçu Google Stars */}
+              <div className="bg-gray-50 rounded-xl p-4 mb-8 border border-gray-100">
+                <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">Avis Google</p>
+                <div className="flex justify-center gap-1 mb-1">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <Star key={i} className="w-7 h-7 text-yellow-400 fill-yellow-400" />
+                  ))}
+                </div>
+                <p className="text-sm text-gray-500">5.0 sur 5</p>
+              </div>
+
+              {/* Boutons d'action */}
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={handleAcceptReview}
+                  className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-bold rounded-xl hover:from-yellow-600 hover:to-orange-600 transition-all shadow-lg hover:shadow-xl transform hover:scale-[1.02] text-lg"
+                >
+                  <Star className="w-5 h-5 fill-white" />
+                  Oui, je laisse un avis !
+                </button>
+                <button
+                  onClick={handleDeclineReview}
+                  className="w-full px-6 py-3 text-gray-500 font-medium rounded-xl hover:bg-gray-50 transition-colors text-sm"
+                >
+                  Non merci, peut-être une prochaine fois
+                </button>
+              </div>
+            </div>
+
+            {/* Message de confidentialité */}
+            <p className="text-center text-xs text-gray-400 mt-4">
+              Vous serez redirigé vers la page Google Avis de votre praticien.
+            </p>
+          </div>
+
+          {/* Animation CSS */}
+          <style jsx>{`
+            @keyframes bounceIn {
+              0% { opacity: 0; transform: scale(0.3); }
+              50% { transform: scale(1.1); }
+              70% { transform: scale(0.9); }
+              100% { opacity: 1; transform: scale(1); }
+            }
+          `}</style>
+        </div>
+      )
+    }
+
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-white p-4">
         {/* Modal Smart Review (4/5) */}
@@ -251,13 +336,11 @@ export default function QuestionnairePage() {
             {reviewDeclined ? 'Merci, à bientôt !' : 'Merci !'}
           </h1>
           <p className="text-gray-600">
-            {isPerfectScore && questionnaire?.google_review_url
-              ? "Un nouvel onglet a été ouvert vers Google Avis. Votre retour compte énormément !"
-              : reviewDeclined
-                ? "Vos réponses ont été enregistrées. Prenez soin de vous !"
-                : averageScore <= 3
-                  ? "Merci, votre retour a bien été pris en compte pour améliorer nos services."
-                  : "Vos réponses ont été enregistrées avec succès."}
+            {reviewDeclined
+              ? "Vos réponses ont été enregistrées. Prenez soin de vous !"
+              : averageScore <= 3
+                ? "Merci, votre retour a bien été pris en compte pour améliorer nos services."
+                : "Vos réponses ont été enregistrées avec succès."}
           </p>
         </div>
         <Toaster position="top-center" />
