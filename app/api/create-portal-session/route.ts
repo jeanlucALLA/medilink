@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { stripe } from '@/lib/stripe'
+import { getBaseUrl } from '@/lib/security'
 
 export async function POST(req: Request) {
     try {
@@ -42,8 +43,7 @@ export async function POST(req: Request) {
         }
 
         // 3. Create Portal Session
-        const origin = req.headers.get('origin') || process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_APP_URL
-        const returnUrl = origin
+        const returnUrl = getBaseUrl()
 
         const portalSession = await stripe.billingPortal.sessions.create({
             customer: profile.stripe_customer_id,
@@ -54,6 +54,6 @@ export async function POST(req: Request) {
 
     } catch (error: any) {
         console.error('Error creating portal session:', error)
-        return new NextResponse(`Internal Error: ${error.message}`, { status: 500 })
+        return new NextResponse('Erreur interne du serveur', { status: 500 })
     }
 }

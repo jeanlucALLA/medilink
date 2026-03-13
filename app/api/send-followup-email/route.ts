@@ -70,9 +70,9 @@ export async function POST(request: Request) {
           },
         }
       )
-      const { data: { session } } = await supabaseCookie.auth.getSession()
-      if (session) {
-        userSession = session
+      const { data: { user: cookieUser }, error: cookieError } = await supabaseCookie.auth.getUser()
+      if (cookieUser && !cookieError) {
+        userSession = { user: cookieUser }
         supabaseClient = supabaseCookie
       }
     }

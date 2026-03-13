@@ -233,9 +233,14 @@ export default function RegisterPage() {
                   alert('Code de parrainage appliqué !') // Feedback explicite demandé
 
                   // Envoyer l'email de notification au parrain (non bloquant)
+                  // Récupérer le token pour l'authentification
+                  const { data: { session: refSession } } = await supabase.auth.getSession()
                   fetch('/api/send-referral-email', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': `Bearer ${refSession?.access_token || ''}`
+                    },
                     body: JSON.stringify({ referrerId: referrerId }),
                   }).catch(err => console.error('Erreur envoi email parrainage:', err))
                 }
@@ -287,13 +292,16 @@ export default function RegisterPage() {
           if (isProPlan) {
             console.log('[Register] Redirection vers Stripe pour abonnement Pro...')
             try {
+              const { data: { session: stripeSession } } = await supabase.auth.getSession()
               const response = await fetch('/api/stripe/checkout', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${stripeSession?.access_token || ''}`
+                },
                 body: JSON.stringify({
                   priceId: STRIPE_PRICE_IDS.pro,
                   tier: 'pro',
-                  userId: authData.user.id
                 }),
               })
 

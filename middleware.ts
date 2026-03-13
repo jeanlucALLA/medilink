@@ -26,7 +26,13 @@ const PUBLIC_API_ROUTES = [
     '/api/consultation',
     '/api/demo-request',
     '/api/responses',
-    '/api/questionnaire',
+]
+
+// Routes API publiques patient (sous-routes avec ID uniquement)
+// Permet /api/questionnaire/[uuid] et /api/questionnaire/[uuid]/submit
+// Mais NOT /api/questionnaire (listing protégé par auth)
+const PUBLIC_API_ROUTE_PATTERNS = [
+    /^\/api\/questionnaire\/[^/]+/,  // /api/questionnaire/:id et sous-routes
 ]
 
 function isPublicRoute(pathname: string): boolean {
@@ -37,9 +43,14 @@ function isPublicRoute(pathname: string): boolean {
 }
 
 function isPublicApiRoute(pathname: string): boolean {
-    return PUBLIC_API_ROUTES.some(
+    // Check exact prefix matches
+    const prefixMatch = PUBLIC_API_ROUTES.some(
         (route) => pathname === route || pathname.startsWith(route + '/')
     )
+    if (prefixMatch) return true
+
+    // Check regex patterns (for routes like /api/questionnaire/:id)
+    return PUBLIC_API_ROUTE_PATTERNS.some((pattern) => pattern.test(pathname))
 }
 
 export async function middleware(request: NextRequest) {

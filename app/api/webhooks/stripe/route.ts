@@ -149,6 +149,6 @@ export async function POST(req: Request) {
 
     } catch (err: any) {
         console.error('Erreur interne webhook:', err)
-        return new NextResponse(`Server Error: ${err.message}`, { status: 500 })
+        return new NextResponse('Erreur interne du serveur', { status: 500 })
     }
 }

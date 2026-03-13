@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { createClient } from '@supabase/supabase-js'
+import { escapeHtml } from '@/lib/security'
 
 // MAIL-01: Crash on missing env vars instead of using placeholders
 const resendApiKey = process.env.RESEND_API_KEY
@@ -16,10 +17,24 @@ if (!resendApiKey || !supabaseUrl || !supabaseServiceKey) {
 }
 
 const resend = new Resend(resendApiKey)
-const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
 export async function POST(req: Request) {
   try {
+    // AUDIT FIX CRIT-05: Vérifier l'authentification
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
+    }
+
+    const token = authHeader.replace('Bearer ', '')
+    const supabase = createClient(supabaseUrl!, supabaseServiceKey!, {
+      auth: { persistSession: false }
+    })
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
+    }
     const { referrerId } = await req.json()
 
     if (!referrerId) {
@@ -89,7 +104,7 @@ export async function POST(req: Request) {
       subject: subject,
       html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #2563eb;">Bravo ${referrer.nom_complet} !</h1>
+          <h1 style="color: #2563eb;">Bravo ${escapeHtml(referrer.nom_complet)} !</h1>
           <p style="font-size: 16px; color: #374151;">
             Un nouveau professionnel de santé vient de s'inscrire sur TopLinkSante en utilisant votre code parrain.
           </p>

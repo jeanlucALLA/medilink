@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { createClient } from '@supabase/supabase-js'
+import { getBaseUrl } from '@/lib/security'
 
 export async function POST(req: Request) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -12,10 +13,26 @@ export async function POST(req: Request) {
         return new NextResponse('Configuration serveur incomplète', { status: 500 })
     }
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+        auth: { persistSession: false }
+    })
     try {
-        const { priceId, tier, userId } = await req.json()
-        const origin = req.headers.get('origin') || process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_APP_URL
+        // AUDIT FIX CRIT-04: Vérifier l'authentification via token
+        const authHeader = req.headers.get('Authorization')
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return new NextResponse('Non autorisé', { status: 401 })
+        }
+
+        const token = authHeader.replace('Bearer ', '')
+        const { data: { user }, error: authError } = await supabase.auth.getUser(token)
+
+        if (authError || !user) {
+            return new NextResponse('Non autorisé', { status: 401 })
+        }
+
+        const { priceId, tier } = await req.json()
+        const userId = user.id // Source de vérité : le token, pas le body
+        const origin = getBaseUrl()
 
         if (!priceId) {
             return new NextResponse('Price ID manquante', { status: 400 })

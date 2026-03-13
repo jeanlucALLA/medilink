@@ -41,18 +41,26 @@ export default function AbonnementPage() {
             }
             console.log("✅ Utilisateur connecté:", user.id)
 
-            // 2. Créer la session Stripe via notre API
+            // 2. Get access token for the API call
+            const { data: { session } } = await supabase.auth.getSession()
+            if (!session?.access_token) {
+                throw new Error('Session expirée, veuillez vous reconnecter.')
+            }
+
+            // 3. Créer la session Stripe via notre API
             const tier = 'pro' // Single tier now
             const priceId = STRIPE_PRICE_IDS[tier];
             console.log("🔄 Tentative création session Stripe pour:", tier, "PriceID:", priceId)
 
             const response = await fetch('/api/stripe/checkout', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session.access_token}`
+                },
                 body: JSON.stringify({
                     priceId: priceId,
                     tier: tier,
-                    userId: user.id
                 })
             })
 

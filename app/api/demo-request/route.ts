@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { escapeHtml } from '@/lib/security'
 
 // API pour recevoir les demandes de démo (utilisateurs non-connectés)
 export async function POST(req: Request) {
@@ -98,13 +99,13 @@ ${message || 'Aucun message supplémentaire'}
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
               <h2 style="color: #0052FF;">Nouvelle demande de démonstration</h2>
               <hr style="border: 1px solid #eee;">
-              <p><strong>Nom:</strong> ${name}</p>
-              <p><strong>Email:</strong> <a href="mailto:${email}">${email}</a></p>
-              <p><strong>Téléphone:</strong> ${phone || 'Non renseigné'}</p>
-              <p><strong>Spécialité:</strong> ${specialty}</p>
+              <p><strong>Nom:</strong> ${escapeHtml(name)}</p>
+              <p><strong>Email:</strong> <a href="mailto:${escapeHtml(email)}">${escapeHtml(email)}</a></p>
+              <p><strong>Téléphone:</strong> ${escapeHtml(phone || 'Non renseigné')}</p>
+              <p><strong>Spécialité:</strong> ${escapeHtml(specialty)}</p>
               <hr style="border: 1px solid #eee;">
               <p><strong>Message:</strong></p>
-              <p style="background: #f5f5f5; padding: 15px; border-radius: 8px;">${message || 'Aucun message'}</p>
+              <p style="background: #f5f5f5; padding: 15px; border-radius: 8px;">${escapeHtml(message || 'Aucun message')}</p>
               <hr style="border: 1px solid #eee;">
               <p style="color: #666; font-size: 12px;">
                 Reçu le ${new Date().toLocaleString('fr-FR')} via toplinksante.com/contact-demo
@@ -126,7 +127,7 @@ ${message || 'Aucun message supplémentaire'}
     } catch (error: any) {
         console.error('Erreur API demo-request:', error)
         return NextResponse.json(
-            { error: error.message || 'Erreur serveur' },
+            { error: 'Erreur interne du serveur' },
             { status: 500 }
         )
     }

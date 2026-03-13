@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { escapeHtml } from '@/lib/security'
 
 // POST: Soumettre les réponses d'un questionnaire
 export async function POST(
@@ -26,12 +27,12 @@ export async function POST(
     }
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    // Utiliser Service Role Key pour bypass RLS (Patient anonyme)
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
     if (!supabaseUrl || !supabaseKey) {
+      console.error('[Submit] SUPABASE_SERVICE_ROLE_KEY manquante')
       return NextResponse.json(
-        { error: 'Configuration Supabase manquante' },
+        { error: 'Configuration serveur incomplète' },
         { status: 500 }
       )
     }
@@ -110,9 +111,8 @@ export async function POST(
         answers: answers, // Tableau des réponses
         score_total: scoreResultat,
         average_score: averageScore,
-        patient_email: questionnaire.patient_email,
+        // AUDIT: patient_email retiré pour conformité Zero-Data / RGPD
         submitted_at: new Date().toISOString(),
-        // On sauvegarde aussi le commentaire et le JSON complet pour référence future si besoin
         comment: body.comment || '',
         metadata: { scoreCalculated: averageScore }
       })
@@ -120,7 +120,7 @@ export async function POST(
     if (insertError) {
       console.error('Erreur insertion responses:', insertError)
       return NextResponse.json(
-        { error: `Erreur sauvegarde (Table Responses): ${insertError.message}` },
+        { error: 'Erreur lors de la sauvegarde des réponses' },
         { status: 500 }
       )
     }
@@ -156,7 +156,7 @@ export async function POST(
           if (resendApiKey) {
             const dashboardUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001'
             const pathologie = questionnaire.pathologie || 'votre suivi'
-            const praticienNom = profile.nom_complet ? `Dr. ${profile.nom_complet.split(' ')[0]}` : 'Docteur'
+            const praticienNom = profile.nom_complet ? `Dr. ${escapeHtml(profile.nom_complet.split(' ')[0])}` : 'Docteur'
             const historyLink = `${dashboardUrl}/dashboard/history`
 
             // Envoyer l'email via Resend
@@ -189,7 +189,7 @@ export async function POST(
                           Bonjour ${praticienNom},
                         </p>
                         <p style="color: #1f2937; margin-bottom: 20px; font-size: 16px; line-height: 1.7;">
-                          Un patient vient de compléter son questionnaire de suivi pour la pathologie : <strong>${pathologie}</strong>.
+                          Un patient vient de compléter son questionnaire de suivi pour la pathologie : <strong>${escapeHtml(pathologie)}</strong>.
                         </p>
                         <p style="color: #1f2937; margin-bottom: 30px; font-size: 16px; line-height: 1.7;">
                           Vous pouvez dès maintenant consulter le détail de ses réponses et son score de récupération sur votre espace sécurisé.
