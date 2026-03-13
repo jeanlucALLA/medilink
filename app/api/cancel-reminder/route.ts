@@ -1,17 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { CancelReminderSchema, parseBody } from '@/lib/validations'
 
 // POST: Annuler la relance automatique pour un questionnaire
 export async function POST(request: NextRequest) {
     try {
-        const { questionnaireId } = await request.json()
+        const body = await request.json()
 
-        if (!questionnaireId) {
+        // Validation Zod
+        const parsed = parseBody(CancelReminderSchema, body)
+        if (!parsed.success) {
             return NextResponse.json(
-                { error: 'questionnaireId requis' },
+                { error: 'Données invalides', details: parsed.errors },
                 { status: 400 }
             )
         }
+
+        const { questionnaireId } = parsed.data
 
         // Vérifier l'authentification
         const authHeader = request.headers.get('Authorization')

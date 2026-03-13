@@ -1,29 +1,23 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { escapeHtml } from '@/lib/security'
+import { DemoRequestSchema, parseBody } from '@/lib/validations'
 
 // API pour recevoir les demandes de démo (utilisateurs non-connectés)
 export async function POST(req: Request) {
     try {
         const body = await req.json()
-        const { name, email, phone, specialty, message } = body
 
-        // Validation
-        if (!name || !email || !specialty) {
+        // Validation Zod
+        const parsed = parseBody(DemoRequestSchema, body)
+        if (!parsed.success) {
             return NextResponse.json(
-                { error: 'Nom, email et spécialité sont requis' },
+                { error: 'Données invalides', details: parsed.errors },
                 { status: 400 }
             )
         }
 
-        // Email validation
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-        if (!emailRegex.test(email)) {
-            return NextResponse.json(
-                { error: 'Email invalide' },
-                { status: 400 }
-            )
-        }
+        const { name, email, phone, specialty, message } = parsed.data
 
         // Supabase avec service role pour bypass RLS
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL

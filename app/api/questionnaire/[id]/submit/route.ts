@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { escapeHtml } from '@/lib/security'
+import { QuestionnaireSubmitSchema, parseBody } from '@/lib/validations'
 
 // POST: Soumettre les réponses d'un questionnaire
 export async function POST(
@@ -10,18 +11,21 @@ export async function POST(
   try {
     const id = params.id
     const body = await request.json()
-    const { answers } = body
 
-    if (!id) {
+    // Validation Zod du payload
+    const parsed = parseBody(QuestionnaireSubmitSchema, body)
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'ID requis' },
+        { error: 'Données invalides', details: parsed.errors },
         { status: 400 }
       )
     }
 
-    if (!answers || !Array.isArray(answers)) {
+    const { answers, comment } = parsed.data
+
+    if (!id) {
       return NextResponse.json(
-        { error: 'Réponses invalides' },
+        { error: 'ID requis' },
         { status: 400 }
       )
     }

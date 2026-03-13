@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { SendEmailNowSchema, parseBody } from '@/lib/validations'
 
 // API Route pour forcer l'envoi immédiat d'un email
 // Cette route agit comme un proxy vers l'Edge Function Supabase
@@ -6,14 +7,17 @@ import { NextRequest, NextResponse } from 'next/server'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { questionnaireId } = body
 
-    if (!questionnaireId) {
+    // Validation Zod
+    const parsed = parseBody(SendEmailNowSchema, body)
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'questionnaireId est requis' },
+        { error: 'Données invalides', details: parsed.errors },
         { status: 400 }
       )
     }
+
+    const { questionnaireId } = parsed.data
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SERVICE_KEY

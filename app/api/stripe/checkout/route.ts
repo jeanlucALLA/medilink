@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { createClient } from '@supabase/supabase-js'
 import { getBaseUrl } from '@/lib/security'
+import { StripeCheckoutSchema, parseBody } from '@/lib/validations'
 
 export async function POST(req: Request) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -30,8 +31,19 @@ export async function POST(req: Request) {
             return new NextResponse('Non autorisé', { status: 401 })
         }
 
-        const { priceId, tier } = await req.json()
-        const userId = user.id // Source de vérité : le token, pas le body
+        const body = await req.json()
+
+        // Validation Zod
+        const parsed = parseBody(StripeCheckoutSchema, body)
+        if (!parsed.success) {
+            return new NextResponse(
+                JSON.stringify({ error: 'Données invalides', details: parsed.errors }),
+                { status: 400, headers: { 'Content-Type': 'application/json' } }
+            )
+        }
+
+        const { priceId, tier } = parsed.data
+        const userId = user.id
         const origin = getBaseUrl()
 
         if (!priceId) {
