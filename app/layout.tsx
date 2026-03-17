@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
+import ServiceWorkerRegistration from '@/components/ServiceWorkerRegistration'
 
 const inter = Inter({ subsets: ['latin'], display: 'swap' })
 
@@ -9,11 +10,18 @@ export const metadata: Metadata = {
   title: 'TopLinkSante - Votre suivi médical simplifié',
   description: 'La solution moderne pour le suivi de vos patients',
   keywords: ['questionnaire médical', 'suivi patient', 'logiciel cabinet médical', 'e-réputation médecin', 'avis google santé'],
+  manifest: '/manifest.json',
   icons: {
     icon: '/icon.svg',
     shortcut: '/icon.svg',
-    apple: '/icon.svg',
+    apple: '/icon-192.png',
   },
+  other: {
+    'mobile-web-app-capable': 'yes',
+    'apple-mobile-web-app-capable': 'yes',
+    'apple-mobile-web-app-status-bar-style': 'black-translucent',
+  },
+  themeColor: '#2563eb',
   openGraph: {
     title: 'TopLinkSante | Questionnaires Médicaux & Suivi Patient Automatisé',
     description: 'Digitalisez votre cabinet : questionnaires de santé sur-mesure, suivi post-consultation automatisé.',
@@ -28,7 +36,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fr">
-      <body className={`${inter.className} antialiased`}>{children}</body>
+      <body className={`${inter.className} antialiased`}>
+        {children}
+        <ServiceWorkerRegistration />
+      </body>
     </html>
   )
 }

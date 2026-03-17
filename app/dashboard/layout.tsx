@@ -10,6 +10,7 @@ import Confetti from 'react-confetti'
 import SidebarSafe from '@/components/dashboard/SidebarSafe'
 import NotificationsBell from '@/components/dashboard/NotificationsBell'
 import TrialBanner from '@/components/dashboard/TrialBanner'
+import InstallButton from '@/components/InstallButton'
 import { checkPerformanceNotification } from '@/lib/performance-detection'
 
 export default function DashboardLayout({
@@ -283,6 +284,9 @@ export default function DashboardLayout({
                         Médecin
                       </span>
                     </div>
+
+                    {/* Install PWA Button */}
+                    <InstallButton />
 
                     {/* Badge Zero-Data */}
                     <Link
