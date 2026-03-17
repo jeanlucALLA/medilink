@@ -8,6 +8,7 @@ import AddMedicalActModal from '@/components/dashboard/AddMedicalActModal'
 import LeaderBadge from '@/components/dashboard/LeaderBadge'
 import BadgesCard from '@/components/dashboard/BadgesCard'
 import BenchmarkingCard from '@/components/dashboard/BenchmarkingCard'
+import InstallBanner from '@/components/InstallBanner'
 import { toast } from 'react-hot-toast'
 import { supabase } from '@/lib/supabase'
 
@@ -694,6 +695,9 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+
+      {/* Bannière d'installation PWA */}
+      <InstallBanner />
 
       {/* Checklist de Bienvenue - Version Compacte */}
       {(!hasFirstAct || !hasQuestionnaireSettings) && (
