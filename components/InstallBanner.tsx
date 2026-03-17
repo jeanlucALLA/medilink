@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Download, Monitor, X, Check, Sparkles } from 'lucide-react'
+import { Download, Monitor, X, Sparkles } from 'lucide-react'
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>
@@ -13,15 +13,19 @@ export default function InstallBanner() {
   const [isInstalled, setIsInstalled] = useState(false)
   const [isDismissed, setIsDismissed] = useState(false)
   const [isInstalling, setIsInstalling] = useState(false)
+  const [isReady, setIsReady] = useState(false)
 
   useEffect(() => {
+    setIsReady(true)
+
     // Check if dismissed in localStorage
-    if (typeof window !== 'undefined') {
-      const dismissed = localStorage.getItem('pwa-banner-dismissed')
-      if (dismissed) setIsDismissed(true)
+    const dismissed = localStorage.getItem('pwa-banner-dismissed')
+    if (dismissed) {
+      setIsDismissed(true)
+      return
     }
 
-    // Check if already installed
+    // Check if already running as installed PWA
     if (window.matchMedia('(display-mode: standalone)').matches) {
       setIsInstalled(true)
       return
@@ -63,7 +67,10 @@ export default function InstallBanner() {
     localStorage.setItem('pwa-banner-dismissed', 'true')
   }
 
-  // Don't show if installed, dismissed, or no prompt available
+  // Wait for client hydration
+  if (!isReady) return null
+
+  // Don't show if already installed as standalone or dismissed
   if (isInstalled || isDismissed) return null
 
   return (
@@ -101,7 +108,7 @@ export default function InstallBanner() {
           </p>
         </div>
 
-        {/* CTA Button */}
+        {/* CTA Button - either install directly or show instructions */}
         {deferredPrompt ? (
           <button
             onClick={handleInstall}
@@ -116,7 +123,7 @@ export default function InstallBanner() {
         ) : (
           <div className="flex-shrink-0 flex items-center gap-2 px-5 py-3 bg-white/15 backdrop-blur-sm rounded-xl border border-white/20 text-sm">
             <Download className="w-4 h-4" />
-            <span>Ouvrez avec <strong>Chrome</strong> ou <strong>Edge</strong></span>
+            <span>Cliquez sur <strong>⊕</strong> dans la barre d&apos;adresse</span>
           </div>
         )}
       </div>
